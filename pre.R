@@ -164,7 +164,7 @@ subSKAT <- function(onelist,fig,pop){
 
     mis <- c("nonframeshiftdeletion","nonframeshiftinsertion","nonsynonymousSNV")
     lof <- c("frameshiftdeletion","frameshiftinsertion","stopgain","stoploss","none")  
-    ind <- nchar(onelist[,"REF"]) != nchar(onelist[,"ALT"])
+    oneind <- nchar(onelist[,"REF"]) != nchar(onelist[,"ALT"])
     
     #  fig=1; LOF only; fig=2; D-mis only; fig=3; indels only; fig=4; LOF and D-mis; fig=5; LOF, D-mis, indels
     if(fig==1){ onelist <- onelist[onelist[,"VariantClass"] %in% lof,];}
@@ -325,9 +325,9 @@ comSKAT <- function(){
     
 }
 
-paraSKAT <- function(){
+parallelSKAT <- function(){
     library(parallel)
-    mclapply(1:21,function(kk) allSKAT(kk),mc.cores = 4)
+    mclapply(1,function(kk) allSKAT(kk),mc.cores = 1)
 }
 
 allSKAT <- function(kk){
