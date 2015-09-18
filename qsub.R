@@ -1,0 +1,2 @@
+source("pre.R")
+runSKAT()
