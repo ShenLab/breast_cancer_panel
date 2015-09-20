@@ -326,8 +326,9 @@ comSKAT <- function(){
 }
 
 parallelSKAT <- function(){
+    source("pre.R")
     library(parallel)
-    mclapply(1,function(kk) allSKAT(kk),mc.cores = 1)
+    mclapply(1:20,function(kk) allSKAT(kk),mc.cores = 20)
 }
 
 allSKAT <- function(kk){
@@ -365,17 +366,19 @@ comSKAT_gene <- function(r1,sig,fig,pop,dirstr="SKATresult/"){
     library(SKAT)
     source("~/.Rprofile")
     source("Faminfo.R")
-    G <- r1$G;wts <- r1$wts; X <- r1$X; y <- r1$y;caselist <- r1$caselist
+    G <- r1$G;wts <- r1$wts; X <- r1$X; y <- r1$y;caselist <- r1$caselist; contlist <- r1$contlist;
     obj <- SKAT_Null_Model(y ~ X, out_type="D")
     casevar <- paste(caselist[,1],caselist[,2],caselist[,4],caselist[,5],sep="_")
+    contvar <- paste(contlist[,1],contlist[,2],contlist[,4],contlist[,5],sep="_")
     
+    #genes <- union(caselist[,"Gene"],contlist[,"Gene"])
     genes <- unique(caselist[,"Gene"])
     n.gene <- length(genes)
     print(n.gene)
     pM <- matrix(,n.gene,6)
     caselist[,c("SKAT_w","SKAT","SKAT-O_w","rho_w","SKAT-O","rho")] <- c("","","","","","")
     for(i in 1:n.gene){
-        onevar <- casevar[which(caselist[,"Gene"] %in% genes[i])]
+        onevar <- union(casevar[which(caselist[,"Gene"] %in% genes[i])],contvar[which(contlist[,"Gene"] %in% genes[i])])
         subs <- which(colnames(G) %in% onevar)
         oneG <- as.matrix(G[,subs])
         pM[i,1] <- (SKAT(oneG, obj, kernel = "linear.weighted", weights=wts[subs])$p.value)
