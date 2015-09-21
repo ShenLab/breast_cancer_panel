@@ -205,10 +205,11 @@ runSKAT <- function(sig,fig,pop){
     
     fres[fres=="."] <- 0
     fres1[fres1=="."] <- 0
-    fres <- as.numeric(fres)
-    fres1 <- as.numeric(fres1)
     fres[is.na(fres)] <- 0
     fres1[is.na(fres1)] <- 0
+    fres <- as.numeric(fres)
+    fres1 <- as.numeric(fres1)
+    
     mafv <- rep(0,length(vars))
     mafv[match(colnames(Z),vars)] <- fres
     mafv[match(colnames(Z1),vars)] <- fres1
@@ -343,23 +344,14 @@ allSKAT <- function(kk){
         sig=FALSE
         r1 <- runSKAT(sig,fig,pop)
         comSKAT_gene(r1,sig,fig,pop,"SKATresult/")
+        comSKAT_variant(r1,sig,fig,pop,"SKATresult/")
         
         sig=TRUE
         r2 <- runSKAT(sig,fig,pop)
         comSKAT_gene(r2,sig,fig,pop,"SKATresult/")
+        comSKAT_variant(r2,sig,fig,pop,"SKATresult/")
     }
-    
-    if(kk==21){
-        fig=5;pop=4;
-        sig=FALSE
-        r1 <- runSKAT(sig,fig,pop)
-        comSKAT_variant(r1,sig,"SKATresult/")
         
-        sig=TRUE
-        r2 <- runSKAT(sig,fig,pop)
-        comSKAT_variant(r2,sig,"SKATresult/")
-    }
-    
 }
 
 comSKAT_gene <- function(r1,sig,fig,pop,dirstr="SKATresult/"){
@@ -371,12 +363,13 @@ comSKAT_gene <- function(r1,sig,fig,pop,dirstr="SKATresult/"){
     casevar <- paste(caselist[,1],caselist[,2],caselist[,4],caselist[,5],sep="_")
     contvar <- paste(contlist[,1],contlist[,2],contlist[,4],contlist[,5],sep="_")
     
-    #genes <- union(caselist[,"Gene"],contlist[,"Gene"])
-    genes <- unique(caselist[,"Gene"])
+    genes <- union(caselist[,"Gene"],contlist[,"Gene"])
+    #genes <- unique(caselist[,"Gene"])
     n.gene <- length(genes)
     print(n.gene)
     pM <- matrix(,n.gene,6)
     caselist[,c("SKAT_w","SKAT","SKAT-O_w","rho_w","SKAT-O","rho")] <- c("","","","","","")
+    contlist[,c("SKAT_w","SKAT","SKAT-O_w","rho_w","SKAT-O","rho")] <- c("","","","","","")
     for(i in 1:n.gene){
         onevar <- union(casevar[which(caselist[,"Gene"] %in% genes[i])],contvar[which(contlist[,"Gene"] %in% genes[i])])
         subs <- which(colnames(G) %in% onevar)
@@ -393,24 +386,23 @@ comSKAT_gene <- function(r1,sig,fig,pop,dirstr="SKATresult/"){
         pM[i,6] <- ifelse(is.null(a2$param$rho_est), -1, a2$param$rho_est)
         
         n <- sum(caselist[,"Gene"]==genes[i])
-        caselist[caselist[,"Gene"]==genes[i],c("SKAT_w","SKAT","SKAT-O_w","rho_w","SKAT-O","rho")] <- matrix(pM[i,],n,6,byrow=TRUE)
+        if(n >0 ) caselist[caselist[,"Gene"]==genes[i],c("SKAT_w","SKAT","SKAT-O_w","rho_w","SKAT-O","rho")] <- matrix(pM[i,],n,6,byrow=TRUE)
+        n <- sum(contlist[,"Gene"]==genes[i])
+        if(n > 0) contlist[contlist[,"Gene"]==genes[i],c("SKAT_w","SKAT","SKAT-O_w","rho_w","SKAT-O","rho")] <- matrix(pM[i,],n,6,byrow=TRUE)
     }
     
     ## most related genes 
     source("~/.Rprofile")
     qwt(caselist,file=paste(dirstr,"caselist_SKAT_gene_",sig,"_",fig,"_",pop,".txt",sep=""),flag=2)
+    qwt(contlist,file=paste(dirstr,"contlist_SKAT_gene_",sig,"_",fig,"_",pop,".txt",sep=""),flag=2)
     
 }
 
-comSKAT_variant <- function(r1,sig,dirstr="SKATresult/"){
+comSKAT_variant <- function(r1,sig,fig,pop,dirstr="SKATresult/"){
     library(SKAT)
-    G <- r1$G;wts <- r1$wts; X <- r1$X; y <- r1$y;
-    obj <- SKAT_Null_Model(y ~ X, out_type="D")
-    
-    source("~/.Rprofile")
     source("Faminfo.R")
-    load(paste("case3_single",sig,sep=""))
-    caselist <- case3
+    G <- r1$G;wts <- r1$wts; X <- r1$X; y <- r1$y;caselist <- r1$caselist; contlist <- r1$contlist;
+    obj <- SKAT_Null_Model(y ~ X, out_type="D")
     casevar <- paste(caselist[,1],caselist[,2],caselist[,4],caselist[,5],sep="_")
     
     vars <- unique(casevar)
@@ -441,11 +433,153 @@ comSKAT_variant <- function(r1,sig,dirstr="SKATresult/"){
     
     ## most related genes 
     source("~/.Rprofile")
-    qwt(caselist,file=paste(dirstr,"caselist_SKAT_variant_",sig,".txt",sep=""),flag=2)
+    #qwt(caselist,file=paste(dirstr,"caselist_SKAT_variant_",sig,".txt",sep=""),flag=2)
+    qwt(caselist,file=paste(dirstr,"caselist_SKAT_variant_",sig,"_",fig,"_",pop,".txt",sep=""),flag=2)
+}
+
+## write to xlsx files with ordering
+write_xlsx <- function(){
+    library(xlsx)
+    n.case <- c(356,223,99)
+    n.cont <- c(114,59,55)
+    dirstr="SKATresult/"
+    vartype <- c("LGD","D-mis","indels","LGD+D-mis","ALL")
+    poptype <- c("Jewish","Hispanic","JH","All")
+    ## single variants 
+    for(sig in c(FALSE,TRUE)){
+        for(fig in 1:5){
+            for(pop in 1:4){
+                r1 <- runSKAT(sig,fig,pop)
+                caselist <- r1$caselist; contlist <- r1$contlist;
+                
+                if(pop==1){onecase=n.case[2];onecont=n.cont[2];}
+                if(pop==2){onecase=n.case[3];onecont=n.cont[3];}
+                if(pop==3){onecase=n.case[2]+n.case[3];onecont=n.cont[2]+n.cont[3];}
+                if(pop==4){onecase=n.case[1];onecont=n.cont[1];}
+                
+                gfile <- paste(dirstr,"caselist_SKAT_gene_",sig,"_",fig,"_",pop,".txt",sep="")
+                gf <- onevfile(caselist,contlist,gfile,"g",onecase,onecont)
+                write.xlsx(gf,file=paste("SKATresult/Gene_",vartype[fig],"_",poptype[pop],".xlsx",sep=""),sheetName=paste(vartype[fig],poptype[pop],sig,sep="_"),row.names=FALSE,append=TRUE)
+                
+                casevar <- paste(caselist[,1],caselist[,2],caselist[,4],caselist[,5],sep="_")
+                contvar <- paste(contlist[,1],contlist[,2],contlist[,4],contlist[,5],sep="_")
+                vfile <- paste(dirstr,"caselist_SKAT_variant_",sig,"_",fig,"_",pop,".txt",sep="")
+                vf <- onevfile(casevar,contvar,vfile,"v",onecase,onecont)
+                write.xlsx(vf,file=paste("SKATresult/Variant_",vartype[fig],"_",poptype[pop],".xlsx",sep=""),sheetName=paste(vartype[fig],poptype[pop],sig,sep="_"),row.names=FALSE,append=TRUE)
+            }
+        }
+    }
     
 }
 
-# burden test -------------------------------------------------------------
+onevfile <- function(casevar,contvar,vfile,fig,onecase,onecont){
+    varfile <- read.delim(vfile,sep="\t")
+    varfile <- varfile[,setdiff(colnames(varfile),c("Variantfiltering","ExACfreq","Popfreq","VCFPASS","noneSegmentalDup","meta.SVM_PP2","GTEXexp","singleton"))]
+    if(fig=="v"){
+        vars <- paste(varfile[,1],varfile[,2],varfile[,4],varfile[,5],sep="_")
+        varfile[,"odd_ratio"] <- sapply(1:length(vars), function(i) (sum(casevar==vars[i])/onecase) / (sum(contvar==vars[i])/onecont))
+    }else if(fig=="g"){
+        varfile[,"odd_ratio"] <- sapply(1:dim(varfile)[1], function(i) (sum(casevar[,"Gene"]==varfile[i,"Gene"])/onecase) / (sum(contvar==varfile[i,"Gene"])/onecont))
+    }
+    varfile <- varfile[varfile[,"odd_ratio"] > 1, ]
+    varfile <- varfile[order(varfile[,"SKAT.O"]),]
+    
+    varfile
+}
+
+find_sig <- function(){
+    library(xlsx)
+    n.case <- c(356,223,99)
+    n.cont <- c(114,59,55)
+    dirstr="SKATresult/"
+    vartype <- c("LGD","D-mis","indels","LGD+D-mis","ALL")
+    poptype <- c("Jewish","Hispanic","JH","All")
+    
+    vcut <- 0.01
+    
+    cols <- c("singleton","variant","Ethnic","#gene_SKAT-O_p_correct<0.01","#gene_SKAT-O_p<0.01","#var_SKAT-O_p_correct<0.01","#var_SKAT-O_p<0.01","#gene","#variant")
+    sigM <- matrix(,40,9)
+    colnames(sigM) <- cols
+    k <- 1
+    for(fig in 1:5){
+        for(pop in 1:4){
+            for(sig in c(FALSE,TRUE)){
+            r1 <- runSKAT(sig,fig,pop)
+            caselist <- r1$caselist; contlist <- r1$contlist;
+            n.gene <- length(union(caselist[,"Gene"],contlist[,"Gene"]))
+            n.var <- dim(r1$G)[2]
+            
+            gfile <- paste("SKATresult/Gene_",vartype[fig],"_",poptype[pop],".xlsx",sep="")
+            vfile <- paste("SKATresult/Variant_",vartype[fig],"_",poptype[pop],".xlsx",sep="")
+            
+            sigM[k,1] <- sig
+            sigM[k,2] <- vartype[fig]
+            sigM[k,3] <- poptype[pop]
+            tmp <- read.xlsx2(gfile,sheetName=paste(vartype[fig],poptype[pop],sig,sep="_"))
+            sigM[k,4] <- length(unique(tmp[(as.numeric(tmp[,"SKAT.O_w"])*n.gene < vcut),"Gene"]))
+            sigM[k,5] <- length(unique(tmp[(as.numeric(tmp[,"SKAT.O_w"]) < vcut),"Gene"]))
+            
+            tmp <- read.xlsx2(vfile,sheetName=paste(vartype[fig],poptype[pop],sig,sep="_"))
+            vars <- paste(tmp[,1],tmp[,2],tmp[,4],tmp[,5],sep="_")
+            sigM[k,6] <- length(unique(vars[(as.numeric(tmp[,"SKAT.O_w"])*n.var < vcut)]))
+            sigM[k,7] <- length(unique(vars[(as.numeric(tmp[,"SKAT.O_w"]) < vcut)]))
+            
+            sigM[k,8] <- n.gene
+            sigM[k,9] <- n.var
+            
+            k <- k+1
+            print(k)
+            }
+        }
+    }
+    source("~/.Rprofile")
+    qwt(sigM,file=paste("SKATresult/sig_var_gene_",vcut,".txt",sep=""),flag=2)
+
+}
+
+manual_check <- function(){
+    
+    library(xlsx)
+    library(SKAT)
+    source("pre.R")
+    source("~/.Rprofile")
+    n.case <- c(356,223,99)
+    n.cont <- c(114,59,55)
+    dirstr="SKATresult/"
+    vartype <- c("LGD","D-mis","indels","LGD+D-mis","ALL")
+    poptype <- c("Jewish","Hispanic","JH","All")
+    
+    fig=2;pop=3;sig=TRUE;
+    gene="FECH";
+    ovar="18_55238725_T_C";
+    gene="NOTCH1"
+    ovar="9_139405111_G_A"
+    
+    
+    r1 <- runSKAT(sig,fig,pop)
+    G <- r1$G;wts <- r1$wts; X <- r1$X; y <- r1$y;caselist <- r1$caselist; contlist <- r1$contlist;
+    obj <- SKAT_Null_Model(y ~ X, out_type="D")
+    casevar <- paste(caselist[,1],caselist[,2],caselist[,4],caselist[,5],sep="_")
+    contvar <- paste(contlist[,1],contlist[,2],contlist[,4],contlist[,5],sep="_")
+    genes <- union(caselist[,"Gene"],contlist[,"Gene"])
+    
+    i <- which(genes==gene)
+    onevar <- union(casevar[which(caselist[,"Gene"] %in% genes[i])],contvar[which(contlist[,"Gene"] %in% genes[i])])
+    subs <- which(colnames(G) %in% onevar)
+    oneG <- as.matrix(G[,subs])
+    SKAT(oneG, obj, kernel = "linear.weighted", weights=wts[subs], method="optimal.adj")$p.value
+    colSums(oneG)
+    
+    casevar <- paste(caselist[,1],caselist[,2],caselist[,4],caselist[,5],sep="_")
+    vars <- unique(casevar)
+    i <- which(vars==ovar)
+    subs <- which(colnames(G)==vars[i])
+    oneG <- as.matrix(G[,subs])
+    SKAT(oneG, obj, kernel = "linear.weighted", weights=wts[subs], method="optimal.adj")$p.value
+    colSums(oneG)
+}
+
+# burden test
 burdent <- function(){
     
     ## case not filtered by matched controls
