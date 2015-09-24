@@ -31,6 +31,13 @@ case_cont <- function(){
 }
 
 remove_out <- function(onelist){
+    ## BRCA1/2 pathogenic mutations cases: br <- c(223109,223041,223275,260333,222968)
+    br <- c(223109,223041,223275,260333,222968)
+    if(grepl("SubID",colnames(onelist))){
+        onelist <- onelist[!(onelist[,"SubID"] %in% br),]
+    }else{
+        onelist <- onelist[!(onelist[,"Subject_ID"] %in% br),]
+    }
     onelist
 }
 
