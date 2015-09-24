@@ -33,7 +33,7 @@ case_cont <- function(){
 remove_out <- function(onelist){
     ## BRCA1/2 pathogenic mutations cases: br <- c(223109,223041,223275,260333,222968)
     br <- c(223109,223041,223275,260333,222968)
-    if(grepl("SubID",colnames(onelist))){
+    if(any(grepl("SubID",colnames(onelist)))){
         onelist <- onelist[!(onelist[,"SubID"] %in% br),]
     }else{
         onelist <- onelist[!(onelist[,"Subject_ID"] %in% br),]
@@ -160,19 +160,19 @@ filter_variant <- function(onelist,sig=FALSE){
     onelist[,"Variantfiltering"] <- onelist[,"ExACfreq"] & onelist[,"Popfreq"] & onelist[,"VCFPASS"] & onelist[,"noneSegmentalDup"] & onelist[,"meta-SVM_PP2"] & onelist[,"GTEXexp"] & onelist[,"singleton"]
     
     #### write log file for each version
-    con <- file(paste("variant_filtering_single_",sig,".log",sep=""),"w");
-    writeLines(paste("Filtering log: ",date(),sep=""),con)
-    writeLines(paste("ExAC frequency: ",Ecut," (ExAc",Ecut,")",sep=""),con)
-    writeLines(paste("Population frequency: ",Pcut," (Pop",Pcut,")",sep=""),con)
-    #writeLines(paste("LOF and missense mutations (LOF: frameshiftdeletion,frameshiftinsertion,stopgain,stoploss,splicing; Mis: nonframeshiftdeletion,nonframeshiftinsertion,nonsynonymousSNV) "," (LOF_MIS)",sep=""),con)
-    writeLines(paste("VCF FILTER: PASS"," (VCFPASS)",sep=""),con)
-    writeLines(paste("VCF SegmentalDuplication: < 0.95"," (noneSegmentalDup)",sep=""),con)
-    writeLines(paste("Meta-SVM or PP2 prediction: D for missense mutations"," (meta-SVM_PP2)",sep=""),con)
-    writeLines(paste("GTEX expressed genes "," (GTExexp)",sep=""),con)
-    if(sig){
-        writeLines(paste("Singleton variants "," (singleton)",sep=""),con)
-    }
-    close(con)
+#     con <- file(paste("variant_filtering_single_",sig,".log",sep=""),"w");
+#     writeLines(paste("Filtering log: ",date(),sep=""),con)
+#     writeLines(paste("ExAC frequency: ",Ecut," (ExAc",Ecut,")",sep=""),con)
+#     writeLines(paste("Population frequency: ",Pcut," (Pop",Pcut,")",sep=""),con)
+#     #writeLines(paste("LOF and missense mutations (LOF: frameshiftdeletion,frameshiftinsertion,stopgain,stoploss,splicing; Mis: nonframeshiftdeletion,nonframeshiftinsertion,nonsynonymousSNV) "," (LOF_MIS)",sep=""),con)
+#     writeLines(paste("VCF FILTER: PASS"," (VCFPASS)",sep=""),con)
+#     writeLines(paste("VCF SegmentalDuplication: < 0.95"," (noneSegmentalDup)",sep=""),con)
+#     writeLines(paste("Meta-SVM or PP2 prediction: D for missense mutations"," (meta-SVM_PP2)",sep=""),con)
+#     writeLines(paste("GTEX expressed genes "," (GTExexp)",sep=""),con)
+#     if(sig){
+#         writeLines(paste("Singleton variants "," (singleton)",sep=""),con)
+#     }
+#     close(con)
     
     #### write updated log file for each version
 #     con <- file("variant_filtering_updated.log","w");
