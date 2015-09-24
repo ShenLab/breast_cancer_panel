@@ -142,20 +142,20 @@ write_pedigree <- function(){
 }
 
 ## step 2: run famSKAT in different levels
-parallelfamSKAT <- function(){
+parallelfamSKAT <- function(flag){
     source("Faminfo.R")
     library(parallel)
-    mclapply(1:20,function(kk) run_famSKAT(kk,FALSE),mc.cores = 20)
-    mclapply(1:20,function(kk) run_famSKAT(kk,TRUE),mc.cores = 20)
+    mclapply(1:20,function(kk) run_famSKAT(kk,FALSE,flag),mc.cores = 20)
+    mclapply(1:20,function(kk) run_famSKAT(kk,TRUE,flag),mc.cores = 20)
 }
 
-run_famSKAT <- function(kk,sig){
+run_famSKAT <- function(kk,sig,flag){
     
     source("family/famSKAT_v1.7_10312012.R")
     source("SKAT_ana.R")
     pheno <- pheno_all()
     id <- as.vector(pheno[,3])
-    flag=1;
+    #flag=1;
     fullkins <- getKinshipMatrix(flag)
     allped <- colnames(fullkins)
     id <- intersect(id,allped)
@@ -191,15 +191,19 @@ run_famSKAT <- function(kk,sig){
     fres <- oneresult$fres
     wts <- dbeta(fres,1,25)
     onelist <- oneresult$onelist
+    subs <- match(id,rownames(Z))
+    Z <- Z[subs,];wts <- wts[subs];onelist <- onelist[onelist[,"Subject_ID"] %in% id,]
+    
+    print(all(id %in% rownames(Z)))
     
     gT <- singlefamSKATg(phe,id,fullkins,covs,Z,wts,onelist)
     colnames(gT) <- cols
-    write.table(gT,file=paste(dirstr,"Gene_",sig,"_",poptype[pop],"_",vartype[fig],".txt",sep=""),row.names=FALSE,quote=FALSE,sep="\t")
+    write.table(gT,file=paste(dirstr,"Gene_",sig,"_",poptype[pop],"_",vartype[fig],"_",flag,".txt",sep=""),row.names=FALSE,quote=FALSE,sep="\t")
     #}
     if(fig==5){
         vT <- singlefamSKATv(phe,id,fullkins,covs,Z,wts,onelist)
         colnames(vT) <- cols
-        write.table(vT,file=paste(dirstr,"Variant_",sig,"_",poptype[pop],".txt",sep=""),row.names=FALSE,quote=FALSE,sep="\t")
+        write.table(vT,file=paste(dirstr,"Variant_",sig,"_",poptype[pop],"_",flag,".txt",sep=""),row.names=FALSE,quote=FALSE,sep="\t")
     }
     #}
     #}
@@ -240,16 +244,16 @@ getKinshipMatrix <- function(flag=1){
     ## two: compute for genomic kinship based on Ashley PCA ped file based on king
     ## three: compute for genomic kinship with Primus first degree inferred pedigree based on software king
     ## four: compute for genomic kinship with Primus second degree inferred pedigree based on software king
-    
+    library(kinship)
     filenames <- c("family/Pedigree_sec.txt","family/king.kin0","family/FirstDegree.kin0","family/SecondDegree.kin0")
     filen <- filenames[flag]
     if(flag==1){
-        library(kinship)
         fullped <- read.delim(filen)
         fullkins <- makekinship(fullped$famid, fullped$id, fullped$father.id, fullped$mother.id)
     }else{
-        fullkins <- kingkinship(filen)
-        fullkins[fullkins < 0] <- 0
+        ibd <- kingkinship(filen)
+        #fullkins[fullkins < 0] <- 0
+        fullkins <-  bdsmatrix.ibd(ibd[,1],ibd[,2], ibd[,3], diagonal=0.5)
     }
     
     fullkins
@@ -257,13 +261,16 @@ getKinshipMatrix <- function(flag=1){
 
 kingkinship <- function(filen){
     tmp <- read.delim(filen,sep="\t")
-    ids <- union(tmp[,"ID1"],tmp[,"ID2"])
-    n <- length(ids)
-    subs <- cbind(tmp[,"ID1"],tmp[,"ID2"])
-    fullkins <- matrix(0,n,n,dimnames=list(ids,ids))
-    fullkins[subs] <- tmp[,"Kinship"]
+    #ids <- union(tmp[,"ID1"],tmp[,"ID2"])
+    #n <- length(ids)
+    #subs <- cbind(tmp[,"ID1"],tmp[,"ID2"])
+    #fullkins <- matrix(0,n,n,dimnames=list(ids,ids))
+    #fullkins[subs] <- tmp[,"Kinship"]
 
-    fullkins
+    #fullkins
+    ibd <- tmp[,c("ID1","ID2","Kinship")]
+    ibd[ibd[,3] < 0,3] <- 0
+    ibd
 }
 
 Covariate_phe <- function(pheno,pcaf,id){
