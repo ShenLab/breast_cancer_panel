@@ -54,6 +54,61 @@ Famdis <- function(){
     
 }
 
+updFam <- function(){
+    source("SKAT_ana.R")
+    #tsvf <- list.files("/home/local/ARCS/yshen/data/WENDY/BreastCancer/Regeneron/Filtering_for_Qiang",".tsv$")
+    #tsvs <- basename(tsvf)
+    #tsvs <- gsub(".tsv","",tsvs)
+    pheno <- pheno_all()
+    #pheno <- pheno[pheno[,3] %in% tsvs,]
+
+    fams <- pheno[,1]
+    print(length(unique(fams)))
+    
+    sifam <- names(table(fams))
+    sifam <- sifam[table(fams)==1]
+    length(sifam)
+    
+    twofam <- setdiff(fams,sifam)
+    length(pheno[pheno[,1] %in% twofam,3])
+    
+    svgf <- list.files("/home/local/ARCS/qh2159/breast_cancer/pedigree/Family_Pedigree",".svg$")
+    svgs <- basename(svgf)
+    svgs <- gsub(".svg","",svgs)
+    length(intersect(sifam,svgs))
+    length(intersect(twofam,svgs))
+    length(svgs)
+    length(pheno[pheno[,1] %in% intersect(twofam,svgs) ,3])
+    
+    
+    ## pedigree information predicted by Primus with second degree information
+    pedf <- "family/Pedigree_sec.txt"
+    ped <- read.delim(pedf)
+    subs <- ped[,3]==0 & ped[,4]==0
+    ped <- ped[!subs,]
+    ped <- ped[,c(2,3,4)]
+    
+    ## pedigree information predicted by Primus with first degree information
+    pedf <- "family/Pedigree_fir.txt"
+    ped_1 <- read.delim(pedf)
+    subs <- ped_1[,3]==0 & ped_1[,4]==0
+    ped_1 <- ped_1[!subs,]
+    ped_1 <- ped_1[,c(2,3,4)]
+    
+    tmp <- intersect(ped_1[,1],ped[,1])
+    ped <- ped[!(ped[,1] %in% tmp),]
+    
+    preped <- rbind(ped,ped_1)
+    preped <- preped[preped[,1] %in% pheno[,3],]
+    
+    length( intersect(unique(pheno[pheno[,3] %in% preped[,1] ,1]),sifam))
+    length( intersect(unique(pheno[pheno[,3] %in% preped[,1] ,1]),twofam))
+    length(pheno[pheno[,1] %in% intersect(unique(pheno[pheno[,3] %in% preped[,1] ,1]),twofam) ,3])
+    
+    length(intersect(union(svgs,pheno[pheno[,3] %in% preped[,1] ,1]),sifam))
+    length(intersect(union(svgs,pheno[pheno[,3] %in% preped[,1] ,1]),twofam))
+}
+
 ## step 1: prepare the pedigree family information and kinship analysis files
 write_ped <- function(){
 
@@ -139,14 +194,36 @@ write_pedigree <- function(){
     close(con)
     close(con1)
     
+    con1 <- file("family/Pedigree_fir.txt","w")
+    cols <- c("famid","id","father.id","mother.id","Sex","Affect")
+    write(cols,con1,ncolumns=6,append=TRUE,sep="\t")
+    
+    secped <- "family/FirstDegree.ped"
+    con <- file(secped,'r');
+    k <- 1
+    line = readLines(con,n=1);
+    while(length(line)!=0){
+        tmp <- unlist(strsplit(line,"\t"))
+        tmp1 <- tmp[1:6]
+        write(tmp1,con1,ncolumns=6,append=TRUE,sep="\t")
+        k <- k+1
+        #print(k)
+        line = readLines(con,n=1);
+    }
+    close(con)
+    close(con1)
+    
 }
 
 ## step 2: run famSKAT in different levels
 parallelfamSKAT <- function(flag){
     source("Faminfo.R")
     library(parallel)
-    mclapply(1:20,function(kk) run_famSKAT(kk,FALSE,flag),mc.cores = 20)
-    mclapply(1:20,function(kk) run_famSKAT(kk,TRUE,flag),mc.cores = 20)
+    #mclapply(1:20,function(kk) run_famSKAT(kk,FALSE,flag),mc.cores = 20)
+    #mclapply(1:20,function(kk) run_famSKAT(kk,TRUE,flag),mc.cores = 20)
+    
+    mclapply(19:20,function(kk) run_famSKAT(kk,FALSE,flag),mc.cores = 2)
+    mclapply(19:20,function(kk) run_famSKAT(kk,TRUE,flag),mc.cores = 2)
 }
 
 run_famSKAT <- function(kk,sig,flag){
@@ -183,6 +260,8 @@ run_famSKAT <- function(kk,sig,flag){
     #for(pop in 1:4){
     #    for(fig in 1:5){
     
+    #fig <- ifelse(kk %% 5==0,5,kk %% 5)
+    #pop <- floor((kk-1)/5) + 1
     fig <- floor((kk-1)/4) + 1
     pop <- ifelse(kk %% 4==0,4,kk %% 4)
     
@@ -199,6 +278,7 @@ run_famSKAT <- function(kk,sig,flag){
     gT <- singlefamSKATg(phe,id,fullkins,covs,Z,wts,onelist)
     colnames(gT) <- cols
     write.table(gT,file=paste(dirstr,"Gene_",sig,"_",poptype[pop],"_",vartype[fig],"_",flag,".txt",sep=""),row.names=FALSE,quote=FALSE,sep="\t")
+
     #}
     if(fig==5){
         vT <- singlefamSKATv(phe,id,fullkins,covs,Z,wts,onelist)
@@ -210,31 +290,84 @@ run_famSKAT <- function(kk,sig,flag){
     
 }
 
+run_one <- function(fig,sig,pop,flag){
+    
+    source("family/famSKAT_v1.7_10312012.R")
+    source("SKAT_ana.R")
+    pheno <- pheno_all()
+    id <- as.vector(pheno[,3])
+    fullkins <- getKinshipMatrix(flag)
+    allped <- colnames(fullkins)
+    id <- intersect(id,allped)
+    
+    phe <- as.vector(pheno[match(id,pheno[,3]),"BreastCancer"])
+    phe[phe=="Yes"] <- 1
+    phe[phe=="No"] <- 0
+    phe <- as.numeric(phe)
+    
+    pcaf <- "family/BC_Regeneron.plus.HapMap.pca.evec"
+    covs <- Covariate_phe(pheno,pcaf,id)
+    
+    dirstr <- "famSKATresult/"
+    cols <- c("Gene","Variant(#)","#case","#control","pvalue")
+    vartype <- c("LGD","D-mis","indels","LGD+D-mis","ALL")
+    poptype <- c("Jewish","Hispanic","JH","All")
+
+    load(paste(dirstr,"genos_",sig,sep=""))
+    
+    oneresult <- subfamSKAT(genos,fig,pop)
+    Z <- oneresult$Z
+    fres <- oneresult$fres
+    wts <- dbeta(fres,1,25)
+    onelist <- oneresult$onelist
+    subs <- match(id,rownames(Z))
+    Z <- Z[subs,];wts <- wts[subs];onelist <- onelist[onelist[,"Subject_ID"] %in% id,]
+    
+    print(all(id %in% rownames(Z)))
+    
+    gT <- singlefamSKATg(phe,id,fullkins,covs,Z,wts,onelist)
+    colnames(gT) <- cols
+    write.table(gT,file=paste(dirstr,"Gene_",sig,"_",poptype[pop],"_",vartype[fig],"_",flag,".txt",sep=""),row.names=FALSE,quote=FALSE,sep="\t")
+    
+    if(fig==5){
+        vT <- singlefamSKATv(phe,id,fullkins,covs,Z,wts,onelist)
+        colnames(vT) <- cols
+        write.table(vT,file=paste(dirstr,"Variant_",sig,"_",poptype[pop],"_",flag,".txt",sep=""),row.names=FALSE,quote=FALSE,sep="\t")
+    }
+}
+
 qqplot_p <- function(){
     ## qq plots for pvalues in variant and gene level
     library(Haplin)
     dirstr <- "famSKATresult/"
     vartype <- c("LGD","D-mis","indels","LGD+D-mis","ALL")
     poptype <- c("Jewish","Hispanic","JH","All")
+    for(flag in 1:4){
     for(sig in c(FALSE,TRUE)){
         for(pop in 1:4){
             for(fig in 1:5){
-                gfile <- paste(dirstr,"Gene_",sig,"_",poptype[pop],"_",vartype[fig],".txt",sep="")
-                gT <- read.delim(gfile,sep="\t")
-                pvals <- gT[,"pvalue"]
-                names(pvals) <- gT[,"Gene"]
-                pdf(file=paste(dirstr,"Gene_",sig,"_",poptype[pop],"_",vartype[fig],".pdf",sep=""),width=10,height=10)
-                pQQ(pvals, nlabs = sum(pvals<0.05), conf = 0.95, mark = 0.05)
-                dev.off()
+                gfile <- paste(dirstr,"Gene_",sig,"_",poptype[pop],"_",vartype[fig],"_",flag,".txt",sep="")
+                if(file.exists(gfile)){
+                    gT <- read.delim(gfile,sep="\t")
+                    pvals <- gT[,"pvalue"]
+                    names(pvals) <- gT[,"Gene"]
+                    pdf(file=paste(dirstr,"Gene_",sig,"_",poptype[pop],"_",vartype[fig],"_",flag,".pdf",sep=""),width=10,height=10)
+                    pQQ(pvals, nlabs = sum(pvals<0.05), conf = 0.95, mark = 0.05)
+                    dev.off()
+                }
             }
-            vfile <- paste(dirstr,"Variant_",sig,"_",poptype[pop],".txt",sep="")
+            
+            vfile <- paste(dirstr,"Variant_",sig,"_",poptype[pop],"_",flag,".txt",sep="")
+            if(file.exists(vfile)){
             vT <- read.delim(vfile,sep="\t")
             pvals <- vT[,"pvalue"]
             names(pvals) <- vT[,"Gene"]
-            pdf(file=paste(dirstr,"Variant_",sig,"_",poptype[pop],".pdf",sep=""),width=10,height=10)
+            pdf(file=paste(dirstr,"Variant_",sig,"_",poptype[pop],"_",flag,".pdf",sep=""),width=10,height=10)
             pQQ(pvals, nlabs = sum(pvals<0.05), conf = 0.95, mark = 0.05)
             dev.off()
+            }
         }
+    }
     }
     
 }
@@ -314,11 +447,22 @@ genotype_wts <- function(id,sig){
     fres <- sapply(1:dim(alllist)[1], function(i){
         tmp <- unlist(strsplit(alllist[i,"INFO"],";"))
         tmp2 <- unlist(strsplit(tmp,"="))
-        tmp2[tmp2==""] <- 0
-        tmp2[tmp2=="."] <- 0
-        min(as.numeric(tmp2[match(freN,tmp2)+1]))
+        tmp3 <- tmp2[match(freN,tmp2)+1]
+        if(all(is.na(tmp3))){0;}else{
+        if(is.na(tmp3[1])){a1=1;}else{
+        a1 <- unlist(strsplit(tmp3[1],","))
+        a1[a1=="."] <- 0
+        a1 <- max(as.numeric(a1))
+        }
+        if(is.na(tmp3[2])){a2=1;}else{
+        a2 <- unlist(strsplit(tmp3[2],","))
+        a2[a2=="."] <- 0
+        a2 <- max(as.numeric(a2))
+        }
+        min(a1,a2)
+        }
     })
-    fres[is.na(fres)] <- 0
+    
     vars <- paste(alllist[,1],alllist[,2],alllist[,4],alllist[,5],sep="_")
     names(fres) <- vars
     vars <- unique(vars)
