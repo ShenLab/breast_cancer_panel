@@ -46,7 +46,7 @@ Famdis <- function(){
     
     pdf(file="Family.pdf",width=12,height=10)
     par(mai=c(2,2,1,1))
-    mp <- barplot(t(famdis[,c(4,3,2,1)]),ylim=c(0,max(rowSums(famdis))+5), space=0.4, col=c("green","cyan","blue","red") ,cex.axis=1.6,xlab="Number of family members",ylab="Number of families",cex.lab=2,legend = c("No(Male)","No(Female)","Breast Cancer(Male)","Breast Cancer(Female)") )
+    mp <- barplot(t(famdis[,c(4,3,2,1)]),ylim=c(0,max(rowSums(famdis))+5), space=0.4, col=c("green","cyan","blue","red") ,cex.axis=1.6,xlab="Number of family members",ylab="Number of families",cex.lab=2,legend = c("No Breast Cancer(Male)","No Breast Cancer(Female)","Breast Cancer(Male)","Breast Cancer(Female)") )
     axis(1, at=mp, labels=tmp1,cex.axis=2)
     text(x=mp,y=rowSums(famdis),labels=testr,pos=3,cex=0.8)
     text(x=mp[5],y=max(rowSums(famdis))/2+30,labels="(#subject, #case(F), #case(M), #non-case(F), #non-case(M))",cex=1)
@@ -107,6 +107,17 @@ updFam <- function(){
     
     length(intersect(union(svgs,pheno[pheno[,3] %in% preped[,1] ,1]),sifam))
     length(intersect(union(svgs,pheno[pheno[,3] %in% preped[,1] ,1]),twofam))
+    
+    
+    ## missed family IDs  
+    allpheno <- read.csv("WES BCFR phenotypic data.csv")
+    allfams <- unique(allpheno[,1])
+    svgf <- list.files("/home/local/ARCS/qh2159/breast_cancer/pedigree/Family_Pedigree",".svg$")
+    svgs <- basename(svgf)
+    svgs <- gsub(".svg","",svgs)
+    
+    missed <- setdiff(allfams,svgs)
+    
 }
 
 ## step 1: prepare the pedigree family information and kinship analysis files
