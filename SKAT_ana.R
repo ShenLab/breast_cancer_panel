@@ -630,6 +630,20 @@ case_control <- function(){
     contid <- setdiff(contid,brall)
     n.cont <- c(length(contid),length(intersect(contid,Jp)),length(intersect(contid,Hp)))
     save(n.cont,file="n.cont_9_30")
+    
+    bc.pop <- read.delim("WES_BCFR_phenotypic_data-19062015.txt")[,1:5]
+    bc.pop[,4] <- paste(bc.pop[,4], bc.pop[,5], sep="")
+    bc.pop <- bc.pop[,-5]
+    Jp <-  bc.pop[bc.pop[,4] %in% "J",3]
+    Hp <-  bc.pop[bc.pop[,4] %in% "H",3]
+    
+    caseid <- unique(gsub(".tsv","",casef))
+    n.case <- c(length(caseid),length(intersect(caseid,Jp)),length(intersect(caseid,Hp)))
+    save(n.case,file="n.case_10_2")
+    
+    contid <- unique(gsub(".tsv","",contf))
+    n.cont <- c(length(contid),length(intersect(contid,Jp)),length(intersect(contid,Hp)))
+    save(n.cont,file="n.cont_10_2")
     #===========================================================================================
     ### case filtered by match controls=========================================================
     source("pre.R")
