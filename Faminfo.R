@@ -9,7 +9,7 @@ BRCAFam <- function(){
     unif <- pheno[pheno[,3] %in% br,1]
     allm <- pheno[pheno[,1] %in% unif,3]
     
-    load("alllist_9_8")
+    load("alllist_9_30")
     subs <- (alllist[,"Subject_ID"] %in% allm) & (alllist[,"Gene"] %in% c("BRCA1","BRCA2"))
     tmplist <- alllist[subs,]
     
@@ -242,11 +242,15 @@ run_famSKAT <- function(kk,sig,flag){
     source("family/famSKAT_v1.7_10312012.R")
     source("SKAT_ana.R")
     pheno <- pheno_all()
-    id <- as.vector(pheno[,3])
-    #flag=1;
+    
+    idi <- as.vector(pheno[,2])
     fullkins <- getKinshipMatrix(flag)
     allped <- colnames(fullkins)
-    id <- intersect(id,allped)
+    idi <- intersect(idi,allped)
+    id <- pheno[match(idi,pheno[,2]),3]
+    colnames(fullkins)[match(idi,colnames(fullkins))] <- id
+    rownames(fullkins)[match(idi,rownames(fullkins))] <- id
+    
     #subs <- match(id,allped)
     #fullkins <- as.matrix(fullkins)[subs,subs]
     
@@ -262,89 +266,31 @@ run_famSKAT <- function(kk,sig,flag){
     cols <- c("Gene","Variant(#)","#case","#control","pvalue")
     vartype <- c("LGD","D-mis","indels","LGD+D-mis","ALL")
     poptype <- c("Jewish","Hispanic","JH","All")
-    #for(sig in c(FALSE,TRUE)){
-    #genos <- genotype_wts(id,sig)
-    #save(genos,file="famSKATresult/genos_FALSE")
-    #save(genos,file="famSKATresult/genos_TRUE")
-    #sig=FALSE;
-    load(paste(dirstr,"genos_",sig,sep=""))
-    #for(pop in 1:4){
-    #    for(fig in 1:5){
     
-    #fig <- ifelse(kk %% 5==0,5,kk %% 5)
-    #pop <- floor((kk-1)/5) + 1
+    genos <- genotype_wts(id,sig)
     fig <- floor((kk-1)/4) + 1
     pop <- ifelse(kk %% 4==0,4,kk %% 4)
     
-    oneresult <- subfamSKAT(genos,fig,pop)
-    Z <- oneresult$Z
+    ### run with one flag, sig and flag
+    oneresult <- subfamSKAT(genos,fig,pop,phe,id,covs)
+    Zsub <- oneresult$Z
     fres <- oneresult$fres
-    wts <- dbeta(fres,1,25)
+    wtssub <- dbeta(fres,1,25)
     onelist <- oneresult$onelist
-    subs <- match(id,rownames(Z))
-    Z <- Z[subs,];wts <- wts[subs];onelist <- onelist[onelist[,"Subject_ID"] %in% id,]
+    phesub <- oneresult$phe
+    idsub <- oneresult$id
+    covssub <- oneresult$covs
     
-    print(all(id %in% rownames(Z)))
-    
-    gT <- singlefamSKATg(phe,id,fullkins,covs,Z,wts,onelist)
-    colnames(gT) <- cols
-    write.table(gT,file=paste(dirstr,"Gene_",sig,"_",poptype[pop],"_",vartype[fig],"_",flag,".txt",sep=""),row.names=FALSE,quote=FALSE,sep="\t")
-
-    #}
-    if(fig==5){
-        vT <- singlefamSKATv(phe,id,fullkins,covs,Z,wts,onelist)
-        colnames(vT) <- cols
-        write.table(vT,file=paste(dirstr,"Variant_",sig,"_",poptype[pop],"_",flag,".txt",sep=""),row.names=FALSE,quote=FALSE,sep="\t")
-    }
-    #}
-    #}
-    
-}
-
-run_one <- function(fig,sig,pop,flag){
-    
-    source("family/famSKAT_v1.7_10312012.R")
-    source("SKAT_ana.R")
-    pheno <- pheno_all()
-    id <- as.vector(pheno[,3])
-    fullkins <- getKinshipMatrix(flag)
-    allped <- colnames(fullkins)
-    id <- intersect(id,allped)
-    
-    phe <- as.vector(pheno[match(id,pheno[,3]),"BreastCancer"])
-    phe[phe=="Yes"] <- 1
-    phe[phe=="No"] <- 0
-    phe <- as.numeric(phe)
-    
-    pcaf <- "family/BC_Regeneron.plus.HapMap.pca.evec"
-    covs <- Covariate_phe(pheno,pcaf,id)
-    
-    dirstr <- "famSKATresult/"
-    cols <- c("Gene","Variant(#)","#case","#control","pvalue")
-    vartype <- c("LGD","D-mis","indels","LGD+D-mis","ALL")
-    poptype <- c("Jewish","Hispanic","JH","All")
-
-    load(paste(dirstr,"genos_",sig,sep=""))
-    
-    oneresult <- subfamSKAT(genos,fig,pop)
-    Z <- oneresult$Z
-    fres <- oneresult$fres
-    wts <- dbeta(fres,1,25)
-    onelist <- oneresult$onelist
-    subs <- match(id,rownames(Z))
-    Z <- Z[subs,];wts <- wts[subs];onelist <- onelist[onelist[,"Subject_ID"] %in% id,]
-    
-    print(all(id %in% rownames(Z)))
-    
-    gT <- singlefamSKATg(phe,id,fullkins,covs,Z,wts,onelist)
+    gT <- singlefamSKATg(phesub,idsub,fullkins,covssub,Zsub,wtssub,onelist)
     colnames(gT) <- cols
     write.table(gT,file=paste(dirstr,"Gene_",sig,"_",poptype[pop],"_",vartype[fig],"_",flag,".txt",sep=""),row.names=FALSE,quote=FALSE,sep="\t")
     
     if(fig==5){
-        vT <- singlefamSKATv(phe,id,fullkins,covs,Z,wts,onelist)
+        vT <- singlefamSKATv(phesub,idsub,fullkins,covssub,Zsub,wtssub,onelist)
         colnames(vT) <- cols
         write.table(vT,file=paste(dirstr,"Variant_",sig,"_",poptype[pop],"_",flag,".txt",sep=""),row.names=FALSE,quote=FALSE,sep="\t")
     }
+    
 }
 
 qqplot_p <- function(){
@@ -353,7 +299,7 @@ qqplot_p <- function(){
     dirstr <- "famSKATresult/"
     vartype <- c("LGD","D-mis","indels","LGD+D-mis","ALL")
     poptype <- c("Jewish","Hispanic","JH","All")
-    for(flag in 1:4){
+    for(flag in 1){
     for(sig in c(FALSE,TRUE)){
         for(pop in 1:4){
             for(fig in 1:5){
@@ -389,11 +335,12 @@ getKinshipMatrix <- function(flag=1){
     ## three: compute for genomic kinship with Primus first degree inferred pedigree based on software king
     ## four: compute for genomic kinship with Primus second degree inferred pedigree based on software king
     library(kinship)
-    filenames <- c("family/Pedigree_sec.txt","family/king.kin0","family/FirstDegree.kin0","family/SecondDegree.kin0")
+    filenames <- c("data/ALL_pedigree.csv","family/king.kin0","family/FirstDegree.kin0","family/SecondDegree.kin0")
     filen <- filenames[flag]
     if(flag==1){
-        fullped <- read.delim(filen)
-        fullkins <- makekinship(fullped$famid, fullped$id, fullped$father.id, fullped$mother.id)
+        fullped <- read.csv(filen)
+        #fullkins <- makekinship(fullped$famid, fullped$id, fullped$father.id, fullped$mother.id)
+        fullkins <- makekinship(fullped[,1], fullped[,2], fullped[,3], fullped[,4])
     }else{
         ibd <- kingkinship(filen)
         #fullkins[fullkins < 0] <- 0
@@ -442,7 +389,7 @@ Covariate_phe <- function(pheno,pcaf,id){
 genotype_wts <- function(id,sig){
     source("indexcase_burden.R")
     hotf <- "hotspots/hotf_cos_2"
-    load("alllist_9_10")
+    load("alllist_9_30")
     mis <- c("nonframeshiftdeletion","nonframeshiftinsertion","nonsynonymousSNV")
     lof <- c("frameshiftdeletion","frameshiftinsertion","stopgain","stoploss","none")
     alllist <- alllist[alllist[,"VariantClass"] %in% c(lof,mis),]
@@ -518,19 +465,40 @@ hotspot_mis <- function(hotf,onelist,mis){
     onelist
 }
 
-subfamSKAT <- function(genos,fig,pop){
+subfamSKAT <- function(genos,fig,pop,phe,id,covs){
     Z <- genos$Z
     fres <- genos$fres
     onelist <- genos$alllist
     
+    
+    ## sub columns corresponding to variants
     source("SKAT_ana.R")
     onelist <- subSKAT(onelist,fig,pop)
     vars <- unique(paste(onelist[,1],onelist[,2],onelist[,4],onelist[,5],sep="_"))
     subs <- match(vars,colnames(Z))
     Z <- Z[,vars]
     fres <- fres[subs]
-
-    list(Z=Z,fres=fres,onelist=onelist)
+    
+    ## sub rows corresponding to subjects
+    bc.pop <- read.delim("WES_BCFR_phenotypic_data-19062015.txt")[,1:5]
+    bc.pop[,4] <- paste(bc.pop[,4], bc.pop[,5], sep="")
+    bc.pop <- bc.pop[,-5]
+    Jp <-  bc.pop[bc.pop[,4] %in% "J",3]
+    Hp <-  bc.pop[bc.pop[,4] %in% "H",3]
+    coln <- ifelse(any(grepl("SubID",colnames(onelist))), "SubID","Subject_ID")
+    
+    if(pop==1){ onep = Jp; }
+    if(pop==2){ onep = Hp; }
+    if(pop==3){ onep = c(Jp,Hp); }
+    if(pop==4){ onep = id;}
+    ## cannot change the orders
+    Z <- Z[rownames(Z) %in% onep,];
+    idsub <- intersect(onep,id)
+    phe <- phe[id %in% idsub]
+    covs <- covs[id %in% idsub,]
+    id <- id[id %in% idsub]
+    
+    list(Z=Z,fres=fres,onelist=onelist,phe=phe,id=id,covs=covs)
 
 }
 

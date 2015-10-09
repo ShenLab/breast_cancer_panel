@@ -161,7 +161,7 @@ subSKAT <- function(onelist,fig,pop){
     coln <- ifelse(any(grepl("SubID",colnames(onelist))), "SubID","Subject_ID")
     if(pop==1){onelist <- onelist[onelist[,coln] %in% Jp,];}
     if(pop==2){onelist <- onelist[onelist[,coln] %in% Hp,];}
-    if(pop==3){onelist <- onelist[onelist[,coln] %in% c(Jp,Hp),]}
+    if(pop==3){onelist <- onelist[onelist[,coln] %in% c(Jp,Hp),];}
     
     onelist
 }
@@ -560,92 +560,68 @@ manual_check <- function(){
 case_control <- function(){
     
     source("SKAT_ana.R")
-    lof <- c("frameshiftdeletion","frameshiftinsertion","stopgain","stoploss","none") 
-    mis <- c("nonframeshiftdeletion","nonframeshiftinsertion","nonsynonymousSNV")
-    
-    ## control variant lists
     control <- controlpheno()
+    
     control_ID <- control[,"Subject_ID"]
     contf <- paste(control_ID,".tsv",sep="")
-    path="/home/local/ARCS/yshen/data/WENDY/BreastCancer/Regeneron/Filtering_for_Qiang_with_Synonymous/"
+    #path="/ifs/scratch/c2b2/ys_lab/yshen/WENDY/BreastCancer/Regeneron/Filtering_for_Qiang/"
+    path="/home/local/ARCS/yshen/data/WENDY/BreastCancer/Regeneron/Filtering_for_Qiang/"
     files <-  list.files(path=path,pattern=".tsv$")
     contf <- intersect(contf,files)
+    
     contlist <- c()
     for(i in 1:length(contf)){
         tmp <- paste(path,contf[i],sep="")
         oner <- read.delim(tmp)
         oner <- cbind(oner,gsub(".tsv","",contf[i]))
-        colnames(oner)[c(24,25,30,45)] <- c("GT","AD","Subject_INFO","Subject_ID")
+        colnames(oner)[c(23,24,29,30)] <- c("GT","AD","Subject_INFO","SubID")
         contlist <- rbind(contlist,oner)
     }
-    contsy <- contlist[contlist[,"VariantClass"] %in% "synonymousSNV",]
-    save(contsy,file="contsy_9_30")
-    contlist <- contlist[contlist[,"VariantClass"] %in% c(lof,mis),]
-    save(contlist,file="contlist_9_30")
+    save(contlist,file="contlist_8_6")
     
     
     ## case not filtered by matched controls
     source("SKAT_ana.R")
-    lof <- c("frameshiftdeletion","frameshiftinsertion","stopgain","stoploss","none") 
-    mis <- c("nonframeshiftdeletion","nonframeshiftinsertion","nonsynonymousSNV")
-    
     cases <- caseonefam()
     case_ID <- cases[,"Subject_ID"]
-    casef <- paste(case_ID,".tsv",sep="")
     path="/home/local/ARCS/yshen/data/WENDY/BreastCancer/Regeneron/Filtering_for_Qiang_with_Synonymous/"
+    casef <- paste(case_ID,".tsv",sep="")
+       
     files <-  list.files(path=path,pattern=".tsv$")
     casef <- intersect(casef,files)
+    #casef <- setdiff(casef,"280002.tsv")#!!!!
+    lof <- c("frameshiftdeletion","frameshiftinsertion","stopgain","stoploss","none") 
+    mis <- c("nonframeshiftdeletion","nonframeshiftinsertion","nonsynonymousSNV")
     
     onlycase <- c()
     for(i in 1:length(casef)){
         tmp <- paste(path,casef[i],sep="")
         oner <- read.delim(tmp)
+        oner <- oner[oner[,"VariantClass"] %in% c(mis,lof),]
         oner <- cbind(oner,gsub(".tsv","",casef[i]))
         colnames(oner)[c(24,25,30,45)] <- c("GT","AD","Subject_INFO","Subject_ID")
         onlycase <- rbind(onlycase,oner)
     }
-    casesy <- onlycase[onlycase[,"VariantClass"] %in% "synonymousSNV",]
-    save(casesy,file="casesy_9_30")
+    save(onlycase,file="caselist_9_28")
     
-    caselist <- onlycase[onlycase[,"VariantClass"] %in% c(lof,mis),]
-    save(caselist,file="caselist_9_30")
-
     
     ### populations
+    caseid <- unique(onlycase[,"Subject_ID"])
     alls <- read.csv("data/Likely pathogenic BRCA mutations list.csv")
     brall <- alls[,"Subject_ID"]
     brall <- brall[!is.na(brall)]
-    bc.pop <- read.delim("WES_BCFR_phenotypic_data-19062015.txt")[,1:5]
-    bc.pop[,4] <- paste(bc.pop[,4], bc.pop[,5], sep="")
-    bc.pop <- bc.pop[,-5]
-    Jp <-  bc.pop[bc.pop[,4] %in% "J",3]
-    Hp <-  bc.pop[bc.pop[,4] %in% "H",3]
-    
-    caseid <- unique(gsub(".tsv","",casef))
     caseid <- setdiff(caseid,brall)
-    n.case <- c(length(caseid),length(intersect(caseid,Jp)),length(intersect(caseid,Hp)))
-    save(n.case,file="n.case_9_30")
-    
-    contid <- unique(gsub(".tsv","",contf))
-    contid <- setdiff(contid,brall)
-    n.cont <- c(length(contid),length(intersect(contid,Jp)),length(intersect(contid,Hp)))
-    save(n.cont,file="n.cont_9_30")
     
     bc.pop <- read.delim("WES_BCFR_phenotypic_data-19062015.txt")[,1:5]
     bc.pop[,4] <- paste(bc.pop[,4], bc.pop[,5], sep="")
     bc.pop <- bc.pop[,-5]
     Jp <-  bc.pop[bc.pop[,4] %in% "J",3]
     Hp <-  bc.pop[bc.pop[,4] %in% "H",3]
-    
-    caseid <- unique(gsub(".tsv","",casef))
     n.case <- c(length(caseid),length(intersect(caseid,Jp)),length(intersect(caseid,Hp)))
-    save(n.case,file="n.case_10_2")
     
-    contid <- unique(gsub(".tsv","",contf))
-    n.cont <- c(length(contid),length(intersect(contid,Jp)),length(intersect(contid,Hp)))
-    save(n.cont,file="n.cont_10_2")
-    #===========================================================================================
-    ### case filtered by match controls=========================================================
+    save(n.case,file="n.case_9_28")
+    
+    ### case filtered by match controls
     source("pre.R")
     path <- "/ifs/scratch/c2b2/ys_lab/yshen/WENDY/BreastCancer/Regeneron/CaseControl_Filtering"
     
@@ -706,10 +682,10 @@ popvariant <- function(){
     allf <- paste(pheno[,3],".tsv",sep="")
     allf <- gsub("222357, 222966.tsv","222357.tsv",allf)
     
-    ##path="/ifs/scratch/c2b2/ys_lab/yshen/WENDY/BreastCancer/Regeneron/Filtering_for_Qiang_with_Synonymous/"
-    path="/home/local/ARCS/yshen/data/WENDY/BreastCancer/Regeneron/Filtering_for_Qiang_with_Synonymous/"
+    path="/ifs/scratch/c2b2/ys_lab/yshen/WENDY/BreastCancer/Regeneron/Filtering_for_Qiang_with_Synonymous/"
     files <-  list.files(path=path,pattern=".tsv$")
     allf <- intersect(allf,files)
+    #allf <- setdiff(allf,"280002.tsv") ## double check 
     
     alllist <- c()
     for(i in 1:length(allf)){
@@ -719,12 +695,48 @@ popvariant <- function(){
         colnames(oner)[c(24,25,30,45)] <- c("GT","AD","Subject_INFO","Subject_ID")
         alllist <- rbind(alllist,oner)
     }
-    save(alllist,file="alllist_9_30")
+    save(alllist,file="alllist_9_10")
 
     allV <- paste(alllist[,1],alllist[,2],alllist[,4],alllist[,5],sep="_")
     varT <- table(allV)
-    save(varT,file="varT_9_30")
+    save(varT,file="varT_9_10")
     
+    #======================================================
+    ### add synonmous variants
+    caseid <- caseonefam()[,3]
+    contid <- controlpheno()[,3]
+    
+    path="/home/local/ARCS/yshen/data/WENDY/BreastCancer/Regeneron/Filtering_for_Qiang_with_Synonymous/"
+    files <-  list.files(path=path,pattern=".tsv$")
+    ## filter by low coverage or gvcf files
+    casef <- paste(caseid,".tsv",sep="")
+    contf <- paste(contid,".tsv",sep="")
+    casef <- intersect(casef,files)
+    contf <- intersect(contf,files)
+    
+    casesy <- c()
+    for(i in 1:length(casef)){
+        tmp <- paste(path,casef[i],sep="")
+        oner <- read.delim(tmp)
+        oner <- cbind(oner,gsub(".tsv","",casef[i]))
+        colnames(oner)[c(24,25,30,45)] <- c("GT","AD","Subject_INFO","Subject_ID")
+        casesy <- rbind(casesy,oner)
+    }
+    
+    casesy <- casesy[casesy[,"VariantClass"] %in% "synonymousSNV",]
+    save(casesy,file="casesy_9_28")
+    
+    contsy <- c()
+    for(i in 1:length(contf)){
+        tmp <- paste(path,contf[i],sep="")
+        oner <- read.delim(tmp)
+        oner <- cbind(oner,gsub(".tsv","",contf[i]))
+        colnames(oner)[c(24,25,30,45)] <- c("GT","AD","Subject_INFO","Subject_ID")
+        contsy <- rbind(contsy,oner)
+    }
+    contsy <- contsy[contsy[,"VariantClass"] %in% "synonymousSNV",]
+    save(contsy,file="contsy_9_28")
+
 }
 
 ## INFO filtering 
