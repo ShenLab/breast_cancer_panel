@@ -1,11 +1,11 @@
 ## phenotype of all samples excluding outliers
 pheno_all <- function(){
-    pheno <- read.csv("WES BCFR phenotypic data.csv")
+    pheno <- read.csv("data/WES BCFR phenotypic data.csv")
     
     ## excluded outlier samples and undetermined and mismatched sex samples
-    outliers <- read.delim("Potential_Outliers.tsv")[,1]
-    sexcheck <- read.delim("CUMC_Regeneron.mismatches.sexcheck.tsv")[,1]
-    outlfam <- read.delim("Potential_Problem_families.tsv",sep=" ")[,1]
+    outliers <- read.delim("data/Potential_Outliers.tsv")[,1]
+    sexcheck <- read.delim("data/CUMC_Regeneron.mismatches.sexcheck.tsv")[,1]
+    outlfam <- read.delim("data/Potential_Problem_families.tsv",sep=" ")[,1]
     
     outliers <- union(outliers,sexcheck)
     pheno <- pheno[!(pheno[,"Subject_ID"] %in% outliers),]
@@ -46,7 +46,7 @@ controlpheno <- function(){
     subs <- sapply(1:dim(pheno)[1],function(i) as.numeric(unlist(strsplit(pheno[i,"BIRTHDT"],"/"))[3])<= 44 )
     pheno <- pheno[subs,]
 
-    canfil <- read.csv("WES_CaseControl_PossibleControls_OtherCancer.csv")
+    canfil <- read.csv("data/WES_CaseControl_PossibleControls_OtherCancer.csv")
     tmpid <- canfil[canfil[,"Control.Status"]=="N","Subject_ID"]    
     pheno <- pheno[!(pheno[,"Subject_ID"] %in% tmpid),]
     
@@ -152,7 +152,7 @@ subSKAT <- function(onelist,fig,pop){
     
     # # hp and jp: p=1 jp only; p=2; hp only; p=3 jp and hp; p=4 jp, hp and unknown;
     ### populations
-    bc.pop <- read.delim("WES_BCFR_phenotypic_data-19062015.txt")[,1:5]
+    bc.pop <- read.delim("data/WES_BCFR_phenotypic_data-19062015.txt")[,1:5]
     bc.pop[,4] <- paste(bc.pop[,4], bc.pop[,5], sep="")
     bc.pop <- bc.pop[,-5]
     
@@ -170,7 +170,7 @@ subSKAT <- function(onelist,fig,pop){
 runSKAT <- function(sig,fig,pop){
     library(SKAT)
     
-    pheno <- read.csv("WES BCFR phenotypic data.csv")
+    pheno <- read.csv("data/WES BCFR phenotypic data.csv")
     r1 <- caseSKAT(sig,fig,pop)
     r2 <- controlSKAT(sig,fig,pop)
     
@@ -612,7 +612,7 @@ case_control <- function(){
     brall <- brall[!is.na(brall)]
     caseid <- setdiff(caseid,brall)
     
-    bc.pop <- read.delim("WES_BCFR_phenotypic_data-19062015.txt")[,1:5]
+    bc.pop <- read.delim("data/WES_BCFR_phenotypic_data-19062015.txt")[,1:5]
     bc.pop[,4] <- paste(bc.pop[,4], bc.pop[,5], sep="")
     bc.pop <- bc.pop[,-5]
     Jp <-  bc.pop[bc.pop[,4] %in% "J",3]
@@ -780,11 +780,11 @@ oneInfo <- function(Info,freN,cutN){
 igvplot <- function(){
     source("pre.R")
 
-    pheno <- read.csv("WES BCFR phenotypic data.csv")
+    pheno <- read.csv("data/WES BCFR phenotypic data.csv")
     ## excluded outlier samples and undetermined and mismatched sex samples
-    outliers <- read.delim("Potential_Outliers.tsv")[,1]
-    sexcheck <- read.delim("CUMC_Regeneron.mismatches.sexcheck.tsv")[,1]
-    outlfam <- read.delim("Potential_Problem_families.tsv",sep=" ")[,1]
+    outliers <- read.delim("data/Potential_Outliers.tsv")[,1]
+    sexcheck <- read.delim("data/CUMC_Regeneron.mismatches.sexcheck.tsv")[,1]
+    outlfam <- read.delim("data/Potential_Problem_families.tsv",sep=" ")[,1]
     
     outliers <- union(outliers,sexcheck)
     pheno <- pheno[!(pheno[,"Subject_ID"] %in% outliers),]

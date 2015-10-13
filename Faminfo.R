@@ -110,7 +110,7 @@ updFam <- function(){
     
     
     ## missed family IDs  
-    allpheno <- read.csv("WES BCFR phenotypic data.csv")
+    allpheno <- read.csv("data/WES BCFR phenotypic data.csv")
     allfams <- unique(allpheno[,1])
     svgf <- list.files("/home/local/ARCS/qh2159/breast_cancer/pedigree/Family_Pedigree",".svg$")
     svgs <- basename(svgf)
@@ -124,7 +124,7 @@ updFam <- function(){
 write_ped <- function(){
 
     ## phenotype information
-    pheno <- read.csv("WES BCFR phenotypic data.csv")
+    pheno <- read.csv("data/WES BCFR phenotypic data.csv")
     ## ped file based on vcf file (vcf file from Ashley based on common SNPs)
     pedf <- "family/aa.ped"
     ## family information inferred from Primus
@@ -480,7 +480,7 @@ subfamSKAT <- function(genos,fig,pop,phe,id,covs){
     fres <- fres[subs]
     
     ## sub rows corresponding to subjects
-    bc.pop <- read.delim("WES_BCFR_phenotypic_data-19062015.txt")[,1:5]
+    bc.pop <- read.delim("data/WES_BCFR_phenotypic_data-19062015.txt")[,1:5]
     bc.pop[,4] <- paste(bc.pop[,4], bc.pop[,5], sep="")
     bc.pop <- bc.pop[,-5]
     Jp <-  bc.pop[bc.pop[,4] %in% "J",3]
