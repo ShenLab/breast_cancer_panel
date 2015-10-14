@@ -1,3 +1,170 @@
+parallelfamSKAT <- function(){
+    source("FB_SKATpre.R")
+    library(parallel)
+    
+    mclapply(1:20,function(kk) run_FBSKAT(kk,FALSE),mc.cores = 20)
+    mclapply(1:20,function(kk) run_FBSKAT(kk,TRUE),mc.cores = 20)
+}
+
+run_FBSKAT <- function(kk,sig){
+    
+    dirstr <- "FBSKATresult/"
+    vartype <- c("LGD","D-mis","indels","LGD+D-mis","ALL")
+    poptype <- c("Jewish","Hispanic","JH","All")
+    
+    source("SKAT_ana.R")
+    source("Faminfo.R")
+    pedf <- "data/ALL_pedigree.csv"
+    peds <- read.csv(pedf)
+    pheno <- pheno_all()
+    idi <- as.vector(pheno[,2])
+    fullkins <- getKinshipMatrix(1)
+    allped <- colnames(fullkins)
+    idi <- intersect(idi,allped)
+    id <- pheno[match(idi,pheno[,2]),3]
+    colnames(fullkins)[match(idi,colnames(fullkins))] <- id
+    rownames(fullkins)[match(idi,rownames(fullkins))] <- id
+    
+    phe <- as.vector(pheno[match(id,pheno[,3]),"BreastCancer"])
+    phe[phe=="Yes"] <- 1
+    phe[phe=="No"] <- 0
+    phe <- as.numeric(phe)
+    
+    sex <- as.vector(pheno[match(id,pheno[,3]),"Sex"])
+    sex[sex=="Male"] <- 1
+    sex[sex=="Female"] <- 2
+    sex <- as.numeric(sex)
+    
+    peds <- peds[match(idi,peds[,2]),]
+    peds[,2] <- id
+    
+    for(i in 1:dim(peds)[1]){
+        if(peds[i,3] %in% pheno[,2]){
+            peds[i,3] <- pheno[pheno[,2]==peds[i,3],3]
+        }else{
+            peds[i,3] <- 9
+        }
+        if(peds[i,4] %in% pheno[,2]){
+            peds[i,4] <- pheno[pheno[,2]==peds[i,4],3]
+        }else{
+            peds[i,4] <- 9
+        }
+    }
+    
+    ### run with one flag, sig and flag
+    fig <- floor((kk-1)/4) + 1
+    pop <- ifelse(kk %% 4==0,4,kk %% 4)
+    genos <- genotype_wts(id,sig)
+    
+    oneresult <- subFBSKAT(genos,fig,pop,peds,sex,phe,id)
+    pedsub <- oneresult$peds
+    sexsub <- oneresult$sex
+    phesub <- oneresult$phe
+    Z1sub <- oneresult$Z1
+    gstsub <- oneresult$gst
+    fres <- oneresult$fres
+    wtssub <- dbeta(fres,1,25)
+    varsub <- oneresult$onelist
+    
+    peds <- cbind(pedsub,sexsub,phesub,Z1sub)
+    write.table(peds,file=paste(dirstr,"pedigree_FBSKAT_",vartype[fig],"_",poptype[pop],"_",sig,".ped",sep=""),row.names=FALSE,col.names=FALSE,quote=FALSE,sep="\t")
+    write.table(gstsub,file=paste(dirstr,"gene_FBSKAT_",vartype[fig],"_",poptype[pop],"_",sig,".txt",sep=""),row.names=FALSE,col.names=FALSE,quote=FALSE)
+    write.table(wtssub,file=paste(dirstr,"wts_FBSKAT_",vartype[fig],"_",poptype[pop],"_",sig,".txt",sep=""),row.names=FALSE,col.names=FALSE,quote=FALSE)
+    write.table(rep(1,length(wtssub)),file=paste(dirstr,"wts1_FBSKAT_",vartype[fig],"_",poptype[pop],"_",sig,".txt",sep=""),row.names=FALSE,col.names=FALSE,quote=FALSE)
+    write.table(varsub,file=paste(dirstr,"var_FBSKAT_",vartype[fig],"_",poptype[pop],"_",sig,".txt",sep=""),row.names=FALSE,quote=FALSE)
+    write.table(rep(1,length(wtssub)),file=paste(dirstr,"var1_FBSKAT_",vartype[fig],"_",poptype[pop],"_",sig,".txt",sep=""),row.names=FALSE,col.names=FALSE,quote=FALSE)
+    
+}
+
+subFBSKAT <- function(genos,fig,pop,peds,sex,phe,id){
+    Z <- genos$Z
+    fres <- genos$fres
+    onelist <- genos$alllist
+    
+    ## sub columns corresponding to variants
+    source("SKAT_ana.R")
+    onelist <- subSKAT(onelist,fig,pop)
+    vars <- paste(onelist[,1],onelist[,2],onelist[,4],onelist[,5],sep="_")
+    univar <- unique(vars)
+    subs <- match(univar,colnames(Z))
+    Z <- Z[,univar]
+    fres <- fres[subs]
+    var_g <- cbind(onelist[,"Gene"],vars)
+    
+    Z1 <- c()
+    Z1n <- c()
+    genes <- unique(onelist[,"Gene"])
+    k <- 0
+    gst <- rep(0,length(genes))
+    for(i in 1:length(genes)){
+        onevar <- unique(vars[var_g[,1]==genes[i]])
+        Z1 <- cbind(Z1,Z[,onevar])
+        Z1n <- c(Z1n,onevar)
+        st <- k+1 
+        ed <- k+length(onevar)
+        gst[i] <- paste(genes[i],st,ed,sep="\t")
+        k <- ed
+    }
+    colnames(Z1) <- Z1n
+    fres <- fres[colnames(Z1)]
+    onelist <- onelist[match(Z1n,vars),]  ## just use the first one
+    
+    ## sub rows corresponding to subjects
+    bc.pop <- read.delim("data/WES_BCFR_phenotypic_data-19062015.txt")[,1:5]
+    bc.pop[,4] <- paste(bc.pop[,4], bc.pop[,5], sep="")
+    bc.pop <- bc.pop[,-5]
+    Jp <-  bc.pop[bc.pop[,4] %in% "J",3]
+    Hp <-  bc.pop[bc.pop[,4] %in% "H",3]
+    coln <- ifelse(any(grepl("SubID",colnames(onelist))), "SubID","Subject_ID")
+    
+    if(pop==1){ onep = Jp; }
+    if(pop==2){ onep = Hp; }
+    if(pop==3){ onep = c(Jp,Hp); }
+    if(pop==4){ onep = id;}
+    ## cannot change the orders
+    Z1 <- Z1[rownames(Z1) %in% onep,]
+    idsub <- intersect(onep,id)
+    phe <- phe[id %in% idsub]
+    peds <- peds[id %in% idsub,]
+    sex <- sex[id %in% idsub]
+    
+    list(peds=peds,sex=sex,phe=phe,Z1=Z1,gst=gst,fres=fres,onelist=onelist)
+    
+}
+
+qqplot_FBSKAT <- function(){
+    ## qq plots for pvalues in variant and gene level
+    library(Haplin)
+    dirstr <- "FBSKATresult/"
+    vartype <- c("LGD","D-mis","indels","LGD+D-mis","ALL")
+    poptype <- c("Jewish","Hispanic","JH","All")
+    for(flag in 1){
+        for(sig in c(FALSE,TRUE)){
+            for(pop in 1:4){
+                for(fig in 1:5){
+                    gfile <- paste(dirstr,"FBSKATr_",vartype[fig],"_",poptype[pop],"_",sig,".txt",sep="")
+                    if(file.exists(gfile)){
+                        x=read.table(gfile);
+                        y1=1-pchisq(x[,4],x[,5]);
+                        y2=1-pchisq(x[,6],x[,7]);
+                        y1[is.na(y1)] <- 1
+                        y2[is.na(y2)] <- 1
+                        genes <- x[,1]
+                        names(y1) <- genes
+                        names(y2) <- genes
+                        pdf(file=paste(dirstr,"FBSKATqq_",vartype[fig],"_",poptype[pop],"_",sig,".pdf",sep=""),width=20,height=10)
+                        par(mfrow=c(1,2))
+                        pQQ(y1, nlabs = sum(y1<0.05), conf = 0.95, mark = 0.05)
+                        pQQ(y2, nlabs = sum(y2<0.05), conf = 0.95, mark = 0.05)
+                        dev.off()
+                    }
+                }
+            }
+        }
+    }
+    
+}
+
 FB_SKATpre <- function(){
     source("SKAT_ana.R")
     source("Faminfo.R")
@@ -43,7 +210,6 @@ FB_SKATpre <- function(){
     
     
 }
-
 
 genotype_wts_FBSKAT <- function(id,sig,dirstr="famSKATresult/"){
     
