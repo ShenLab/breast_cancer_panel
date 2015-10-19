@@ -263,7 +263,7 @@ run_famSKAT <- function(kk,sig,flag){
     covs <- Covariate_phe(pheno,pcaf,id)
     
     dirstr <- "famSKATresult/"
-    cols <- c("Gene","Variant(#)","#case","#control","pvalue")
+    cols <- c("Gene","Variant(#)","#case","#control","fold_enrich","pvalue")
     vartype <- c("LGD","D-mis","indels","LGD+D-mis","ALL")
     poptype <- c("Jewish","Hispanic","JH","All")
     
@@ -507,7 +507,7 @@ singlefamSKATg <- function(phe,id,fullkins,covs,Z,wts,onelist){
     genes <- unique(onelist[,"Gene"])
     varlist <- paste(onelist[,1],onelist[,2],onelist[,4],onelist[,5],sep="_")
     vars <- colnames(Z)
-    vT <- matrix(0,length(genes),5)
+    vT <- matrix(0,length(genes),6)
     vT[,1] <- genes
     
     tmp <- sapply(1:length(genes),function(i){
@@ -520,8 +520,9 @@ singlefamSKATg <- function(phe,id,fullkins,covs,Z,wts,onelist){
             famSKAT(phe, oneG, id, fullkins, covs, h2=0.5, sqrtweights=wts[match(onevars,vars)], binomialimpute=FALSE, method="Kuonen", acc=NULL)$pvalue
         )
     })
-    vT[,2:5] <- t(tmp)
-    
+    vT[,c(2,3,4,6)] <- t(tmp)
+    vT[,5] <- (vT[,3]/sum(phe==1))/(vT[,4]/sum(phe==0))
+        
     vT
 }
 
@@ -529,7 +530,7 @@ singlefamSKATv <- function(phe,id,fullkins,covs,Z,wts,onelist){
     ## single variant level
     varlist <- paste(onelist[,1],onelist[,2],onelist[,4],onelist[,5],sep="_")
     vars <- colnames(Z)
-    vT <- matrix(0,length(vars),5)
+    vT <- matrix(0,length(vars),6)
     vT[,1] <- onelist[match(vars,varlist),"Gene"]
     vT[,2] <- vars
     
@@ -539,7 +540,8 @@ singlefamSKATv <- function(phe,id,fullkins,covs,Z,wts,onelist){
            famSKAT(phe, Z[,vars[i],drop=FALSE], id, fullkins, covs, h2=0.5, sqrtweights=wts[i], binomialimpute=FALSE, method="Kuonen", acc=NULL)$pvalue
         )
         })
-    vT[,3:5] <- t(tmp)
+    vT[,c(3,4,6)] <- t(tmp)
+    vT[,5] <- (vT[,3]/sum(phe==1))/(vT[,4]/sum(phe==0))
     
     vT
 }

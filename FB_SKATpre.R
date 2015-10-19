@@ -69,6 +69,10 @@ run_FBSKAT <- function(kk,sig){
     peds <- cbind(pedsub,sexsub,phesub,Z1sub)
     write.table(peds,file=paste(dirstr,"pedigree_FBSKAT_",vartype[fig],"_",poptype[pop],"_",sig,".ped",sep=""),row.names=FALSE,col.names=FALSE,quote=FALSE,sep="\t")
     write.table(gstsub,file=paste(dirstr,"gene_FBSKAT_",vartype[fig],"_",poptype[pop],"_",sig,".txt",sep=""),row.names=FALSE,col.names=FALSE,quote=FALSE)
+    if(fig==5){
+        tmp <- cbind(colnames(Z1sub),1:length(wtssub),1:length(wtssub))
+        write.table(tmp,file=paste(dirstr,"variant_FBSKAT_",vartype[fig],"_",poptype[pop],"_",sig,".txt",sep=""),row.names=FALSE,col.names=FALSE,quote=FALSE)
+    }
     write.table(wtssub,file=paste(dirstr,"wts_FBSKAT_",vartype[fig],"_",poptype[pop],"_",sig,".txt",sep=""),row.names=FALSE,col.names=FALSE,quote=FALSE)
     write.table(rep(1,length(wtssub)),file=paste(dirstr,"wts1_FBSKAT_",vartype[fig],"_",poptype[pop],"_",sig,".txt",sep=""),row.names=FALSE,col.names=FALSE,quote=FALSE)
     write.table(varsub,file=paste(dirstr,"var_FBSKAT_",vartype[fig],"_",poptype[pop],"_",sig,".txt",sep=""),row.names=FALSE,quote=FALSE)
@@ -135,14 +139,15 @@ subFBSKAT <- function(genos,fig,pop,peds,sex,phe,id){
 qqplot_FBSKAT <- function(){
     ## qq plots for pvalues in variant and gene level
     library(Haplin)
-    dirstr <- "FBSKATresult/"
+    dirstr <- "FBSKATresult/FBout/"
+    dirstr1 <- "FBSKATresult/qqout/"
     vartype <- c("LGD","D-mis","indels","LGD+D-mis","ALL")
     poptype <- c("Jewish","Hispanic","JH","All")
     for(flag in 1){
         for(sig in c(FALSE,TRUE)){
             for(pop in 1:4){
                 for(fig in 1:5){
-                    gfile <- paste(dirstr,"FBSKATr_",vartype[fig],"_",poptype[pop],"_",sig,".txt",sep="")
+                    gfile <- paste(dirstr,"FBSKATr_",vartype[fig],"_",poptype[pop],"_",sig,"0.050000_0.010000_0.txt",sep="")
                     if(file.exists(gfile)){
                         x=read.table(gfile);
                         y1=1-pchisq(x[,4],x[,5]);
@@ -152,7 +157,7 @@ qqplot_FBSKAT <- function(){
                         genes <- x[,1]
                         names(y1) <- genes
                         names(y2) <- genes
-                        pdf(file=paste(dirstr,"FBSKATqq_",vartype[fig],"_",poptype[pop],"_",sig,".pdf",sep=""),width=20,height=10)
+                        pdf(file=paste(dirstr1,"FBSKATqq_",vartype[fig],"_",poptype[pop],"_",sig,".pdf",sep=""),width=20,height=10)
                         par(mfrow=c(1,2))
                         pQQ(y1, nlabs = sum(y1<0.05), conf = 0.95, mark = 0.05)
                         pQQ(y2, nlabs = sum(y2<0.05), conf = 0.95, mark = 0.05)
