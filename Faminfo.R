@@ -508,7 +508,6 @@ singlefamSKATg <- function(phe,id,fullkins,covs,Z,wts,onelist){
     varlist <- paste(onelist[,1],onelist[,2],onelist[,4],onelist[,5],sep="_")
     vars <- colnames(Z)
     vT <- matrix(0,length(genes),6)
-    vT[,1] <- genes
     
     tmp <- sapply(1:length(genes),function(i){
         onevars <- unique(varlist[onelist[,"Gene"]==genes[i]])
@@ -522,7 +521,8 @@ singlefamSKATg <- function(phe,id,fullkins,covs,Z,wts,onelist){
     })
     vT[,c(2,3,4,6)] <- t(tmp)
     vT[,5] <- (vT[,3]/sum(phe==1))/(vT[,4]/sum(phe==0))
-        
+    vT[,1] <- genes
+    
     vT
 }
 
@@ -531,8 +531,6 @@ singlefamSKATv <- function(phe,id,fullkins,covs,Z,wts,onelist){
     varlist <- paste(onelist[,1],onelist[,2],onelist[,4],onelist[,5],sep="_")
     vars <- colnames(Z)
     vT <- matrix(0,length(vars),6)
-    vT[,1] <- onelist[match(vars,varlist),"Gene"]
-    vT[,2] <- vars
     
     tmp <- sapply(1:length(vars),function(i){
         c( length(intersect(id[phe==1],onelist[varlist==vars[i],"Subject_ID"])),
@@ -542,6 +540,8 @@ singlefamSKATv <- function(phe,id,fullkins,covs,Z,wts,onelist){
         })
     vT[,c(3,4,6)] <- t(tmp)
     vT[,5] <- (vT[,3]/sum(phe==1))/(vT[,4]/sum(phe==0))
+    vT[,1] <- onelist[match(vars,varlist),"Gene"]
+    vT[,2] <- vars
     
     vT
 }
