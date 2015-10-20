@@ -10,13 +10,12 @@ pheno_all <- function(){
     outliers <- union(outliers,sexcheck)
     pheno <- pheno[!(pheno[,"Subject_ID"] %in% outliers),]
     #pheno <- pheno[!(pheno[,"FAMILYID"] %in% outlfam),]
-    
     pheno
 }
 
 ## one case from one family data 
 caseonefam <- function(){
-
+    
     pheno <- pheno_all()
     ## one case in one family
     famid <- unique(pheno[,1])
@@ -46,7 +45,7 @@ controlpheno <- function(){
     pheno <- pheno[subs,]
     subs <- sapply(1:dim(pheno)[1],function(i) as.numeric(unlist(strsplit(pheno[i,"BIRTHDT"],"/"))[3])<= 44 )
     pheno <- pheno[subs,]
-
+    
     canfil <- read.csv("data/WES_CaseControl_PossibleControls_OtherCancer.csv")
     tmpid <- canfil[canfil[,"Control.Status"]=="N","Subject_ID"]    
     pheno <- pheno[!(pheno[,"Subject_ID"] %in% tmpid),]
@@ -139,7 +138,7 @@ controlSKAT <- function(sig,fig,pop){
 }
 
 subSKAT <- function(onelist,fig,pop){
-
+    
     mis <- c("nonframeshiftdeletion","nonframeshiftinsertion","nonsynonymousSNV")
     lof <- c("frameshiftdeletion","frameshiftinsertion","stopgain","stoploss","none")  
     oneind <- nchar(onelist[,"REF"]) != nchar(onelist[,"ALT"])
@@ -162,7 +161,7 @@ subSKAT <- function(onelist,fig,pop){
     coln <- ifelse(any(grepl("SubID",colnames(onelist))), "SubID","Subject_ID")
     if(pop==1){onelist <- onelist[onelist[,coln] %in% Jp,];}
     if(pop==2){onelist <- onelist[onelist[,coln] %in% Hp,];}
-    if(pop==3){onelist <- onelist[onelist[,coln] %in% c(Jp,Hp),];}
+    if(pop==3){onelist <- onelist[onelist[,coln] %in% c(Jp,Hp),]}
     
     onelist
 }
@@ -218,31 +217,31 @@ runSKAT <- function(sig,fig,pop){
     list(G=G,X=X,y=y,wts=wts,caselist=r1$caselist,contlist=r2$contlist)
     
     #### run SKAT
-#     obj <- SKAT_Null_Model(y ~ X, out_type="D")
-#     ## weighted
-#     p0 <- SKAT(G, obj, kernel = "linear.weighted", weights=wts)
-#     save(p0,file="SKATr0")
-#     pV <- SKAT(G, obj)
-#     save(pV,file="SKATr")
-#     
-#     # weighted rare variants
-#     pV <- rep(1,dim(G)[2])
-#     for(i in 1:dim(G)[2]){
-#         pV[i] <- SKAT(as.matrix(G[,i],ncol=1), obj, kernel = "linear.weighted", weights=wts[i])$p.value
-#     }
-#     
-#     save(pV,file="singleSKATr")
+    #     obj <- SKAT_Null_Model(y ~ X, out_type="D")
+    #     ## weighted
+    #     p0 <- SKAT(G, obj, kernel = "linear.weighted", weights=wts)
+    #     save(p0,file="SKATr0")
+    #     pV <- SKAT(G, obj)
+    #     save(pV,file="SKATr")
+    #     
+    #     # weighted rare variants
+    #     pV <- rep(1,dim(G)[2])
+    #     for(i in 1:dim(G)[2]){
+    #         pV[i] <- SKAT(as.matrix(G[,i],ncol=1), obj, kernel = "linear.weighted", weights=wts[i])$p.value
+    #     }
+    #     
+    #     save(pV,file="singleSKATr")
     
     ## weighted combined and rare variants
-#     p0 <- SKAT_CommonRare(G, obj)$p.value
-#     save(p0,file="SKATr_RC")
-# 
-#     pV <- rep(1,dim(G)[2])
-#     for(i in 1:dim(G)[2]){
-#         pV[i] <- SKAT_CommonRare(as.matrix(G[,i],ncol=1), obj)$p.value
-#     }
-#     
-#     save(pV,file="singleSKATr_RC")
+    #     p0 <- SKAT_CommonRare(G, obj)$p.value
+    #     save(p0,file="SKATr_RC")
+    # 
+    #     pV <- rep(1,dim(G)[2])
+    #     for(i in 1:dim(G)[2]){
+    #         pV[i] <- SKAT_CommonRare(as.matrix(G[,i],ncol=1), obj)$p.value
+    #     }
+    #     
+    #     save(pV,file="singleSKATr_RC")
     
     
 }
@@ -290,7 +289,7 @@ comSKAT <- function(){
     ## top genes
     subs <- pV < 0.01 ## 159
     sivars <- colnames(G)[subs]
-
+    
     gesubs <- which(casevar %in% sivars)
     sigenes <- unique(caselist[gesubs,"Gene"])
     qwt(sigenes,file="topgenes.txt")
@@ -329,7 +328,7 @@ allSKAT <- function(kk){
         comSKAT_gene(r2,sig,fig,pop,"SKATresult/")
         comSKAT_variant(r2,sig,fig,pop,"SKATresult/")
     }
-        
+    
 }
 
 comSKAT_gene <- function(r1,sig,fig,pop,dirstr="SKATresult/"){
@@ -482,37 +481,37 @@ find_sig <- function(){
     for(fig in 1:5){
         for(pop in 1:4){
             for(sig in c(FALSE,TRUE)){
-            r1 <- runSKAT(sig,fig,pop)
-            caselist <- r1$caselist; contlist <- r1$contlist;
-            n.gene <- length(union(caselist[,"Gene"],contlist[,"Gene"]))
-            n.var <- dim(r1$G)[2]
-            
-            gfile <- paste("SKATresult/Gene_",vartype[fig],"_",poptype[pop],".xlsx",sep="")
-            vfile <- paste("SKATresult/Variant_",vartype[fig],"_",poptype[pop],".xlsx",sep="")
-            
-            sigM[k,1] <- sig
-            sigM[k,2] <- vartype[fig]
-            sigM[k,3] <- poptype[pop]
-            tmp <- read.xlsx2(gfile,sheetName=paste(vartype[fig],poptype[pop],sig,sep="_"))
-            sigM[k,4] <- length(unique(tmp[(as.numeric(tmp[,"SKAT.O_w"])*n.gene < vcut),"Gene"]))
-            sigM[k,5] <- length(unique(tmp[(as.numeric(tmp[,"SKAT.O_w"]) < vcut),"Gene"]))
-            
-            tmp <- read.xlsx2(vfile,sheetName=paste(vartype[fig],poptype[pop],sig,sep="_"))
-            vars <- paste(tmp[,1],tmp[,2],tmp[,4],tmp[,5],sep="_")
-            sigM[k,6] <- length(unique(vars[(as.numeric(tmp[,"SKAT.O_w"])*n.var < vcut)]))
-            sigM[k,7] <- length(unique(vars[(as.numeric(tmp[,"SKAT.O_w"]) < vcut)]))
-            
-            sigM[k,8] <- n.gene
-            sigM[k,9] <- n.var
-            
-            k <- k+1
-            print(k)
+                r1 <- runSKAT(sig,fig,pop)
+                caselist <- r1$caselist; contlist <- r1$contlist;
+                n.gene <- length(union(caselist[,"Gene"],contlist[,"Gene"]))
+                n.var <- dim(r1$G)[2]
+                
+                gfile <- paste("SKATresult/Gene_",vartype[fig],"_",poptype[pop],".xlsx",sep="")
+                vfile <- paste("SKATresult/Variant_",vartype[fig],"_",poptype[pop],".xlsx",sep="")
+                
+                sigM[k,1] <- sig
+                sigM[k,2] <- vartype[fig]
+                sigM[k,3] <- poptype[pop]
+                tmp <- read.xlsx2(gfile,sheetName=paste(vartype[fig],poptype[pop],sig,sep="_"))
+                sigM[k,4] <- length(unique(tmp[(as.numeric(tmp[,"SKAT.O_w"])*n.gene < vcut),"Gene"]))
+                sigM[k,5] <- length(unique(tmp[(as.numeric(tmp[,"SKAT.O_w"]) < vcut),"Gene"]))
+                
+                tmp <- read.xlsx2(vfile,sheetName=paste(vartype[fig],poptype[pop],sig,sep="_"))
+                vars <- paste(tmp[,1],tmp[,2],tmp[,4],tmp[,5],sep="_")
+                sigM[k,6] <- length(unique(vars[(as.numeric(tmp[,"SKAT.O_w"])*n.var < vcut)]))
+                sigM[k,7] <- length(unique(vars[(as.numeric(tmp[,"SKAT.O_w"]) < vcut)]))
+                
+                sigM[k,8] <- n.gene
+                sigM[k,9] <- n.var
+                
+                k <- k+1
+                print(k)
             }
         }
     }
     source("~/.Rprofile")
     qwt(sigM,file=paste("SKATresult/sig_var_gene_",vcut,".txt",sep=""),flag=2)
-
+    
 }
 
 manual_check <- function(){
@@ -561,68 +560,92 @@ manual_check <- function(){
 case_control <- function(){
     
     source("SKAT_ana.R")
-    control <- controlpheno()
+    lof <- c("frameshiftdeletion","frameshiftinsertion","stopgain","stoploss","none") 
+    mis <- c("nonframeshiftdeletion","nonframeshiftinsertion","nonsynonymousSNV")
     
+    ## control variant lists
+    control <- controlpheno()
     control_ID <- control[,"Subject_ID"]
     contf <- paste(control_ID,".tsv",sep="")
-    #path="/ifs/scratch/c2b2/ys_lab/yshen/WENDY/BreastCancer/Regeneron/Filtering_for_Qiang/"
-    path="/home/local/ARCS/yshen/data/WENDY/BreastCancer/Regeneron/Filtering_for_Qiang/"
+    path="/home/local/ARCS/yshen/data/WENDY/BreastCancer/Regeneron/Filtering_for_Qiang_with_Synonymous/"
     files <-  list.files(path=path,pattern=".tsv$")
     contf <- intersect(contf,files)
-    
     contlist <- c()
     for(i in 1:length(contf)){
         tmp <- paste(path,contf[i],sep="")
         oner <- read.delim(tmp)
         oner <- cbind(oner,gsub(".tsv","",contf[i]))
-        colnames(oner)[c(23,24,29,30)] <- c("GT","AD","Subject_INFO","SubID")
+        colnames(oner)[c(24,25,30,45)] <- c("GT","AD","Subject_INFO","Subject_ID")
         contlist <- rbind(contlist,oner)
     }
-    save(contlist,file="contlist_8_6")
+    contsy <- contlist[contlist[,"VariantClass"] %in% "synonymousSNV",]
+    save(contsy,file="contsy_9_30")
+    contlist <- contlist[contlist[,"VariantClass"] %in% c(lof,mis),]
+    save(contlist,file="contlist_9_30")
     
     
     ## case not filtered by matched controls
     source("SKAT_ana.R")
-    cases <- caseonefam()
-    case_ID <- cases[,"Subject_ID"]
-    path="/home/local/ARCS/yshen/data/WENDY/BreastCancer/Regeneron/Filtering_for_Qiang_with_Synonymous/"
-    casef <- paste(case_ID,".tsv",sep="")
-       
-    files <-  list.files(path=path,pattern=".tsv$")
-    casef <- intersect(casef,files)
-    #casef <- setdiff(casef,"280002.tsv")#!!!!
     lof <- c("frameshiftdeletion","frameshiftinsertion","stopgain","stoploss","none") 
     mis <- c("nonframeshiftdeletion","nonframeshiftinsertion","nonsynonymousSNV")
+    
+    cases <- caseonefam()
+    case_ID <- cases[,"Subject_ID"]
+    casef <- paste(case_ID,".tsv",sep="")
+    path="/home/local/ARCS/yshen/data/WENDY/BreastCancer/Regeneron/Filtering_for_Qiang_with_Synonymous/"
+    files <-  list.files(path=path,pattern=".tsv$")
+    casef <- intersect(casef,files)
     
     onlycase <- c()
     for(i in 1:length(casef)){
         tmp <- paste(path,casef[i],sep="")
         oner <- read.delim(tmp)
-        oner <- oner[oner[,"VariantClass"] %in% c(mis,lof),]
         oner <- cbind(oner,gsub(".tsv","",casef[i]))
         colnames(oner)[c(24,25,30,45)] <- c("GT","AD","Subject_INFO","Subject_ID")
         onlycase <- rbind(onlycase,oner)
     }
-    save(onlycase,file="caselist_9_28")
+    casesy <- onlycase[onlycase[,"VariantClass"] %in% "synonymousSNV",]
+    save(casesy,file="casesy_9_30")
+    
+    caselist <- onlycase[onlycase[,"VariantClass"] %in% c(lof,mis),]
+    save(caselist,file="caselist_9_30")
     
     
     ### populations
-    caseid <- unique(onlycase[,"Subject_ID"])
     alls <- read.csv("data/Likely pathogenic BRCA mutations list.csv")
     brall <- alls[,"Subject_ID"]
     brall <- brall[!is.na(brall)]
+    bc.pop <- read.delim("data/WES_BCFR_phenotypic_data-19062015.txt")[,1:5]
+    bc.pop[,4] <- paste(bc.pop[,4], bc.pop[,5], sep="")
+    bc.pop <- bc.pop[,-5]
+    Jp <-  bc.pop[bc.pop[,4] %in% "J",3]
+    Hp <-  bc.pop[bc.pop[,4] %in% "H",3]
+    
+    caseid <- unique(gsub(".tsv","",casef))
     caseid <- setdiff(caseid,brall)
+    n.case <- c(length(caseid),length(intersect(caseid,Jp)),length(intersect(caseid,Hp)))
+    save(n.case,file="n.case_9_30")
+    
+    contid <- unique(gsub(".tsv","",contf))
+    contid <- setdiff(contid,brall)
+    n.cont <- c(length(contid),length(intersect(contid,Jp)),length(intersect(contid,Hp)))
+    save(n.cont,file="n.cont_9_30")
     
     bc.pop <- read.delim("data/WES_BCFR_phenotypic_data-19062015.txt")[,1:5]
     bc.pop[,4] <- paste(bc.pop[,4], bc.pop[,5], sep="")
     bc.pop <- bc.pop[,-5]
     Jp <-  bc.pop[bc.pop[,4] %in% "J",3]
     Hp <-  bc.pop[bc.pop[,4] %in% "H",3]
+    
+    caseid <- unique(gsub(".tsv","",casef))
     n.case <- c(length(caseid),length(intersect(caseid,Jp)),length(intersect(caseid,Hp)))
+    save(n.case,file="n.case_10_2")
     
-    save(n.case,file="n.case_9_28")
-    
-    ### case filtered by match controls
+    contid <- unique(gsub(".tsv","",contf))
+    n.cont <- c(length(contid),length(intersect(contid,Jp)),length(intersect(contid,Hp)))
+    save(n.cont,file="n.cont_10_2")
+    #===========================================================================================
+    ### case filtered by match controls=========================================================
     source("pre.R")
     path <- "/ifs/scratch/c2b2/ys_lab/yshen/WENDY/BreastCancer/Regeneron/CaseControl_Filtering"
     
@@ -639,7 +662,7 @@ case_control <- function(){
     subs <- which(casefile %in% files)
     casefile <- casefile[subs]
     case_ID <- case_ID[subs]
-        
+    
     ncase <- length(casefile)
     caselist <- c()
     cols <- c("Chromosome","Position","ID","REF","ALT","Gene","VariantFunction","VariantClass","AAchange","AlleleFrequency.ExAC","AlleleFrequency.1KG","AlleleFrequency.ESP","MetaSVM","SIFTprediction","PP2prediction","MAprediction","MTprediction","GERP..","CADDscore","SegmentalDuplication","PredictionSummary","VariantCallQuality","AlternateAlleles","MetaSVMScore","FILTER","INFO")
@@ -673,7 +696,7 @@ case_control <- function(){
     save(caselist,file="caselist_8_26")
     
     ##==============================================================================
-
+    
 }
 
 # all population frequency
@@ -683,10 +706,10 @@ popvariant <- function(){
     allf <- paste(pheno[,3],".tsv",sep="")
     allf <- gsub("222357, 222966.tsv","222357.tsv",allf)
     
-    path="/ifs/scratch/c2b2/ys_lab/yshen/WENDY/BreastCancer/Regeneron/Filtering_for_Qiang_with_Synonymous/"
+    ##path="/ifs/scratch/c2b2/ys_lab/yshen/WENDY/BreastCancer/Regeneron/Filtering_for_Qiang_with_Synonymous/"
+    path="/home/local/ARCS/yshen/data/WENDY/BreastCancer/Regeneron/Filtering_for_Qiang_with_Synonymous/"
     files <-  list.files(path=path,pattern=".tsv$")
     allf <- intersect(allf,files)
-    #allf <- setdiff(allf,"280002.tsv") ## double check 
     
     alllist <- c()
     for(i in 1:length(allf)){
@@ -696,48 +719,12 @@ popvariant <- function(){
         colnames(oner)[c(24,25,30,45)] <- c("GT","AD","Subject_INFO","Subject_ID")
         alllist <- rbind(alllist,oner)
     }
-    save(alllist,file="alllist_9_10")
-
+    save(alllist,file="alllist_9_30")
+    
     allV <- paste(alllist[,1],alllist[,2],alllist[,4],alllist[,5],sep="_")
     varT <- table(allV)
-    save(varT,file="varT_9_10")
+    save(varT,file="varT_9_30")
     
-    #======================================================
-    ### add synonmous variants
-    caseid <- caseonefam()[,3]
-    contid <- controlpheno()[,3]
-    
-    path="/home/local/ARCS/yshen/data/WENDY/BreastCancer/Regeneron/Filtering_for_Qiang_with_Synonymous/"
-    files <-  list.files(path=path,pattern=".tsv$")
-    ## filter by low coverage or gvcf files
-    casef <- paste(caseid,".tsv",sep="")
-    contf <- paste(contid,".tsv",sep="")
-    casef <- intersect(casef,files)
-    contf <- intersect(contf,files)
-    
-    casesy <- c()
-    for(i in 1:length(casef)){
-        tmp <- paste(path,casef[i],sep="")
-        oner <- read.delim(tmp)
-        oner <- cbind(oner,gsub(".tsv","",casef[i]))
-        colnames(oner)[c(24,25,30,45)] <- c("GT","AD","Subject_INFO","Subject_ID")
-        casesy <- rbind(casesy,oner)
-    }
-    
-    casesy <- casesy[casesy[,"VariantClass"] %in% "synonymousSNV",]
-    save(casesy,file="casesy_9_28")
-    
-    contsy <- c()
-    for(i in 1:length(contf)){
-        tmp <- paste(path,contf[i],sep="")
-        oner <- read.delim(tmp)
-        oner <- cbind(oner,gsub(".tsv","",contf[i]))
-        colnames(oner)[c(24,25,30,45)] <- c("GT","AD","Subject_INFO","Subject_ID")
-        contsy <- rbind(contsy,oner)
-    }
-    contsy <- contsy[contsy[,"VariantClass"] %in% "synonymousSNV",]
-    save(contsy,file="contsy_9_28")
-
 }
 
 ## INFO filtering 
@@ -754,7 +741,7 @@ case_INFO <- function(INFOs){
 }
 
 oneInfo <- function(Info,freN,cutN){
-
+    
     tmp1 <- unlist(strsplit(Info,";"))
     tmp2 <- unlist(strsplit(tmp1,"="))
     
@@ -764,12 +751,12 @@ oneInfo <- function(Info,freN,cutN){
         }else{
             va <- tmp2[match(freN[i],tmp2)+1];
             if(va==""){ tmp <- TRUE;
-                        }else{
-            va <- gsub("\\.,","0,",va)
-            va <- gsub(",\\.",",0",va)
-            va <- as.numeric(unlist(strsplit(va,",")))
-            tmp <- max(va) < cutN[i]
-                        }
+            }else{
+                va <- gsub("\\.,","0,",va)
+                va <- gsub(",\\.",",0",va)
+                va <- as.numeric(unlist(strsplit(va,",")))
+                tmp <- max(va) < cutN[i]
+            }
         }
         sub1 <- sub1 & tmp    
     }
@@ -777,27 +764,19 @@ oneInfo <- function(Info,freN,cutN){
     sub1
 }
 
-# igvplot -----------------------------------------------------------------
+# igvplot
 igvplot <- function(){
     source("pre.R")
-
-    pheno <- read.csv("data/WES BCFR phenotypic data.csv")
-    ## excluded outlier samples and undetermined and mismatched sex samples
-    outliers <- read.delim("data/Potential_Outliers.tsv")[,1]
-    sexcheck <- read.delim("data/CUMC_Regeneron.mismatches.sexcheck.tsv")[,1]
-    outlfam <- read.delim("data/Potential_Problem_families.tsv",sep=" ")[,1]
     
-    outliers <- union(outliers,sexcheck)
-    pheno <- pheno[!(pheno[,"Subject_ID"] %in% outliers),]
-    pheno <- pheno[!(pheno[,"FAMILYID"] %in% outlfam),]
+    pheno <- pheno_all()
     
-#     load("Burden_caselist")
-#     caselist <-caseL
-#     a1 <- nchar(caselist[,"REF"])
-#     a2 <- nchar(caselist[,"ALT"])
-#     subs <- a1!=a2
-#     indels <- caselist[subs,]
-#     save(indels,file="indels_8_13")
+    #     load("Burden_caselist")
+    #     caselist <-caseL
+    #     a1 <- nchar(caselist[,"REF"])
+    #     a2 <- nchar(caselist[,"ALT"])
+    #     subs <- a1!=a2
+    #     indels <- caselist[subs,]
+    #     save(indels,file="indels_8_13")
     
     load("indels_8_13")
     con <- file("indels_IGV_8_13.txt","w")
@@ -808,7 +787,7 @@ igvplot <- function(){
         writeLines(paste(indels[i,1],indels[i,2],Ss,sep="\t"),con)
     }
     close(con)
-
+    
     load("case3")
     a1 <- nchar(case3[,"REF"])
     a2 <- nchar(case3[,"ALT"])
@@ -817,4 +796,3 @@ igvplot <- function(){
     save(indels,file="indels_8_24")
     
 }
-
