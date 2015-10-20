@@ -579,10 +579,9 @@ case_control <- function(){
         contlist <- rbind(contlist,oner)
     }
     contsy <- contlist[contlist[,"VariantClass"] %in% "synonymousSNV",]
-    save(contsy,file="contsy_9_30")
+    save(contsy,file="contsy_10_20")
     contlist <- contlist[contlist[,"VariantClass"] %in% c(lof,mis),]
-    save(contlist,file="contlist_9_30")
-    
+    save(contlist,file="contlist_10_20")
     
     ## case not filtered by matched controls
     source("SKAT_ana.R")
@@ -605,16 +604,15 @@ case_control <- function(){
         onlycase <- rbind(onlycase,oner)
     }
     casesy <- onlycase[onlycase[,"VariantClass"] %in% "synonymousSNV",]
-    save(casesy,file="casesy_9_30")
+    save(casesy,file="casesy_10_20")
     
     caselist <- onlycase[onlycase[,"VariantClass"] %in% c(lof,mis),]
-    save(caselist,file="caselist_9_30")
+    save(caselist,file="caselist_10_20")
     
     
     ### populations
-    alls <- read.csv("data/Likely pathogenic BRCA mutations list.csv")
-    brall <- alls[,"Subject_ID"]
-    brall <- brall[!is.na(brall)]
+    source("indexcase_burden.R")
+    brall <- remove_out()
     bc.pop <- read.delim("data/WES_BCFR_phenotypic_data-19062015.txt")[,1:5]
     bc.pop[,4] <- paste(bc.pop[,4], bc.pop[,5], sep="")
     bc.pop <- bc.pop[,-5]
@@ -624,26 +622,21 @@ case_control <- function(){
     caseid <- unique(gsub(".tsv","",casef))
     caseid <- setdiff(caseid,brall)
     n.case <- c(length(caseid),length(intersect(caseid,Jp)),length(intersect(caseid,Hp)))
-    save(n.case,file="n.case_9_30")
+    save(n.case,file="n.case_10_20r")
     
     contid <- unique(gsub(".tsv","",contf))
     contid <- setdiff(contid,brall)
     n.cont <- c(length(contid),length(intersect(contid,Jp)),length(intersect(contid,Hp)))
-    save(n.cont,file="n.cont_9_30")
+    save(n.cont,file="n.cont_10_20r")
     
-    bc.pop <- read.delim("data/WES_BCFR_phenotypic_data-19062015.txt")[,1:5]
-    bc.pop[,4] <- paste(bc.pop[,4], bc.pop[,5], sep="")
-    bc.pop <- bc.pop[,-5]
-    Jp <-  bc.pop[bc.pop[,4] %in% "J",3]
-    Hp <-  bc.pop[bc.pop[,4] %in% "H",3]
-    
+    ## not remove
     caseid <- unique(gsub(".tsv","",casef))
     n.case <- c(length(caseid),length(intersect(caseid,Jp)),length(intersect(caseid,Hp)))
-    save(n.case,file="n.case_10_2")
+    save(n.case,file="n.case_10_20")
     
     contid <- unique(gsub(".tsv","",contf))
     n.cont <- c(length(contid),length(intersect(contid,Jp)),length(intersect(contid,Hp)))
-    save(n.cont,file="n.cont_10_2")
+    save(n.cont,file="n.cont_10_20")
     #===========================================================================================
     ### case filtered by match controls=========================================================
     source("pre.R")
@@ -719,11 +712,11 @@ popvariant <- function(){
         colnames(oner)[c(24,25,30,45)] <- c("GT","AD","Subject_INFO","Subject_ID")
         alllist <- rbind(alllist,oner)
     }
-    save(alllist,file="alllist_9_30")
+    save(alllist,file="alllist_10_20")
     
     allV <- paste(alllist[,1],alllist[,2],alllist[,4],alllist[,5],sep="_")
     varT <- table(allV)
-    save(varT,file="varT_9_30")
+    save(varT,file="varT_10_20")
     
 }
 

@@ -207,8 +207,9 @@ case_cont <- function(){
     load("contlist_9_30")
     hotf <- "hotspots/hotf_cos_2"
     
-    caselist <- remove_out(caselist)
-    contlist <- remove_out(contlist)
+    rid <- remove_out()
+    caselist <- caselist[!(caselist[,"Subject_ID"] %in% rid),]
+    contlist <- contlist[!(contlist[,"Subject_ID"] %in% rid),]
     
     sig=FALSE
     caselist <- filter_variant(caselist,sig)
@@ -228,18 +229,12 @@ case_cont <- function(){
     
 }
 # remove BRCA1/2 pathogenic cases
-remove_out <- function(onelist){
-    ## BRCA1/2 pathogenic mutations cases: br <- c(223109,223041,223275,260333,222968)
-    alls <- read.csv("data/Likely pathogenic BRCA mutations list.csv")
-    brall <- alls[,"Subject_ID"]
-    brall <- brall[!is.na(brall)]
-    br <- brall
-    if(any(grepl("Subject_ID",colnames(onelist)))){
-        onelist <- onelist[!(onelist[,"Subject_ID"] %in% br),]
-    }else{
-        onelist <- onelist[!(onelist[,"Subject_ID"] %in% br),]
-    }
-    onelist
+remove_out <- function(){
+    
+    alls <- read.delim("data/BRCA1_2.txt")
+    rid <- alls[alls[,1] %in% c("likely pathogenic","pathogenic"),"Subject_ID"]
+    
+    rid
 }
 
 # single gene level burden test
