@@ -5,11 +5,12 @@ pheno_all <- function(){
     ## excluded outlier samples and undetermined and mismatched sex samples
     outliers <- read.delim("data/Potential_Outliers.tsv")[,1]
     sexcheck <- read.delim("data/CUMC_Regeneron.mismatches.sexcheck.tsv")[,1]
-    outlfam <- read.delim("data/Potential_Problem_families.tsv",sep=" ")[,1]
+    #outlfam <- read.delim("data/Potential_Problem_families.tsv",sep=" ")[,1]
     
     outliers <- union(outliers,sexcheck)
     pheno <- pheno[!(pheno[,"Subject_ID"] %in% outliers),]
-    pheno <- pheno[!(pheno[,"FAMILYID"] %in% outlfam),]
+    #pheno <- pheno[!(pheno[,"FAMILYID"] %in% outlfam),]
+    
     pheno
 }
 
