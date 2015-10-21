@@ -2,15 +2,15 @@
 look_up <- function(){
     source("indexcase_burden.R")
     source("Faminfo.R")
-    load("caselist_9_30")
-    load("contlist_9_30")
+    load("caselist_10_20")
+    load("contlist_10_20")
     
-    #load("n.case_9_30")
-    #load("n.cont_9_30")
+    #load("n.case_10_20")
+    #load("n.cont_10_20")
     #caselist <- remove_out(caselist)
     #contlist <- remove_out(contlist)
-    load("n.case_10_2")
-    load("n.cont_10_2")
+    load("n.case_10_20r")
+    load("n.cont_10_20r")
     
     caselist <- filter_lookup(caselist)
     contlist <- filter_lookup(contlist)
@@ -59,7 +59,7 @@ look_up <- function(){
     
     #============================================================================
     ### the second list: high frequency in our cohort and rare in ExAC
-    load("alllist_9_30")
+    load("alllist_10_20")
     Ecut=0.01
     alllist[is.na(alllist[,"AlleleFrequency.ExAC"]),"AlleleFrequency.ExAC"] <- 0
     alllist[alllist[,"AlleleFrequency.ExAC"]==".","AlleleFrequency.ExAC"] <- 0
@@ -98,8 +98,8 @@ filter_lookup <- function(onelist){
     
     # cohort frequency < 5%
     onelist[,"Popfreq"] <- 0
-    Pn <- 1160 
-    load("varT_9_30")
+    Pn <- 1291 
+    load("varT_10_20")
     vs <- paste(onelist[,1],onelist[,2],onelist[,4],onelist[,5],sep="_")
     #iv <- intersect(vs,names(varT))
     onelist[,"Popfreq"] <- varT[vs]/Pn
@@ -149,8 +149,8 @@ filter_sanity <- function(onelist){
     
     # cohort frequency < 5%
     onelist[,"Popfreq"] <- 0
-    Pn <- 1160 
-    load("varT_9_30")
+    Pn <- 1291 
+    load("varT_10_20")
     vs <- paste(onelist[,1],onelist[,2],onelist[,4],onelist[,5],sep="_")
     #iv <- intersect(vs,names(varT))
     onelist[,"Popfreq"] <- varT[vs]/Pn
@@ -203,8 +203,8 @@ var_table <- function(caselist,contlist){
 ### Step 1: index cases and control in order to see single gene level burden 
 case_cont <- function(){
     source("Faminfo.R")
-    load("caselist_9_30")
-    load("contlist_9_30")
+    load("caselist_10_20")
+    load("contlist_10_20")
     hotf <- "hotspots/hotf_cos_2"
     
     rid <- remove_out()
@@ -218,8 +218,8 @@ case_cont <- function(){
     write.csv(contlist[contlist[,"ExACfreq"],],file="Controlvariants.csv",row.names=FALSE) # ontly write the rare variant based on ExAc Frequency
     singleana(caselist,contlist,sig,hotf)
     
-    load("caselist_9_30")
-    load("contlist_9_30")
+    load("caselist_10_20")
+    load("contlist_10_20")
     sig=TRUE
     caselist <- filter_variant(caselist,sig)
     write.csv(caselist[caselist[,"ExACfreq"],],file="IndexCasesvariants_single.csv",row.names=FALSE)
@@ -307,8 +307,8 @@ filter_variant <- function(onelist,sig=FALSE){
     # population frequency < 5%
     #onelist[,"Popfreq"] <- TRUE
     Pcut <- 0.05
-    Pn <- 1160 * 0.05 ## 1160 population
-    load("varT_9_30")
+    Pn <- 1291 * 0.05 ## 1291 population
+    load("varT_10_20")
     vs <- paste(onelist[,1],onelist[,2],onelist[,4],onelist[,5],sep="_")
     #subs1 <- rep(FALSE,length(vs));
     #iv <- intersect(vs,names(varT))
@@ -578,8 +578,8 @@ geneburden <- function(caselist,contlist,bc.pop,cols){
     contid <- unique(contlist[,"Subject_ID"])
     #n.case <- c(length(caseid),length(intersect(caseid,Jp)),length(intersect(caseid,Hp)))
     #n.cont <- c(length(contid),length(intersect(contid,Jp)),length(intersect(contid,Hp)))
-    load("n.case_9_30")
-    load("n.cont_9_30")
+    load("n.case_10_20r")
+    load("n.cont_10_20r")
     
     Sta[is.na(Sta)] <- 0
     for(i in 1:3){
@@ -622,8 +622,8 @@ variantburden <- function(caselist,contlist,bc.pop,cols){
     contid <- unique(contlist[,"Subject_ID"])
     #n.case <- c(length(caseid),length(intersect(caseid,Jp)),length(intersect(caseid,Hp)))
     #n.cont <- c(length(contid),length(intersect(contid,Jp)),length(intersect(contid,Hp)))
-    load("n.case_9_30")
-    load("n.cont_9_30")
+    load("n.case_10_20r")
+    load("n.cont_10_20r")
     
     Sta[is.na(Sta)] <- 0
     for(i in 1:3){
@@ -767,8 +767,8 @@ filter_gene <- function(){
 
 write_panel <- function(genes,burdenf, wf){
 
-    load("n.case_9_30")
-    load("n.cont_9_30")
+    load("n.case_10_20r")
+    load("n.cont_10_20r")
     
     aa <- read.csv(burdenf)
     cc <- aa[aa[,"Gene"] %in% genes,]
@@ -834,8 +834,8 @@ variant_type_burden0 <- function(){
     
     #===================synonmous===============================================
     source("Faminfo.R")
-    load("casesy_9_30")
-    load("contsy_9_30")
+    load("casesy_10_20")
+    load("contsy_10_20")
 
     for(sig in c(FALSE,TRUE)){
     casesy <- filter_variant(casesy,sig)
@@ -864,8 +864,8 @@ variant_type_burden0 <- function(){
 }
 
 synonymous_burden <- function(casesy,contsy){
-    load("n.case_9_30")
-    load("n.cont_9_30")
+    load("n.case_10_20r")
+    load("n.cont_10_20r")
     
     ### population
     bc.pop <- read.delim("WES_BCFR_phenotypic_data-19062015.txt")[,1:5]
@@ -910,8 +910,8 @@ synonymous_burden <- function(casesy,contsy){
 
 variant_type_burden_sig <- function(caselist,contlist){
     
-    load("n.case_9_30")
-    load("n.cont_9_30")
+    load("n.case_10_20r")
+    load("n.cont_10_20r")
     # LOF, MIS, indels, slient
     subcase <- variant_types(caselist)
     subcont <- variant_types(contlist)
@@ -1244,7 +1244,7 @@ hotspots_cosmic <- function(){
 
 ### single gene double check
 WRN_check <- function(){
-    load("caselist_9_30")
+    load("caselist_10_20")
     onelist <- caselist
     Ecut=0.001
     onelist <- onelist[as.numeric(onelist[,"AlleleFrequency.ExAC"])< Ecut,]
@@ -1281,7 +1281,7 @@ BRCA_check <-  function(){
     brall <- brall[!is.na(brall)]
     br <- c(223109,223041,223275,260333,222968)
     
-    load("caselist_9_30")
+    load("caselist_10_20")
     caseid <- unique(caselist[,"Subject_ID"])
     dch <- setdiff(intersect(caseid,brall),br)
     
@@ -1290,7 +1290,7 @@ BRCA_check <-  function(){
     lof <- c("frameshiftdeletion","frameshiftinsertion","stopgain","stoploss","none") 
     mis <- c("nonframeshiftdeletion","nonframeshiftinsertion","nonsynonymousSNV")
     
-    load("alllist_9_30")
+    load("alllist_10_20")
     subs <- alllist[,"Gene"] %in% c("BRCA1","BRCA2") & alllist[,"VariantClass"] %in% c(lof,mis) & alllist[,"Subject_ID"] %in% brall
     onelist <- alllist[subs,]
 }
@@ -1298,7 +1298,7 @@ BRCA_check <-  function(){
 ### slient mutation number check
 vcf_check <- function(){
     
-    load("caselist_9_30")
+    load("caselist_10_20")
     caselist <- onlycase
     bc.pop <- read.delim("WES_BCFR_phenotypic_data-19062015.txt")[,1:5]
     bc.pop[,4] <- paste(bc.pop[,4], bc.pop[,5], sep="")
@@ -1333,7 +1333,7 @@ sample_check <- function(){
     Jp <-  bc.pop[bc.pop[,4] %in% "J",3]
     Hp <-  bc.pop[bc.pop[,4] %in% "H",3]
     
-    load("caselist_9_30")
+    load("caselist_10_20")
     caseid <- unique(onlycase[,"Subject_ID"])
     
     YaleSam <- bats[bats[,3]=="Yale",2]
@@ -1344,8 +1344,8 @@ sample_check <- function(){
     others <- setdiff(caseid,caseYa)
     
     sig=FALSE
-    load("casesy_9_30")
-    load("contsy_9_30")
+    load("casesy_10_20")
+    load("contsy_10_20")
     
     a <- table(casesy[,"Subject_ID"])[caseY1]
     b <- table(casesy[,"Subject_ID"])[caseY2]

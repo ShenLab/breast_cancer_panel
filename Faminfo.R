@@ -9,7 +9,7 @@ BRCAFam <- function(){
     unif <- pheno[pheno[,3] %in% br,1]
     allm <- pheno[pheno[,1] %in% unif,3]
     
-    load("alllist_9_30")
+    load("alllist_10_20")
     subs <- (alllist[,"Subject_ID"] %in% allm) & (alllist[,"Gene"] %in% c("BRCA1","BRCA2"))
     tmplist <- alllist[subs,]
     
@@ -389,7 +389,7 @@ Covariate_phe <- function(pheno,pcaf,id){
 genotype_wts <- function(id,sig){
     source("indexcase_burden.R")
     hotf <- "hotspots/hotf_cos_2"
-    load("alllist_9_30")
+    load("alllist_10_20")
     mis <- c("nonframeshiftdeletion","nonframeshiftinsertion","nonsynonymousSNV")
     lof <- c("frameshiftdeletion","frameshiftinsertion","stopgain","stoploss","none")
     alllist <- alllist[alllist[,"VariantClass"] %in% c(lof,mis),]
