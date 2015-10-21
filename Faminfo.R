@@ -509,6 +509,12 @@ singlefamSKATg <- function(phe,id,fullkins,covs,Z,wts,onelist){
     vars <- colnames(Z)
     vT <- matrix(0,length(genes),6)
     
+    p <- sum(phe==1)/length(phe)
+    subs <- phe==1
+    a1 <- log(p/(1-p))
+    phe[subs] <- a1
+    phe[!subs] <- -a1
+    
     tmp <- sapply(1:length(genes),function(i){
         onevars <- unique(varlist[onelist[,"Gene"]==genes[i]])
         oneG <- as.matrix(Z[,onevars])
@@ -516,7 +522,7 @@ singlefamSKATg <- function(phe,id,fullkins,covs,Z,wts,onelist){
             length(onevars),
             length(intersect(id[phe==1],onelist[varlist %in% onevars,"Subject_ID"])),
             length(intersect(id[phe==0],onelist[varlist %in% onevars,"Subject_ID"])),
-            famSKAT(phe, oneG, id, fullkins, covs, h2=0.5, sqrtweights=wts[match(onevars,vars)], binomialimpute=FALSE, method="Kuonen", acc=NULL)$pvalue
+            famSKAT(phe, oneG, id, fullkins, covs, h2=NULL, sqrtweights=wts[match(onevars,vars)], binomialimpute=FALSE, method="Kuonen", acc=NULL)$pvalue
         )
     })
     vT[,c(2,3,4,6)] <- t(tmp)
@@ -532,10 +538,16 @@ singlefamSKATv <- function(phe,id,fullkins,covs,Z,wts,onelist){
     vars <- colnames(Z)
     vT <- matrix(0,length(vars),6)
     
+    p <- sum(phe==1)/length(phe)
+    subs <- phe==1
+    a1 <- log(p/(1-p))
+    phe[subs] <- a1
+    phe[!subs] <- -a1
+    
     tmp <- sapply(1:length(vars),function(i){
         c( length(intersect(id[phe==1],onelist[varlist==vars[i],"Subject_ID"])),
            length(intersect(id[phe==0],onelist[varlist==vars[i],"Subject_ID"])),
-           famSKAT(phe, Z[,vars[i],drop=FALSE], id, fullkins, covs, h2=0.5, sqrtweights=wts[i], binomialimpute=FALSE, method="Kuonen", acc=NULL)$pvalue
+           famSKAT(phe, Z[,vars[i],drop=FALSE], id, fullkins, covs, h2=NULL, sqrtweights=wts[i], binomialimpute=FALSE, method="Kuonen", acc=NULL)$pvalue
         )
         })
     vT[,c(3,4,6)] <- t(tmp)
