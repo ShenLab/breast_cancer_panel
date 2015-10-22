@@ -61,12 +61,19 @@ run_FBSKAT <- function(kk,sig){
     sexsub <- oneresult$sex
     phesub <- oneresult$phe
     Z1sub <- oneresult$Z1
+    ## try to use genotype data
+    #Z1sub[Z1sub > 0] <- 2
+    #Z1sub[Z1sub == 0] <- 1
+    
     gstsub <- oneresult$gst
     fres <- oneresult$fres
-    wtssub <- dbeta(fres,1,25)
+    wtssub <- fres #dbeta(fres,1,25)
     varsub <- oneresult$onelist
     
     peds <- cbind(pedsub,sexsub,phesub,Z1sub)
+    ## order a trio need to be in order child, parent1, parent2
+    peds <- changepeds(peds)
+    
     write.table(peds,file=paste(dirstr,"pedigree_FBSKAT_",vartype[fig],"_",poptype[pop],"_",sig,".ped",sep=""),row.names=FALSE,col.names=FALSE,quote=FALSE,sep="\t")
     write.table(gstsub,file=paste(dirstr,"gene_FBSKAT_",vartype[fig],"_",poptype[pop],"_",sig,".txt",sep=""),row.names=FALSE,col.names=FALSE,quote=FALSE)
     if(fig==5){
@@ -78,6 +85,39 @@ run_FBSKAT <- function(kk,sig){
     write.table(varsub,file=paste(dirstr,"var_FBSKAT_",vartype[fig],"_",poptype[pop],"_",sig,".txt",sep=""),row.names=FALSE,quote=FALSE)
     write.table(rep(1,length(wtssub)),file=paste(dirstr,"var1_FBSKAT_",vartype[fig],"_",poptype[pop],"_",sig,".txt",sep=""),row.names=FALSE,col.names=FALSE,quote=FALSE)
     
+}
+
+changepeds <- function(peds){
+    
+    n <- dim(peds)[2]
+    misf <- rep(9,n)
+    misf[5] <- 1
+    mism <- rep(9,n)
+    mism[5] <- 2
+    peds0 <- c()
+    for(i in 1:dim(peds)[1]){
+        if(!(peds[i,2] %in% peds0[,2] & peds[i,3]==9 & peds[i,4]==9)){
+            onetrio <- peds[i,]
+            if(peds[i,3]==9){
+                tmpf <- misf
+                tmpf[1] <- peds[i,1]
+            }else{
+                tmpf <- peds[peds[,2]==peds[i,3],]
+            }
+            
+            if(peds[i,4]==9){
+                tmpm <- mism
+                tmpm[1] <- peds[i,1]
+            }else{
+                tmpm <- peds[peds[,2]==peds[i,4],]
+            }
+            
+            onetrio <- rbind(onetrio,tmpf,tmpm)
+            peds0 <- rbind(peds0,onetrio)
+        }
+    }
+    
+    peds0
 }
 
 subFBSKAT <- function(genos,fig,pop,peds,sex,phe,id){
@@ -152,11 +192,14 @@ qqplot_FBSKAT <- function(){
                         x=read.table(gfile);
                         y1=1-pchisq(x[,4],x[,5]);
                         y2=1-pchisq(x[,6],x[,7]);
-                        y1[is.na(y1)] <- 1
-                        y2[is.na(y2)] <- 1
-                        genes <- x[,1]
-                        names(y1) <- genes
-                        names(y2) <- genes
+                        #y1[is.na(y1)] <- 1
+                        #y2[is.na(y2)] <- 1
+                        names(y1) <- x[,1]
+                        names(y2) <- x[,1]
+                        # del nan
+                        subs <- is.na(y1) | is.na(y2)
+                        y1 <- y1[!subs]
+                        y2 <- y2[!subs]
                         pdf(file=paste(dirstr1,"FBSKATqq_",vartype[fig],"_",poptype[pop],"_",sig,".pdf",sep=""),width=20,height=10)
                         par(mfrow=c(1,2))
                         pQQ(y1, nlabs = sum(y1<0.05), conf = 0.95, mark = 0.05)
