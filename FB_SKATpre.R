@@ -4,6 +4,9 @@ parallelfamSKAT <- function(){
     
     mclapply(1:20,function(kk) run_FBSKAT(kk,FALSE),mc.cores = 20)
     mclapply(1:20,function(kk) run_FBSKAT(kk,TRUE),mc.cores = 20)
+    
+    ## bash parallel run
+    ##parallel './runFBSKAT.sh $i' ::: {1..40} 
 }
 
 run_FBSKAT <- function(kk,sig){
@@ -17,13 +20,19 @@ run_FBSKAT <- function(kk,sig){
     pedf <- "data/ALL_pedigree.csv"
     peds <- read.csv(pedf)
     pheno <- pheno_all()
+    pheno[,3] <- gsub("222357, 222966","222357",pheno[,3])
+    load("alllist_10_20")
+    listsubs <- unique(alllist[,"Subject_ID"])
+    pheno <- pheno[pheno[,3] %in% listsubs,]
+    
     idi <- as.vector(pheno[,2])
-    fullkins <- getKinshipMatrix(1)
-    allped <- colnames(fullkins)
+    #fullkins <- getKinshipMatrix(1)
+    #allped <- colnames(fullkins)
+    allped <- union(peds[,2],union(peds[,3],peds[,4]))
     idi <- intersect(idi,allped)
     id <- pheno[match(idi,pheno[,2]),3]
-    colnames(fullkins)[match(idi,colnames(fullkins))] <- id
-    rownames(fullkins)[match(idi,rownames(fullkins))] <- id
+    #colnames(fullkins)[match(idi,colnames(fullkins))] <- id
+    #rownames(fullkins)[match(idi,rownames(fullkins))] <- id
     
     phe <- as.vector(pheno[match(id,pheno[,3]),"BreastCancer"])
     phe[phe=="Yes"] <- 1
@@ -35,21 +44,24 @@ run_FBSKAT <- function(kk,sig){
     sex[sex=="Female"] <- 2
     sex <- as.numeric(sex)
     
-    peds <- peds[match(idi,peds[,2]),]
-    peds[,2] <- id
-    
-    for(i in 1:dim(peds)[1]){
-        if(peds[i,3] %in% pheno[,2]){
-            peds[i,3] <- pheno[pheno[,2]==peds[i,3],3]
-        }else{
-            peds[i,3] <- 9
+    peds0 <- matrix(9,length(id),4) ## 9 for miss 
+    peds0[,1] <- pheno[match(id,pheno[,3]),1]
+    peds0[,2] <- id
+    for(i in 1:length(id)){
+        if(any(peds[,2]==idi[i])){
+        fid <- peds[which(peds[,2]==idi[i]),3]
+        mid <- peds[which(peds[,2]==idi[i]),4]
+        
+        if(fid %in% pheno[,2]){
+            peds0[i,3] <- pheno[pheno[,2]==fid,3]
         }
-        if(peds[i,4] %in% pheno[,2]){
-            peds[i,4] <- pheno[pheno[,2]==peds[i,4],3]
-        }else{
-            peds[i,4] <- 9
+        if(mid %in% pheno[,2]){
+            peds0[i,4] <- pheno[pheno[,2]==mid,3]
         }
-    }
+        
+        }
+    } 
+    peds <- peds0
     
     ### run with one flag, sig and flag
     fig <- floor((kk-1)/4) + 1
@@ -96,7 +108,7 @@ changepeds <- function(peds){
     mism[5] <- 2
     peds0 <- c()
     for(i in 1:dim(peds)[1]){
-        if(!(peds[i,2] %in% peds0[,2] & peds[i,3]==9 & peds[i,4]==9)){
+        if(!( (peds[i,2] %in% union(peds[,3],peds[,4])) & peds[i,3]==9 & peds[i,4]==9)){
             onetrio <- peds[i,]
             if(peds[i,3]==9){
                 tmpf <- misf
@@ -200,9 +212,9 @@ qqplot_FBSKAT <- function(){
                         y1 <- y1[!is.na(y1)]
                         y2 <- y2[!is.na(y2)]
                         pdf(file=paste(dirstr1,"FBSKATqq_",vartype[fig],"_",poptype[pop],"_",sig,".pdf",sep=""),width=20,height=10)
-                        par(mfrow=c(1,2))
+                        par(mfrow=c(1,1))
                         pQQ(y1, nlabs = sum(y1<0.05), conf = 0.95, mark = 0.05)
-                        pQQ(y2, nlabs = sum(y2<0.05), conf = 0.95, mark = 0.05)
+                        #pQQ(y2, nlabs = sum(y2<0.05), conf = 0.95, mark = 0.05)
                         dev.off()
                     }
                 }
