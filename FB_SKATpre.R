@@ -197,9 +197,8 @@ qqplot_FBSKAT <- function(){
                         names(y1) <- x[,1]
                         names(y2) <- x[,1]
                         # del nan
-                        subs <- is.na(y1) | is.na(y2)
-                        y1 <- y1[!subs]
-                        y2 <- y2[!subs]
+                        y1 <- y1[!is.na(y1)]
+                        y2 <- y2[!is.na(y2)]
                         pdf(file=paste(dirstr1,"FBSKATqq_",vartype[fig],"_",poptype[pop],"_",sig,".pdf",sep=""),width=20,height=10)
                         par(mfrow=c(1,2))
                         pQQ(y1, nlabs = sum(y1<0.05), conf = 0.95, mark = 0.05)
