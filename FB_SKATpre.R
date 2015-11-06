@@ -211,6 +211,8 @@ qqplot_FBSKAT <- function(){
                         # del nan
                         y1 <- y1[!is.na(y1)]
                         y2 <- y2[!is.na(y2)]
+                        y1[y1==0] <- min(y1[y1>0])/100
+                        y2[y2==0] <- min(y2[y2>0])/100
                         pdf(file=paste(dirstr1,"FBSKATqq_",vartype[fig],"_",poptype[pop],"_",sig,".pdf",sep=""),width=20,height=10)
                         par(mfrow=c(1,1))
                         pQQ(y1, nlabs = sum(y1<0.05), conf = 0.95, mark = 0.05)

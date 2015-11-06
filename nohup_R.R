@@ -1,0 +1,5 @@
+source("Faminfo.R")
+parallelfamSKAT(1)
+parallelfamSKAT(2)
+parallelfamSKAT(3)
+parallelfamSKAT(4)

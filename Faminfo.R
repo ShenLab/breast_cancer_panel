@@ -46,11 +46,40 @@ Famdis <- function(){
     
     pdf(file="Family.pdf",width=12,height=10)
     par(mai=c(2,2,1,1))
-    mp <- barplot(t(famdis[,c(4,3,2,1)]),ylim=c(0,max(rowSums(famdis))+5), space=0.4, col=c("green","cyan","blue","red") ,cex.axis=1.6,xlab="Number of family members",ylab="Number of families",cex.lab=2,legend = c("No Breast Cancer(Male)","No Breast Cancer(Female)","Breast Cancer(Male)","Breast Cancer(Female)") )
+    mp <- barplot(t(famdis[,c(4,3,2,1)]),ylim=c(0,max(rowSums(famdis))+5), space=0.4, col=c("green","cyan","blue","red") ,cex.axis=1.6,xlab="Number of family members",ylab="Number of families",cex.lab=2,legend = c("No Breast Cancer(Male)","No Breast Cancer(Female)","Breast Cancer(Male)","Breast Cancer(Female)"),main="Family Distribution",cex.main=2 )
     axis(1, at=mp, labels=tmp1,cex.axis=2)
     text(x=mp,y=rowSums(famdis),labels=testr,pos=3,cex=0.8)
-    text(x=mp[5],y=max(rowSums(famdis))/2+30,labels="(#subject, #case(F), #case(M), #non-case(F), #non-case(M))",cex=1)
+    text(x=mp[5],y=max(rowSums(famdis))/2+50,labels="(#subject, #case(F), #case(M), #non-case(F), #non-case(M))",cex=1)
     dev.off()   
+    
+    pheno <- pheno_all()
+    ## the number of cases in each family
+    fams <- unique(pheno[,1])
+    numcases <- rep(0,length(fams))
+    for(i in 1:length(fams)){
+        numcases[i] <- sum(pheno[pheno[,1] %in% fams[i],"BreastCancer"]=="Yes")
+    }
+    
+    tmp <- table(pheno[,1])
+    ncol <- max(numcases)
+    nrow <- sort(unique(tmp))
+    barM <- matrix(0,length(nrow),ncol+1)
+    testr <- 1:dim(barM)[1]
+    for(i in 1:dim(barM)[1]){
+        for(j in 1:dim(barM)[2]){
+            onefams <- names(tmp)[tmp==nrow[i]]
+            barM[i,j] <- sum(numcases[fams %in% onefams]==j-1)
+        }
+        testr[i] <- paste(barM[i,1:min(c(nrow[i]+1,dim(barM)[2]))],sep="",collapse=",")
+    }
+    testr <- paste("(",testr,")",sep="")
+    
+    pdf(file="case_perFamily.pdf",width=12,height=10)
+    par(mai=c(2,2,1,1))
+    mp <- barplot(t(barM),ylim=c(0,max(rowSums(barM))+5), space=0.6, col=c("black","cyan","blue","red","yellow","green") ,cex.axis=1.6,xlab="Number of family members",ylab="",cex.lab=2,legend = c("no case","1 case","2 case","3 case","4 case","5 case"),main="Number of cases in each family",cex.main=2)
+    axis(1, at=mp, labels=nrow,cex.axis=2)
+    text(x=mp,y=rowSums(barM),labels=testr,pos=3,cex=0.8)
+    dev.off()
     
 }
 
@@ -237,6 +266,13 @@ parallelfamSKAT <- function(flag){
     mclapply(19:20,function(kk) run_famSKAT(kk,TRUE,flag),mc.cores = 2)
 }
 
+parallelsamSKAT <- function(){
+    source("Faminfo.R")
+    library(parallel)
+    
+    mclapply(1:4,function(kk) runsmall_famSKAT(kk),mc.cores = 4)
+}
+
 run_famSKAT <- function(kk,sig,flag){
     
     source("family/famSKAT_v1.7_10312012.R")
@@ -293,6 +329,63 @@ run_famSKAT <- function(kk,sig,flag){
     
 }
 
+runsmall_famSKAT <- function(set4){
+    source("family/famSKAT_v1.7_10312012.R")
+    source("SKAT_ana.R")
+    pheno <- pheno_all()
+    
+    flag=1;
+    sig=FALSE;
+    kk=20;
+    trsV <- c("trio","fam")
+    
+    idi <- as.vector(pheno[,2])
+    fullkins <- getKinshipMatrix(1)
+    allped <- colnames(fullkins)
+    idi <- intersect(idi,allped)
+    id <- pheno[match(idi,pheno[,2]),3]
+    colnames(fullkins)[match(idi,colnames(fullkins))] <- id
+    rownames(fullkins)[match(idi,rownames(fullkins))] <- id
+    idmap <- read.table("family/BC_Hap_popMap.txt")
+    id <- intersect(id,idmap[,1])
+    
+    if(set4 <=2) trs <- trsV[set4]
+    if(set4 >2 ) trs <- trsV[set4-2]
+    id <- triosall(trs,idi,id,pheno)
+    
+    phe <- as.vector(pheno[match(id,pheno[,3]),"BreastCancer"])
+    phe[phe=="Yes"] <- 1
+    phe[phe=="No"] <- 0
+    phe <- as.numeric(phe)
+    
+    if(set4<=2){
+        pcaf <- "family/BC_Regeneron.plus.HapMap.pca.evec"
+        covs <- Covariate_phe(pheno,pcaf,id)
+    }else{
+        pcaf <- "family/Combined_data_for_eigenstrat.7.Q"
+        covs <- Covariate_admix(pheno,pcaf,id)
+        covs <- covs[,1:8]
+    }
+    dirstr <- "famSKATresult/"
+    cols <- c("Gene","Variant(#)","#case","#control","fold_enrich","pvalue")
+    
+    genos <- genotype_wts(id,sig)
+    ### run one
+    Z <- genos$Z
+    fres <- genos$fres
+    wts <- dbeta(fres,1,25)
+    onelist <- genos$alllist
+    
+    gT <- singlefamSKATg(phe,id,fullkins,covs,Z,wts,onelist)
+    colnames(gT) <- cols
+    write.table(gT,file=paste(dirstr,"Gene_",set4,".txt",sep=""),row.names=FALSE,quote=FALSE,sep="\t")
+    
+    vT <- singlefamSKATv(phe,id,fullkins,covs,Z,wts,onelist)
+    colnames(vT) <- cols
+    write.table(vT,file=paste(dirstr,"Variant_",set4,".txt",sep=""),row.names=FALSE,quote=FALSE,sep="\t")
+
+}
+
 qqplot_p <- function(){
     ## qq plots for pvalues in variant and gene level
     library(Haplin)
@@ -335,7 +428,8 @@ getKinshipMatrix <- function(flag=1){
     ## three: compute for genomic kinship with Primus first degree inferred pedigree based on software king
     ## four: compute for genomic kinship with Primus second degree inferred pedigree based on software king
     library(kinship)
-    filenames <- c("data/ALL_pedigree.csv","family/king.kin0","family/FirstDegree.kin0","family/SecondDegree.kin0")
+    #filenames <- c("data/ALL_pedigree.csv","family/king.kin0","family/FirstDegree.kin0","family/SecondDegree.kin0")
+    filenames <- c("data/ALLadd_pedigree.csv","family/king.kin0","family/FirstDegree.kin0","family/SecondDegree.kin0")
     filen <- filenames[flag]
     if(flag==1){
         fullped <- read.csv(filen)
@@ -364,6 +458,41 @@ kingkinship <- function(filen){
     ibd
 }
 
+triosall <- function(trs,idi,id,pheno){
+
+    pedf <- "data/ALL_pedigree.csv"
+    peds <- read.csv(pedf)
+    
+    peds0 <- matrix(9,length(id),4) ## 9 for miss 
+    peds0[,1] <- pheno[match(id,pheno[,3]),1]
+    peds0[,2] <- id
+    for(i in 1:length(id)){
+        if(any(peds[,2]==idi[i])){
+            fid <- peds[which(peds[,2]==idi[i]),3]
+            mid <- peds[which(peds[,2]==idi[i]),4]
+            
+            if(fid %in% pheno[,2]){
+                peds0[i,3] <- pheno[pheno[,2]==fid,3]
+            }
+            if(mid %in% pheno[,2]){
+                peds0[i,4] <- pheno[pheno[,2]==mid,3]
+            }
+            
+        }
+    } 
+    peds <- peds0
+    
+    if(trs=="trio"){
+        id0 <- unique(as.vector(peds[(peds[,3]!=9 & peds[,4]!=9),2:4]))
+    }else if(trs=="fam"){
+        id0 <- unique(as.vector(peds[(peds[,3]!=9 | peds[,4]!=9),2:4]))
+    }
+    
+    id0 <- intersect(id0,id)
+    
+    id0
+}
+
 Covariate_phe <- function(pheno,pcaf,id){
 
     alldat <- read.table(pcaf) ## include Regeneron and Hapmap data; top 10 pca 
@@ -382,6 +511,24 @@ Covariate_phe <- function(pheno,pcaf,id){
     X[,3] <- alldat[match(id,alldat[,1]),2]
     X <- as.numeric(X)
     X <- matrix(X,ncol=3)
+    
+    X
+}
+
+Covariate_admix <- function(pheno,pcaf,id){
+    
+    idmap <- read.table("family/BC_Hap_popMap.txt")
+    alldat <- as.matrix(read.table(pcaf)) ## include Regeneron and Hapmap data; top 10 pca 
+    ## covariates: sex, age and pc1
+    X <- matrix(0,length(id),9,dimnames=list(id,c("sex","age",paste("pop",1:7,sep=""))))
+    X[,1] <- pheno[match(id,pheno[,3]),"Sex"]
+    X[X[,1]=="Female",1] <- 1
+    X[X[,1]=="Male",1] <- 0
+    
+    X[,2] <- pheno[match(id,pheno[,3]),"BIRTHDT"]
+    X[,2] <- sapply(1:dim(X)[1],function(i) 114 - as.numeric(unlist(strsplit(X[i,2],"/"))[3]) )
+    X[,3:9] <- alldat[match(id,idmap[,1]),]
+    mode(X) <- "numeric"
     
     X
 }
@@ -512,8 +659,9 @@ singlefamSKATg <- function(phe,id,fullkins,covs,Z,wts,onelist){
     p <- sum(phe==1)/length(phe)
     subs <- phe==1
     a1 <- log(p/(1-p))
-    phe[subs] <- a1
-    phe[!subs] <- -a1
+    phe0 <- phe
+    phe0[subs] <- a1
+    phe0[!subs] <- -a1
     
     tmp <- sapply(1:length(genes),function(i){
         onevars <- unique(varlist[onelist[,"Gene"]==genes[i]])
@@ -522,7 +670,7 @@ singlefamSKATg <- function(phe,id,fullkins,covs,Z,wts,onelist){
             length(onevars),
             length(intersect(id[phe==1],onelist[varlist %in% onevars,"Subject_ID"])),
             length(intersect(id[phe==0],onelist[varlist %in% onevars,"Subject_ID"])),
-            famSKAT(phe, oneG, id, fullkins, covs, h2=NULL, sqrtweights=wts[match(onevars,vars)], binomialimpute=FALSE, method="Kuonen", acc=NULL)$pvalue
+            famSKAT(phe0, oneG, id, fullkins, covs, h2=NULL, sqrtweights=wts[match(onevars,vars)], binomialimpute=FALSE, method="Kuonen", acc=NULL)$pvalue
         )
     })
     vT[,c(2,3,4,6)] <- t(tmp)
@@ -541,13 +689,14 @@ singlefamSKATv <- function(phe,id,fullkins,covs,Z,wts,onelist){
     p <- sum(phe==1)/length(phe)
     subs <- phe==1
     a1 <- log(p/(1-p))
-    phe[subs] <- a1
-    phe[!subs] <- -a1
+    phe0 <- phe
+    phe0[subs] <- a1
+    phe0[!subs] <- -a1
     
     tmp <- sapply(1:length(vars),function(i){
         c( length(intersect(id[phe==1],onelist[varlist==vars[i],"Subject_ID"])),
            length(intersect(id[phe==0],onelist[varlist==vars[i],"Subject_ID"])),
-           famSKAT(phe, Z[,vars[i],drop=FALSE], id, fullkins, covs, h2=NULL, sqrtweights=wts[i], binomialimpute=FALSE, method="Kuonen", acc=NULL)$pvalue
+           famSKAT(phe0, Z[,vars[i],drop=FALSE], id, fullkins, covs, h2=NULL, sqrtweights=wts[i], binomialimpute=FALSE, method="Kuonen", acc=NULL)$pvalue
         )
         })
     vT[,c(3,4,6)] <- t(tmp)
@@ -556,4 +705,20 @@ singlefamSKATv <- function(phe,id,fullkins,covs,Z,wts,onelist){
     vT[,2] <- vars
     
     vT
+}
+
+rewrite_allpeds <- function(){
+     a <- read.csv("data/ALL_pedigree.csv")
+     ids <- union(a[,2],union(a[,3],a[,4]))
+     idd <- setdiff(ids,a[,2])
+     
+     tmp <- matrix(0,length(idd),4)
+     tmp[,2] <- idd
+     for(i in 1:length(idd)){
+        tmp[i,1] <- a[which(a==idd[i],arr.ind=TRUE)[1],1]
+     }
+     colnames(tmp) <- names(a)
+     allped <- rbind(a,tmp)
+     write.csv(allped,file="data/ALLadd_pedigree.csv",row.names=FALSE)
+     
 }

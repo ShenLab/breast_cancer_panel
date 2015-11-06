@@ -194,3 +194,28 @@ vcf_check_WRN_CBL <- function(){
     table(alt0[,3])
     
 }
+
+famSKAT_check <- function(){
+
+    alllist <- genos$alllist
+    gener <- read.delim("famSKATresult/Gene_FALSE_All_ALL_1.txt")
+    gener <- gener[order(gener[,6]),]
+    qwt(gener,file="famSKAT_gene.txt",flag=2)
+    subg <- c()
+    for (i in 1:dim(gener)[1]){
+        onel <- which(alllist[,"Gene"]==gener[i,1])
+        subg <- c(subg,onel)
+        }
+    genelist <- alllist[subg,]
+    qwt(genelist,file="famSKAT_genelist.txt",flag=2)
+    
+    varr <- read.delim("famSKATresult/Variant_FALSE_All_1.txt")
+    varr <- varr[order(varr[,6]),]
+    qwt(varr,file="famSKAT_vars.txt",flag=2)
+    
+    varV <- paste(alllist[,1],alllist[,2],alllist[,4],alllist[,5],sep="_")
+    tmp <- do.call(c,sapply(1:dim(varr)[1],function(i) which(varV==varr[i,2]) ))
+    varlist <- alllist[tmp,]
+    qwt(varlist,file="famSKAT_varlist.txt",flag=2)
+    
+}
