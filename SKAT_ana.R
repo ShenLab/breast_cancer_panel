@@ -563,7 +563,32 @@ case_control <- function(){
     lof <- c("frameshiftdeletion","frameshiftinsertion","stopgain","stoploss","none") 
     mis <- c("nonframeshiftdeletion","nonframeshiftinsertion","nonsynonymousSNV")
     
+    ## =========================================================
+    ## AJ control variant lists from PCA analysis
+    ## =========================================================
+    control_ID <- unlist(read.table("/home/local/ARCS/qh2159/breast_cancer/variants/data/AJs_586.txt"))
+    path= "/home/local/ARCS/qh2159/breast_cancer/variants/AJconVariantCalling/"
+    contf <- paste(control_ID,".tsv",sep="")
+    files <- list.files(path=path,pattern=".tsv$")
+    print(paste("Whether all AJ data with tsv files:", all(contf %in% files),sep=" "))
+    contf <- intersect(contf,files)
+   
+    contlist <- c()
+    for(i in 1:length(contf)){
+        tmp <- paste(path,contf[i],sep="")
+        oner <- read.delim(tmp)
+        oner <- cbind(oner,gsub(".tsv","",contf[i]))
+        colnames(oner)[c(24,25,30,45)] <- c("GT","AD","Subject_INFO","Subject_ID")
+        contlist <- rbind(contlist,oner)
+    }
+    contsy <- contlist[contlist[,"VariantClass"] %in% "synonymousSNV",]
+    save(contsy,file="AJcontsy_11_5")
+    contlist <- contlist[contlist[,"VariantClass"] %in% c(lof,mis),]
+    save(contlist,file="AJcontlist_11_5")
+    
+    ## =========================================================
     ## control variant lists
+    ## =========================================================
     control <- controlpheno()
     control_ID <- control[,"Subject_ID"]
     contf <- paste(control_ID,".tsv",sep="")
@@ -583,7 +608,9 @@ case_control <- function(){
     contlist <- contlist[contlist[,"VariantClass"] %in% c(lof,mis),]
     save(contlist,file="contlist_10_20")
     
+    ## =========================================================
     ## case not filtered by matched controls
+    ## =========================================================
     source("SKAT_ana.R")
     lof <- c("frameshiftdeletion","frameshiftinsertion","stopgain","stoploss","none") 
     mis <- c("nonframeshiftdeletion","nonframeshiftinsertion","nonsynonymousSNV")
@@ -609,8 +636,9 @@ case_control <- function(){
     caselist <- onlycase[onlycase[,"VariantClass"] %in% c(lof,mis),]
     save(caselist,file="caselist_10_20")
     
-    
+    ## =========================================================
     ### populations
+    ## =========================================================
     source("indexcase_burden.R")
     brall <- remove_out()
     bc.pop <- read.delim("data/WES_BCFR_phenotypic_data-19062015.txt")[,1:5]
@@ -637,8 +665,9 @@ case_control <- function(){
     contid <- unique(gsub(".tsv","",contf))
     n.cont <- c(length(contid),length(intersect(contid,Jp)),length(intersect(contid,Hp)))
     save(n.cont,file="n.cont_10_20")
-    #===========================================================================================
+    ## =========================================================================================
     ### case filtered by match controls=========================================================
+    ## =========================================================
     source("pre.R")
     path <- "/ifs/scratch/c2b2/ys_lab/yshen/WENDY/BreastCancer/Regeneron/CaseControl_Filtering"
     
