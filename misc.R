@@ -52,7 +52,8 @@ variant_filtering <- function(onelist,mis,Ecut=0.01,segd=0.95,pp2=TRUE,sig=FALSE
         popvars <- paste(alleleFres[,"CHROM"],alleleFres[,"POS"],alleleFres[,"ALLELE"],sep="_")
         allvars <- paste(onelist[,"Chromosome"],onelist[,"Position"],onelist[,"ALT"],sep="_")
         igvars <- intersect(popvars,allvars)
-        onelist[match(igvars,allvars),"alleleFre"] <- alleleFres[match(igvars,popvars),"ALLELE_FREQ"] >= popcut
+        filteredvars <- igvars[alleleFres[match(igvars,popvars),"ALLELE_FREQ"] >= popcut]
+        onelist[allvars %in% filteredvars,"alleleFre"] <- FALSE
     }
     
     ### filtered more details in VCF
@@ -128,6 +129,7 @@ burden_test <- function(caselist,contlist,testset=NULL,testtype=NULL,flag,indel=
 ## testset: test gene sets or variants 
 ## testtype: (missense, LOF and indel)
 ## flag: 1, gene/variant set; 2, single gene test; 3, single variant test
+## indel: indel variants or not
     print_log(paste("burden_test function is running ...", date(),sep=" ")) 
 
     n.case <- length(unique(caselist[,"Subject_ID"]))
@@ -173,6 +175,28 @@ burden_test <- function(caselist,contlist,testset=NULL,testtype=NULL,flag,indel=
     print_log(paste("burden_test function is done!", date(),sep=" "))
     ##========================================================================================
     oneTable
+}
+
+qwt <- function(x,filer,sep="\t",flag=0){
+    if(flag==0){
+        write.table(x,file=filer,quote=FALSE,row.names=FALSE,col.names=FALSE,sep=sep)
+    }
+    ## row.names = TRUE
+    if(flag==1){
+        write.table(x,file=filer,quote=FALSE,row.names=TRUE,col.names=FALSE,sep=sep)
+    }
+    ## col.names = TRUE
+    if(flag==2){
+        write.table(x,file=filer,quote=FALSE,row.names=FALSE,col.names=TRUE,sep=sep)
+    }
+    ## both
+    if(flag==3){
+        write.table(x,file=filer,quote=FALSE,row.names=TRUE,col.names=TRUE,sep=sep)
+    }
+    ## ALL 
+    if(flag==4){
+        write.table(x,file=filer,quote=TRUE,row.names=TRUE,col.names=TRUE,sep=sep)
+    }
 }
 
 print_log <- function(printstr){
