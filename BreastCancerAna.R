@@ -72,12 +72,12 @@ for(i in 1:length(genesets)){
         setburdens <- rbind(setburdens,tmp)
     }
 }
-setburdens;
+
 ## single gene level burden test
-geneTable <- burden_test(caselist,contlist,testset="",testtype="",flag=2)
+geneTable <- burden_test(caselist,contlist,flag=2)
 geneTable <- geneTable[order(-as.numeric(geneTable[,"Folds"]),as.numeric(geneTable[,"Pvalue"])), ]
 ## single variant level burden test
-variantTable <- burden_test(caselist,contlist,testset="",testtype="",flag=3)
+variantTable <- burden_test(caselist,contlist,flag=3)
 variantTable <- variantTable[order(-as.numeric(variantTable[,"Folds"]),as.numeric(variantTable[,"Pvalue"])), ]
 
 ## =========================output burden test to files=========================================
