@@ -10,6 +10,8 @@ outlierfile <- "/home/local/ARCS/yshen/data/WENDY/BreastCancer/Regeneron/FreezeO
 BRCA1_2pathogenicfile <- "../data/phenotype/BRCA1_2.txt"
 ## COSMIC hotspots file
 hotspotfile <- "../data/hotspots/cosmic_hotspots_2.txt"
+## non-breast cancer samples allle frequency
+alleleFrefile <- "/home/local/ARCS/ads2202/data/AJ_PCA/combined_variant_call/NonBC_Frequencies.expanded.tsv"
 ## collected tumor suppressors and cancer drivers and DNA repair genes
 TSfile <- "../data/hotspots/Tumor_suppressors_11_6.txt"
 cancerdriverfile <- "../data/hotspots/Cancer_driver_11_6.txt" ## cancer drivers
@@ -46,9 +48,9 @@ caselist <- caselist[!(caselist[,"VariantClass"] %in% syn), ]
 contlist <- contlist[!(contlist[,"VariantClass"] %in% syn), ]
 ##  variant filtering
 ## filters <- c("filtered","ExACfreq","VCFPASS","noneSegmentalDup","meta-SVM_PP2","singleton","hotspot")
-caselist <- variant_filtering(caselist,mis,Ecut=0.01,segd=0.95,pp2=TRUE,sig=FALSE,hotf=hotspotfile)
+caselist <- variant_filtering(caselist,mis,Ecut=0.01,segd=0.95,pp2=TRUE,sig=FALSE,hotf=hotspotfile,alleleFrefile,popcut=0.05)
 caselist <- caselist[caselist[,"filtered"], ]
-contlist <- variant_filtering(contlist,mis,Ecut=0.01,segd=0.95,pp2=TRUE,sig=FALSE,hotf=hotspotfile)
+contlist <- variant_filtering(contlist,mis,Ecut=0.01,segd=0.95,pp2=TRUE,sig=FALSE,hotf=hotspotfile,alleleFrefile,popcut=0.05)
 contlist <- contlist[contlist[,"filtered"], ]
 
 
@@ -57,15 +59,15 @@ contlist <- contlist[contlist[,"filtered"], ]
 TSg <- unlist(read.table(TSfile))
 DRg <- unlist(read.table(cancerdriverfile)) ## cancer drivers
 DNAreg <- unlist(read.table(DNArepairfile))
-genesets <- c(TSg,DRg,DNAreg,"")
+genesets <- list(TSg,DRg,DNAreg,NULL)
 genesetnames <- c("Tumor suppressors","Cancer drivers","DNA repairs","ALL genes")
-vartypes <- c(lof,mis,mis,"")
+vartypes <- list(lof,mis,mis,NULL)
 vartypenames <- c("LOF","D-MIS","Indels","ALL variants")
 setburdens <- c()
 for(i in 1:length(genesets)){
     for(j in 1:length(vartypes)){
         if(j==3){ indel <- TRUE;}else{indel=FALSE;}
-        tmp <- burden_test(caselist,contlist,testset=genesets[i],testtype=vartypes[j],flag=1,indel)
+        tmp <- burden_test(caselist,contlist,testset=genesets[[i]],testtype=vartypes[[j]],flag=1,indel)
         tmp[1,1:2] <- c(genesetnames[i],vartypenames[j])
         setburdens <- rbind(setburdens,tmp)
     }

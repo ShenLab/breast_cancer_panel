@@ -27,7 +27,7 @@ getVariantlist <- function(path,IDfile,namestr=".tsv",savefile){
     #onelist
 }
 
-variant_filtering <- function(onelist,mis,Ecut=0.01,segd=0.95,pp2=TRUE,sig=FALSE,hotf=""){
+variant_filtering <- function(onelist,mis,Ecut=0.01,segd=0.95,pp2=TRUE,sig=FALSE,hotf="",alleleFrefile=NULL,popcut=0.05){
     ### onelist: variant list
     ### Ecut: ExAC frequency cut off
     ### segd: segment duplication score cut off in VCF
@@ -36,7 +36,7 @@ variant_filtering <- function(onelist,mis,Ecut=0.01,segd=0.95,pp2=TRUE,sig=FALSE
     ### hotf: filtering missense with hotspot information
     print_log(paste("variant_filtering function is running ...", date(),sep=" "))
     
-    filters <- c("filtered","ExACfreq","VCFPASS","noneSegmentalDup","meta-SVM_PP2","singleton","hotspot")
+    filters <- c("filtered","ExACfreq","VCFPASS","noneSegmentalDup","meta-SVM_PP2","singleton","hotspot","alleleFre")
     filS <- matrix(FALSE,dim(onelist)[1],length(filters))
     colnames(filS) <- filters
     onelist <- cbind(onelist,filS)
@@ -45,6 +45,15 @@ variant_filtering <- function(onelist,mis,Ecut=0.01,segd=0.95,pp2=TRUE,sig=FALSE
     onelist[is.na(onelist[,"AlleleFrequency.ExAC"]),"AlleleFrequency.ExAC"] <- 0
     onelist[onelist[,"AlleleFrequency.ExAC"]==".","AlleleFrequency.ExAC"] <- 0
     onelist[as.numeric(onelist[,"AlleleFrequency.ExAC"])< Ecut,"ExACfreq"] <- TRUE
+    
+    onelist[,"alleleFre"] <- TRUE
+    if(!is.null(alleleFrefile)){
+        alleleFres <- read.delim(alleleFrefile)
+        popvars <- paste(alleleFres[,"CHROM"],alleleFres[,"POS"],alleleFres[,"ALLELE"],sep="_")
+        allvars <- paste(onelist[,"Chromosome"],onelist[,"Position"],onelist[,"ALT"],sep="_")
+        igvars <- intersect(popvars,allvars)
+        onelist[match(igvars,allvars),"alleleFre"] <- alleleFres[match(igvars,popvars),"ALLELE_FREQ"] >= popcut
+    }
     
     ### filtered more details in VCF
     badvars <- c('QD_Bad_SNP','FS_Bad_SNP','FS_Mid_SNP;QD_Mid_SNP','LowQuality','LowQD_Indel','LowQuality','VQSRTrancheSNP99.90to100.00','VQSRTrancheINDEL99.90to100.00')
@@ -107,22 +116,24 @@ variant_filtering <- function(onelist,mis,Ecut=0.01,segd=0.95,pp2=TRUE,sig=FALSE
     print_log(paste("variant_filtering parameters: PolyPhen2 used ", pp2,sep=" "))
     print_log(paste("variant_filtering parameters: singleton variant only ",sig,sep=" "))
     print_log(paste("variant_filtering parameters: variant filtered by hotspots ", hotf!="", sep=" "))
+    print_log(paste("variant_filtering parameters: population frequency filter used ", !is.null(alleleFrefile), sep=" "))
+    if(!is.null(alleleFrefile)) print_log(paste("variant_filtering parameters: population frequency cutoff ", popcut, sep=" "))
     print_log(paste("variant_filtering function is done!", date(),sep=" "))
     ##=========================================================================================
     onelist
 }
 
-burden_test <- function(caselist,contlist,testset,testtype,flag,indel=FALSE){
+burden_test <- function(caselist,contlist,testset=NULL,testtype=NULL,flag,indel=FALSE){
 ## variant lists: caselist and contlist
 ## testset: test gene sets or variants 
 ## testtype: (missense, LOF and indel)
 ## flag: 1, gene/variant set; 2, single gene test; 3, single variant test
     print_log(paste("burden_test function is running ...", date(),sep=" ")) 
 
-    n.case <- length(caselist[,"Subject_ID"])
-    n.cont <- length(contlist[,"Subject_ID"])
-    if(testset=="") testset <- union(caselist[,"Gene"],contlist[,"Gene"])
-    if(testtype=="") testtype <- unique(caselist[,"VariantClass"])
+    n.case <- length(unique(caselist[,"Subject_ID"]))
+    n.cont <- length(unique(contlist[,"Subject_ID"]))
+    if(is.null(testset)) testset <- union(caselist[,"Gene"],contlist[,"Gene"])
+    if(is.null(testtype)) testtype <- unique(caselist[,"VariantClass"])
     caselist <- caselist[caselist[,"VariantClass"] %in% testtype & caselist[,"Gene"] %in% testset, ]
     contlist <- contlist[contlist[,"VariantClass"] %in% testtype & contlist[,"Gene"] %in% testset, ]
     if(indel){
