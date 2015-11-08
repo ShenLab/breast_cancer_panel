@@ -27,6 +27,25 @@ getVariantlist <- function(path,IDfile,namestr=".tsv",savefile){
     #onelist
 }
 
+getindexcase <- function(phenofile){
+    print_log(paste("getindexcase function is running ...", date(),sep=" "))
+    pheno <- read.csv(phenofile)
+    ## one case in one family
+    famid <- unique(pheno[,1])
+    subs <- rep(FALSE,dim(pheno)[1])
+    ages <- sapply(1:dim(pheno)[1], function(i) 114 -  as.numeric(unlist(strsplit(pheno[i,"BIRTHDT"],"/"))[3]) )
+    print_log(paste("getindexcase: All subjects' ages are avaiable: ", !any(is.na(ages)),sep=" "))
+    for(i in 1:length(famid)){
+        casesub <- which(pheno[,"BreastCancer"] == "Yes" & pheno[,1]%in% famid[i])
+        onesub <- which.min(ages[casesub])
+        subs[casesub[onesub]] <- TRUE
+    }
+    indexcases <- pheno[subs,3] ## subject_IDs
+    print_log(paste("getindexcase: The number of index cases is", length(unique(indexcases)),sep=" "))
+    print_log(paste("getindexcase function is done!", date(),sep=" "))
+    indexcases
+}
+
 variant_filtering <- function(onelist,mis,Ecut=0.01,segd=0.95,pp2=TRUE,sig=FALSE,hotf="",alleleFrefile=NULL,popcut=0.05){
     ### onelist: variant list
     ### Ecut: ExAC frequency cut off
