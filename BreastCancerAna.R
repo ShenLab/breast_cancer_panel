@@ -51,6 +51,8 @@ caselist <- caselist[!(caselist[,"Subject_ID"] %in% pathogenic_sample), ]
 contlist <- contlist[!(contlist[,"Subject_ID"] %in% pathogenic_sample), ]
 ##  remove synonynous variant
 VariantClass <- c(".","frameshiftdeletion","frameshiftinsertion","none","nonframeshiftdeletion","nonframeshiftinsertion","nonsynonymousSNV","stopgain","stoploss","synonymousSNV","unknown")
+lof <- c("frameshiftdeletion","frameshiftinsertion","none","stopgain","stoploss")
+mis <- c(".","nonframeshiftdeletion","nonframeshiftinsertion","nonsynonymousSNV","unknown")
 syn <- "synonymousSNV"
 caselist <- caselist[!(caselist[,"VariantClass"] %in% syn), ]
 contlist <- contlist[!(contlist[,"VariantClass"] %in% syn), ]
@@ -63,9 +65,7 @@ contlist <- contlist[contlist[,"filtered"], ]
 
 
 ## =========================burden test for gene, variant=========================================
-## burden test for all genes, tumor suppressors, cancer drivers genes,
-lof <- c("frameshiftdeletion","frameshiftinsertion","none","stopgain","stoploss")
-mis <- c(".","nonframeshiftdeletion","nonframeshiftinsertion","nonsynonymousSNV","unknown")
+## burden test for all genes, tumor suppressors, cancer drivers genes
 TSg <- unlist(read.table(TSfile))
 DRg <- unlist(read.table(cancerdriverfile)) ## cancer drivers
 DNAreg <- unlist(read.table(DNArepairfile))

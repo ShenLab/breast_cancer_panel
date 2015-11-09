@@ -37,11 +37,12 @@ getindexcase <- function(phenofile){
     print_log(paste("getindexcase: All subjects' ages are avaiable: ", !any(is.na(ages)),sep=" "))
     for(i in 1:length(famid)){
         casesub <- which(pheno[,"BreastCancer"] == "Yes" & pheno[,1]%in% famid[i])
-        onesub <- which.min(ages[casesub])
+        ##onesub <- which.min(ages[casesub]) ## younger cases
+        onesub <- which.max(ages[casesub]) ## older cases
         subs[casesub[onesub]] <- TRUE
     }
     indexcases <- pheno[subs,3] ## subject_IDs
-    print_log(paste("getindexcase: The number of index cases is", length(unique(indexcases)),sep=" "))
+    print_log(paste("getindexcase: The number of index cases is ", length(unique(indexcases)),sep=" "))
     print_log(paste("getindexcase function is done!", date(),sep=" "))
     indexcases
 }
