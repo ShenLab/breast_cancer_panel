@@ -28,6 +28,7 @@ getVariantlist <- function(path,IDfile,namestr=".tsv",savefile){
 }
 
 getindexcase <- function(phenofile){
+    print_log("\n\n")
     print_log(paste("getindexcase function is running ...", date(),sep=" "))
     pheno <- read.csv(phenofile)
     ## one case in one family
@@ -191,6 +192,8 @@ burden_test <- function(caselist,contlist,testset=NULL,testtype=NULL,flag,indel=
     colnames(oneTable) <- cols
     
     ##======================print information to logFile======================================
+    print_log(paste("burden_test: the number of index cases used is ",n.case,sep=""))
+    print_log(paste("burden_test: the number of corresponding controls used is ",n.cont,,sep=""))
     print_log(paste("burden_test: there are totally ",dim(oneTable)[1]," tests",sep=""))
     print_log(paste("burden_test function is done!", date(),sep=" "))
     ##========================================================================================

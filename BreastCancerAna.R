@@ -52,7 +52,9 @@ contlist <- contlist[!(contlist[,"Subject_ID"] %in% pathogenic_sample), ]
 ##  remove synonynous variant
 VariantClass <- c(".","frameshiftdeletion","frameshiftinsertion","none","nonframeshiftdeletion","nonframeshiftinsertion","nonsynonymousSNV","stopgain","stoploss","synonymousSNV","unknown")
 lof <- c("frameshiftdeletion","frameshiftinsertion","none","stopgain","stoploss")
-mis <- c(".","nonframeshiftdeletion","nonframeshiftinsertion","nonsynonymousSNV","unknown")
+mis <- c("nonframeshiftdeletion","nonframeshiftinsertion","nonsynonymousSNV")
+print_log(paste("Main: LOF variant defined as : ", paste(lof,sep="",collapse=","), sep=" "))
+print_log(paste("Main: D-MIS variant defined as : ", paste(mis,sep="",collapse=","), sep=" "))
 syn <- "synonymousSNV"
 caselist <- caselist[!(caselist[,"VariantClass"] %in% syn), ]
 contlist <- contlist[!(contlist[,"VariantClass"] %in% syn), ]
@@ -94,6 +96,7 @@ indelTable <- indelTable[order(-as.numeric(indelTable[,"Folds"]),as.numeric(inde
 ## single variant level burden test
 variantTable <- burden_test(caselist,contlist,flag=3)
 variantTable <- variantTable[order(-as.numeric(variantTable[,"Folds"]),as.numeric(variantTable[,"Pvalue"])), ]
+
 
 ## =========================output burden test to files=========================================
 ### output files
