@@ -178,15 +178,18 @@ variantDis <- function(){
     rm(caselist)
     rm(contlist)
     
-    load("../resultf/caselist_singleton")
-    load("../resultf/contlist_singleton")
+    load("../resultf/caselist_singleton_0.01")
+    load("../resultf/contlist_singleton_0.01")
     varTypes1 <- variantDis_one(caselist,contlist)
     
     #=======================================
     outputpath <- "../resultf/"
     qwt(varTypes,file=paste(outputpath,"Jewish_case_control_variants.txt",sep=""),flag=2)
     qwt(varTypes1,file=paste(outputpath,"Jewish_case_control_variants_filtered_singleton.txt",sep=""),flag=2)
-       
+ 
+    density_plots(varTypes,"../resultf/plots_all/")
+    density_plots(varTypes1,"../resultf/plots_singleton_0.01/")
+    
 }
 
 variantDis_one <- function(caselist,contlist){
@@ -208,7 +211,7 @@ variantDis_one <- function(caselist,contlist){
         onecase <- caselist[caselist[,"Subject_ID"]==cases[i], ]
         varTypes[i,3:7] <- c(sum(onecase[,"VariantClass"] %in% lof), sum(onecase[,"VariantClass"] %in% mis), sum(onecase[,"VariantClass"] %in% indel),sum(onecase[,"VariantClass"] %in% syn),sum(onecase[,"VariantClass"] %in% unknown))
     }
-    for(i in n.cont){
+    for(i in 1:n.cont){
         onecont <- contlist[contlist[,"Subject_ID"]==conts[i], ]
         varTypes[i+n.case,3:7] <- c(sum(onecont[,"VariantClass"] %in% lof), sum(onecont[,"VariantClass"] %in% mis), sum(onecase[,"VariantClass"] %in% indel), sum(onecont[,"VariantClass"] %in% syn),sum(onecont[,"VariantClass"] %in% unknown))
     }
@@ -220,4 +223,28 @@ variantDis_one <- function(caselist,contlist){
     colnames(varTypes) <- c("case/control","Subject_ID","#LOF","#MIS","#indel","#synonymous","#unknown")
     
     varTypes  
+}
+
+density_plots <- function(oneVar,outputpath){
+    if(!file.exists(outputpath)){
+        dir.create(outputpath, showWarnings = TRUE, recursive = FALSE)
+    }
+    
+    tmp <- oneVar[,3:7]
+    mode(tmp) <- "numeric"
+    VarT <- c("LOF","MIS","indel","synonymous","unknown","ALL")
+    for(i in 1:6){
+        pdf(paste(outputpath,VarT[i],"_Dis.pdf",sep=""),height=10,width=10)
+        if(i==6){
+            x <- as.numeric(rowSums(tmp))
+        }else{
+            x <- as.numeric(oneVar[,i+2])
+        }
+        g <- oneVar[,1]
+        plot(density(x[g=="case"]),col=1,type="l")
+        lines(density(x[g=="control"]),col=2,type="l")
+        title(main=paste(VarT[i]," : case-control distribution",sep=""))
+        legend("topright",legend=c("case","control"),lty=rep(1,2),lwd=2,col=1:2)
+        dev.off()
+    }
 }
