@@ -24,12 +24,16 @@ AJcontrolfile <- "/home/local/ARCS/qh2159/breast_cancer/variants/data/AJs_585.tx
 
 ## =========================variant class definition=================================
 VariantClass <- c(".","frameshiftdeletion","frameshiftinsertion","none","nonframeshiftdeletion","nonframeshiftinsertion","nonsynonymousSNV","stopgain","stoploss","synonymousSNV","unknown")
-lof <- c("frameshiftdeletion","frameshiftinsertion","none","stopgain","stoploss")
-mis <- c("nonframeshiftdeletion","nonframeshiftinsertion","nonsynonymousSNV")
+lof <- c("frameshiftdeletion","frameshiftinsertion","none","stopgain","stoploss",".")
+mis <- "nonsynonymousSNV"
+indel <- c("nonframeshiftdeletion","nonframeshiftinsertion")
 syn <- "synonymousSNV"
+unknown <- "unknown"
 print_log(paste("Main: LOF variant defined as : ", paste(lof,sep="",collapse=","), sep=" "))
 print_log(paste("Main: D-MIS variant defined as : ", paste(mis,sep="",collapse=","), sep=" "))
+print_log(paste("Main: indel variant defined as : ", paste(indel,sep="",collapse=","), sep=" "))
 print_log(paste("Main: syn variant defined as : ", syn, sep=" "))
+print_log(paste("Main: unknown variant defined as : ", paste(unknown,sep="",collapse=","), sep=" "))
 
 ## =========================variant list filtering===========================================
 ##getVariantlist(casevariantpath,AJcasefile,namestr=".AllVariants.tsv","../data/Rdata/AJcaselist_11_9")
@@ -77,18 +81,19 @@ Panelg <- unlist(read.table(Panelgfile))
 Panelg <- setdiff(Panelg,c(TSg,DRg,DNAreg))
 Gtop <- read.table(GTExfile)
 allgenes <- union(Gtop[,1],c(TSg,DRg,DNAreg,Panelg))
+
 Ggs <- c("top 25%","top 50%","top 75%","top 100%")
 GgL <- list(Gtop[1:floor(0.25*dim(Gtop)[1]),1], Gtop[1:floor(0.5*dim(Gtop)[1]),1], Gtop[1:floor(0.75*dim(Gtop)[1]),1],allgenes)
 genesets <- list(TSg,DRg,DNAreg,Panelg)
 genesetnames <- c("Tumor suppressors","Cancer drivers","DNA repairs","Panel genes")
-vartypes <- list(lof,mis,mis,NULL,syn)
-vartypenames <- c("LOF","D-MIS","Indels","ALL variants","Synonymous")
+vartypes <- list(lof,mis,indel,NULL,syn,unknown)
+vartypenames <- c("LOF","D-MIS","Indels","ALL variants","Synonymous","Unknown")
+
 setburdens <- c()
 for(i in 1:length(genesets)){
     for(j in 1:length(vartypes)){
-        if(j==3){ indel <- TRUE;}else{indel=FALSE;}
         for(k in 1:length(Ggs)){
-            tmp <- burden_test(caselist,contlist,testset=intersect(genesets[[i]],GgL[[k]]),testtype=vartypes[[j]],flag=1,indel,sig)
+            tmp <- burden_test(caselist,contlist,testset=intersect(genesets[[i]],GgL[[k]]),testtype=vartypes[[j]],flag=1,sig)
             tmp[1,1:2] <- c(genesetnames[i],vartypenames[j])
             tmp <- cbind(tmp,Ggs[k])
             setburdens <- rbind(setburdens,tmp)
@@ -100,10 +105,12 @@ LOFTable <- burden_test(caselist,contlist,testtype=lof,flag=2,sig=sig)
 LOFTable <- LOFTable[order(-as.numeric(LOFTable[,"Folds"]),as.numeric(LOFTable[,"Pvalue"])), ]
 MISTable <- burden_test(caselist,contlist,testtype=mis,flag=2,sig=sig)
 MISTable <- MISTable[order(-as.numeric(MISTable[,"Folds"]),as.numeric(MISTable[,"Pvalue"])), ]
-indelTable <- burden_test(caselist,contlist,testtype=mis,flag=2,indel=TRUE,sig=sig)
+indelTable <- burden_test(caselist,contlist,testtype=indel,flag=2,sig=sig)
 indelTable <- indelTable[order(-as.numeric(indelTable[,"Folds"]),as.numeric(indelTable[,"Pvalue"])), ]
 synTable <- burden_test(caselist,contlist,testtype=syn,flag=2,sig=sig)
 synTable <- synTable[order(-as.numeric(synTable[,"Folds"]),as.numeric(synTable[,"Pvalue"])), ]
+unkTable <- burden_test(caselist,contlist,testtype=unknown,flag=2,sig=sig)
+unkTable <- unkTable[order(-as.numeric(unkTable[,"Folds"]),as.numeric(unkTable[,"Pvalue"])), ]
 ## single variant level burden test
 variantTable <- burden_test(caselist,contlist,flag=3,sig=sig)
 variantTable <- variantTable[order(-as.numeric(variantTable[,"Folds"]),as.numeric(variantTable[,"Pvalue"])), ]
@@ -121,6 +128,7 @@ loffile <- paste(outputpath,"LOF_level.burden.txt",sep="") ###LOF: single gene l
 misfile <- paste(outputpath,"MIS_level.burden.txt",sep="") ###MIS: single gene level burden test                 
 indelfile <- paste(outputpath,"indel_level.burden.txt",sep="") ###indel: single gene level burden test
 synfile <- paste(outputpath,"syn_level.burden.txt",sep="") ###synonymous
+unkfile <- paste(outputpath,"Unknown_level.burden.txt",sep="") ### unknown
 vburdenfile <- paste(outputpath,"variant_level.burden.txt",sep="") ### single variant level burden test
 ## write to files
 qwt(setburdens,setburdenfile,flag=2)
@@ -128,6 +136,7 @@ qwt(LOFTable,loffile,flag=2)
 qwt(MISTable,misfile,flag=2)
 qwt(indelTable,indelfile,flag=2)
 qwt(synTable,synfile,flag=2)
+qwt(unkTable,unkfile,flag=2)
 qwt(variantTable,vburdenfile,flag=2)
 
 
@@ -143,8 +152,8 @@ rowTitle[variantlist[,"Gene"] %in% DRg,1] <- "Cancer_driver"
 rowTitle[variantlist[,"Gene"] %in% DNAreg,1] <- "DNA_repair"
 rowTitle[variantlist[,"Gene"] %in% Panelg,1] <- "Panel_genes"
 rowTitle[variantlist[,"VariantClass"] %in% lof,2] <- "LOF" 
-rowTitle[variantlist[,"VariantClass"] %in% mis & nchar(variantlist[,"REF"]) != nchar(variantlist[,"ALT"]),2] <- "indels"
-rowTitle[variantlist[,"VariantClass"] %in% mis & nchar(variantlist[,"REF"]) == nchar(variantlist[,"ALT"]),2] <- "d-mis"
+rowTitle[variantlist[,"VariantClass"] %in% indel,2] <- "indels"
+rowTitle[variantlist[,"VariantClass"] %in% mis,2] <- "d-mis"
 rowTitle[,3] <- variantlist[,"Gene"]
 rowTitle[,4:10] <- as.matrix(varTable[match(vars,varTable[,2]),c(2:8)])
 variantlist <- variantlist[,colnames(variantlist)!="Gene"]

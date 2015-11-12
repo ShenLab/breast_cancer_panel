@@ -102,8 +102,8 @@ variant_filtering <- function(onelist,mis,Ecut=0.01,segd=0.95,pp2=TRUE,sig=FALSE
     onelist[,"meta-SVM_PP2"] <- TRUE
     subs2 <- onelist[,"VariantClass"] %in% mis
     if(pp2){subs1 <- onelist[,"PP2prediction"]=="D" | onelist[,"MetaSVM"]=="D";}else{subs1 <- onelist[,"MetaSVM"]=="D";}   
-    subs3 <- nchar(onelist[,"REF"]) != nchar(onelist[,"ALT"]) ### indels
-    subs2 <- subs2 & !subs3
+    #subs3 <- nchar(onelist[,"REF"]) != nchar(onelist[,"ALT"]) ### indels
+    #subs2 <- subs2 & !subs3
     onelist[subs2 & !subs1,"meta-SVM_PP2"] <- FALSE
     
     onelist[,"singleton"] <- TRUE
@@ -148,12 +148,11 @@ variant_filtering <- function(onelist,mis,Ecut=0.01,segd=0.95,pp2=TRUE,sig=FALSE
     onelist
 }
 
-burden_test <- function(caselist,contlist,testset=NULL,testtype=NULL,flag,indel=FALSE,sig=FALSE){
+burden_test <- function(caselist,contlist,testset=NULL,testtype=NULL,flag,sig=FALSE){
 ## variant lists: caselist and contlist
 ## testset: test gene sets or variants 
 ## testtype: (missense, LOF and indel)
 ## flag: 1, gene/variant set; 2, single gene test; 3, single variant test
-## indel: indel variants or not
 ## sig: singleton variants or not
     
     print_log(paste("burden_test function is running ...", date(),sep=" ")) 
@@ -164,10 +163,6 @@ burden_test <- function(caselist,contlist,testset=NULL,testtype=NULL,flag,indel=
     if(is.null(testtype)) testtype <- unique(caselist[,"VariantClass"])
     caselist <- caselist[caselist[,"VariantClass"] %in% testtype & caselist[,"Gene"] %in% testset, ]
     contlist <- contlist[contlist[,"VariantClass"] %in% testtype & contlist[,"Gene"] %in% testset, ]
-    if(indel){
-        caselist <- caselist[nchar(caselist[,"REF"]) != nchar(caselist[,"ALT"]), ]
-        contlist <- contlist[nchar(contlist[,"REF"]) != nchar(contlist[,"ALT"]), ]
-    }
     casevars <- paste(caselist[,1],caselist[,2],caselist[,4],caselist[,5],sep="_") 
     contvars <- paste(contlist[,1],contlist[,2],contlist[,4],contlist[,5],sep="_")
     

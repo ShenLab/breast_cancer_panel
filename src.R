@@ -157,3 +157,67 @@ ts <- gsub("Sep-05","SEPT5",ts);ts <- gsub("Sep-06","SEPT6",ts);ts <- gsub("Sep-
 qwt(ts,"../data/hotspots/Tumor_suppressors_11_11.txt")
 
 }
+
+variantDis <- function(){
+    source("misc.R")
+    source("src.R")
+    load("../data/Rdata/AJcaselist_11_9")
+    phenofile <- "../data/phenotype/WES BCFR phenotypic data.csv" ## phenotype file to get index cases only
+    outlierfile <- "/home/local/ARCS/yshen/data/WENDY/BreastCancer/Regeneron/FreezeOneVariantCalling/Outliers_to_be_excluded.list"  ## outlier samples
+    caselist <- onelist
+    rm(onelist)
+    indexcases <- getindexcase(phenofile)
+    caselist <- caselist[caselist[,"Subject_ID"] %in% indexcases, ] ## only index cases
+    outliers <- unlist(read.table(outlierfile)) ## exclude outlier subjects
+    outliers <- sapply(1:length(outliers),function(i) {tmp=unlist(strsplit(outliers[i],"_"));setdiff(gsub("\\D","",tmp),c("",paste("00",1:9,sep="")));})
+    caselist <- caselist[!(caselist[,"Subject_ID"] %in% outliers), ]
+    load("../data/Rdata/AJcontlist_11_9")
+    contlist <- onelist
+    varTypes <- variantDis_one(caselist,contlist)
+    
+    rm(caselist)
+    rm(contlist)
+    
+    load("../resultf/caselist_singleton")
+    load("../resultf/contlist_singleton")
+    varTypes1 <- variantDis_one(caselist,contlist)
+    
+    #=======================================
+    outputpath <- "../resultf/"
+    qwt(varTypes,file=paste(outputpath,"Jewish_case_control_variants.txt",sep=""),flag=2)
+    qwt(varTypes1,file=paste(outputpath,"Jewish_case_control_variants_filtered_singleton.txt",sep=""),flag=2)
+       
+}
+
+variantDis_one <- function(caselist,contlist){
+
+    VariantClass <- c(".","frameshiftdeletion","frameshiftinsertion","none","nonframeshiftdeletion","nonframeshiftinsertion","nonsynonymousSNV","stopgain","stoploss","synonymousSNV","unknown")
+    lof <- c("frameshiftdeletion","frameshiftinsertion","none","stopgain","stoploss",".")
+    mis <- "nonsynonymousSNV"
+    indel <- c("nonframeshiftdeletion","nonframeshiftinsertion")
+    syn <- "synonymousSNV"
+    unknown <- c("unknown")
+    
+    cases <- unique(caselist[,"Subject_ID"])
+    conts <- unique(contlist[,"Subject_ID"])
+    n.case <- length(cases)
+    n.cont <- length(conts)
+    varTypes <- matrix(0,n.case+n.cont,7)
+    
+    for(i in 1:n.case){
+        onecase <- caselist[caselist[,"Subject_ID"]==cases[i], ]
+        varTypes[i,3:7] <- c(sum(onecase[,"VariantClass"] %in% lof), sum(onecase[,"VariantClass"] %in% mis), sum(onecase[,"VariantClass"] %in% indel),sum(onecase[,"VariantClass"] %in% syn),sum(onecase[,"VariantClass"] %in% unknown))
+    }
+    for(i in n.cont){
+        onecont <- contlist[contlist[,"Subject_ID"]==conts[i], ]
+        varTypes[i+n.case,3:7] <- c(sum(onecont[,"VariantClass"] %in% lof), sum(onecont[,"VariantClass"] %in% mis), sum(onecase[,"VariantClass"] %in% indel), sum(onecont[,"VariantClass"] %in% syn),sum(onecont[,"VariantClass"] %in% unknown))
+    }
+    
+    varTypes[,1] <- "control"
+    varTypes[1:n.case,1] <- "case"
+    varTypes[1:n.case,2] <- cases
+    varTypes[(n.case+1):(n.case+n.cont),2] <- conts
+    colnames(varTypes) <- c("case/control","Subject_ID","#LOF","#MIS","#indel","#synonymous","#unknown")
+    
+    varTypes  
+}
