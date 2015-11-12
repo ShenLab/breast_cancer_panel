@@ -241,9 +241,8 @@ density_plots <- function(oneVar,outputpath){
             x <- as.numeric(oneVar[,i+2])
         }
         g <- oneVar[,1]
-        plot(density(x[g=="case"]),col=1,type="l")
+        plot(density(x[g=="case"]),col=1,type="l",main=paste(VarT[i]," : case-control distribution",sep=""))
         lines(density(x[g=="control"]),col=2,type="l")
-        title(main=paste(VarT[i]," : case-control distribution",sep=""))
         legend("topright",legend=c("case","control"),lty=rep(1,2),lwd=2,col=1:2)
         dev.off()
     }

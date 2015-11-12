@@ -65,10 +65,10 @@ contlist <- contlist[!(contlist[,"Subject_ID"] %in% pathogenic_sample), ]
 #contlist <- contlist[!(contlist[,"VariantClass"] %in% syn), ]
 ##  variant filtering
 ## filters <- c("filtered","ExACfreq","VCFPASS","noneSegmentalDup","meta-SVM_PP2","singleton","hotspot")
-sig=TRUE
-caselist <- variant_filtering(caselist,mis,Ecut=0.001,segd=0.95,pp2=TRUE,sig=sig,hotf=hotspotfile,alleleFrefile,popcut=0.05)
+sig=FALSE
+caselist <- variant_filtering(caselist,mis,Ecut=0.01,segd=0.95,pp2=TRUE,sig=sig,hotf=hotspotfile,alleleFrefile,popcut=0.05)
 caselist <- caselist[caselist[,"filtered"], ]
-contlist <- variant_filtering(contlist,mis,Ecut=0.001,segd=0.95,pp2=TRUE,sig=sig,hotf=hotspotfile,alleleFrefile,popcut=0.05)
+contlist <- variant_filtering(contlist,mis,Ecut=0.01,segd=0.95,pp2=TRUE,sig=sig,hotf=hotspotfile,alleleFrefile,popcut=0.05)
 contlist <- contlist[contlist[,"filtered"], ]
 
 
@@ -167,7 +167,3 @@ colnames(variantlist)[1:10] <- c("Gene_sets","variant_type","Gene","Variant","#c
 qwt(variantlist,file="../resultf/burdentest/geneset_variantlist.txt",flag=2)
 indelsfile <- "../resultf/burdentest/indels.txt"
 qwt(variantlist[variantlist[,"variant_type"]=="indels",c("Chromosome","Position","Subject_ID")],file=indelsfile)
-
-
-
-
