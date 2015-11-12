@@ -21,6 +21,16 @@ AJcasefile <- "/home/local/ARCS/yshen/data/WENDY/BreastCancer/Regeneron/tablesan
 contvariantpath <- "/home/local/ARCS/qh2159/breast_cancer/variants/AJconVariantCalling/"
 AJcontrolfile <- "/home/local/ARCS/qh2159/breast_cancer/variants/data/AJs_585.txt"
 
+
+## =========================variant class definition=================================
+VariantClass <- c(".","frameshiftdeletion","frameshiftinsertion","none","nonframeshiftdeletion","nonframeshiftinsertion","nonsynonymousSNV","stopgain","stoploss","synonymousSNV","unknown")
+lof <- c("frameshiftdeletion","frameshiftinsertion","none","stopgain","stoploss")
+mis <- c("nonframeshiftdeletion","nonframeshiftinsertion","nonsynonymousSNV")
+syn <- "synonymousSNV"
+print_log(paste("Main: LOF variant defined as : ", paste(lof,sep="",collapse=","), sep=" "))
+print_log(paste("Main: D-MIS variant defined as : ", paste(mis,sep="",collapse=","), sep=" "))
+print_log(paste("Main: syn variant defined as : ", syn, sep=" "))
+
 ## =========================variant list filtering===========================================
 ##getVariantlist(casevariantpath,AJcasefile,namestr=".AllVariants.tsv","../data/Rdata/AJcaselist_11_9")
 ##getVariantlist(contvariantpath,AJcontrolfile,namestr=".tsv","../data/Rdata/AJcontlist_11_9")
@@ -47,20 +57,14 @@ pathogenic_sample <- tmp[tmp[,1] %in% c("likely pathogenic","pathogenic"),"Subje
 caselist <- caselist[!(caselist[,"Subject_ID"] %in% pathogenic_sample), ]
 contlist <- contlist[!(contlist[,"Subject_ID"] %in% pathogenic_sample), ]
 ##  synonynous variant
-VariantClass <- c(".","frameshiftdeletion","frameshiftinsertion","none","nonframeshiftdeletion","nonframeshiftinsertion","nonsynonymousSNV","stopgain","stoploss","synonymousSNV","unknown")
-lof <- c("frameshiftdeletion","frameshiftinsertion","none","stopgain","stoploss")
-mis <- c("nonframeshiftdeletion","nonframeshiftinsertion","nonsynonymousSNV")
-syn <- "synonymousSNV"
-print_log(paste("Main: LOF variant defined as : ", paste(lof,sep="",collapse=","), sep=" "))
-print_log(paste("Main: D-MIS variant defined as : ", paste(mis,sep="",collapse=","), sep=" "))
-print_log(paste("Main: syn variant defined as : ", syn, sep=" "))
 #caselist <- caselist[!(caselist[,"VariantClass"] %in% syn), ]
 #contlist <- contlist[!(contlist[,"VariantClass"] %in% syn), ]
 ##  variant filtering
 ## filters <- c("filtered","ExACfreq","VCFPASS","noneSegmentalDup","meta-SVM_PP2","singleton","hotspot")
-caselist <- variant_filtering(caselist,mis,Ecut=0.01,segd=0.95,pp2=TRUE,sig=TRUE,hotf=hotspotfile,alleleFrefile,popcut=0.05)
+sig=TRUE
+caselist <- variant_filtering(caselist,mis,Ecut=0.01,segd=0.95,pp2=TRUE,sig=sig,hotf=hotspotfile,alleleFrefile,popcut=0.05)
 caselist <- caselist[caselist[,"filtered"], ]
-contlist <- variant_filtering(contlist,mis,Ecut=0.01,segd=0.95,pp2=TRUE,sig=TRUE,hotf=hotspotfile,alleleFrefile,popcut=0.05)
+contlist <- variant_filtering(contlist,mis,Ecut=0.01,segd=0.95,pp2=TRUE,sig=sig,hotf=hotspotfile,alleleFrefile,popcut=0.05)
 contlist <- contlist[contlist[,"filtered"], ]
 
 
@@ -92,38 +96,38 @@ for(i in 1:length(genesets)){
     }
 }
 ## single gene level burden test
-LOFTable <- burden_test(caselist,contlist,testtype=lof,flag=2)
+LOFTable <- burden_test(caselist,contlist,testtype=lof,flag=2,sig=sig)
 LOFTable <- LOFTable[order(-as.numeric(LOFTable[,"Folds"]),as.numeric(LOFTable[,"Pvalue"])), ]
-MISTable <- burden_test(caselist,contlist,testtype=mis,flag=2)
+MISTable <- burden_test(caselist,contlist,testtype=mis,flag=2,sig=sig)
 MISTable <- MISTable[order(-as.numeric(MISTable[,"Folds"]),as.numeric(MISTable[,"Pvalue"])), ]
-indelTable <- burden_test(caselist,contlist,testtype=mis,flag=2,indel=TRUE)
+indelTable <- burden_test(caselist,contlist,testtype=mis,flag=2,indel=TRUE,sig=sig)
 indelTable <- indelTable[order(-as.numeric(indelTable[,"Folds"]),as.numeric(indelTable[,"Pvalue"])), ]
-synTable <- burden_test(caselist,contlist,testtype=syn,flag=2)
+synTable <- burden_test(caselist,contlist,testtype=syn,flag=2,sig=sig)
 synTable <- synTable[order(-as.numeric(synTable[,"Folds"]),as.numeric(synTable[,"Pvalue"])), ]
 ## single variant level burden test
-variantTable <- burden_test(caselist,contlist,flag=3)
+variantTable <- burden_test(caselist,contlist,flag=3,sig=sig)
 variantTable <- variantTable[order(-as.numeric(variantTable[,"Folds"]),as.numeric(variantTable[,"Pvalue"])), ]
 
 
 ## =========================output burden test to files=========================================
+outputpath <- "../resultf/burdentest/"
 ### output files
-if(!file.exists("../resultf/burdentest/")){
-    dir.create("../resultf/burdentest/", showWarnings = TRUE, recursive = FALSE)
+if(!file.exists(outputpath)){
+    dir.create(outputpath, showWarnings = TRUE, recursive = FALSE)
 }
-### gene set and variant types burden test file
-setburdenfile <- "../resultf/burdentest/gene_variant_set.burden.txt"
+### output file names
+setburdenfile <- paste(outputpath,"gene_variant_set.burden.txt",sep="") ### gene set and variant types burden test file
+loffile <- paste(outputpath,"LOF_level.burden.txt",sep="") ###LOF: single gene level burden test
+misfile <- paste(outputpath,"MIS_level.burden.txt",sep="") ###MIS: single gene level burden test                 
+indelfile <- paste(outputpath,"indel_level.burden.txt",sep="") ###indel: single gene level burden test
+synfile <- paste(outputpath,"syn_level.burden.txt",sep="") ###synonymous
+vburdenfile <- paste(outputpath,"variant_level.burden.txt",sep="") ### single variant level burden test
+## write to files
 qwt(setburdens,setburdenfile,flag=2)
-### single gene level burden test
-loffile <- "../resultf/burdentest/LOF_level.burden.txt"
 qwt(LOFTable,loffile,flag=2)
-misfile <- "../resultf/burdentest/MIS_level.burden.txt"
 qwt(MISTable,misfile,flag=2)
-indelfile <- "../resultf/burdentest/indel_level.burden.txt"
 qwt(indelTable,indelfile,flag=2)
-synfile <- "../resultf/burdentest/syn_level.burden.txt"
 qwt(synTable,synfile,flag=2)
-### single variant level burden test
-vburdenfile <- "../resultf/burdentest/variant_level.burden.txt"
 qwt(variantTable,vburdenfile,flag=2)
 
 
