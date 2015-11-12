@@ -62,9 +62,9 @@ contlist <- contlist[!(contlist[,"Subject_ID"] %in% pathogenic_sample), ]
 ##  variant filtering
 ## filters <- c("filtered","ExACfreq","VCFPASS","noneSegmentalDup","meta-SVM_PP2","singleton","hotspot")
 sig=TRUE
-caselist <- variant_filtering(caselist,mis,Ecut=0.01,segd=0.95,pp2=TRUE,sig=sig,hotf=hotspotfile,alleleFrefile,popcut=0.05)
+caselist <- variant_filtering(caselist,mis,Ecut=0.001,segd=0.95,pp2=TRUE,sig=sig,hotf=hotspotfile,alleleFrefile,popcut=0.05)
 caselist <- caselist[caselist[,"filtered"], ]
-contlist <- variant_filtering(contlist,mis,Ecut=0.01,segd=0.95,pp2=TRUE,sig=sig,hotf=hotspotfile,alleleFrefile,popcut=0.05)
+contlist <- variant_filtering(contlist,mis,Ecut=0.001,segd=0.95,pp2=TRUE,sig=sig,hotf=hotspotfile,alleleFrefile,popcut=0.05)
 contlist <- contlist[contlist[,"filtered"], ]
 
 
@@ -110,7 +110,7 @@ variantTable <- variantTable[order(-as.numeric(variantTable[,"Folds"]),as.numeri
 
 
 ## =========================output burden test to files=========================================
-outputpath <- "../resultf/burdentest/"
+outputpath <- "../resultf/burdentest_all_0.001/"
 ### output files
 if(!file.exists(outputpath)){
     dir.create(outputpath, showWarnings = TRUE, recursive = FALSE)

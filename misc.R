@@ -27,7 +27,7 @@ getVariantlist <- function(path,IDfile,namestr=".tsv",savefile){
     #onelist
 }
 
-getindexcase <- function(phenofile){
+getindexcase <- function(phenofile,agem="max"){
     print_log("\n\n")
     print_log(paste("getindexcase function is running ...", date(),sep=" "))
     pheno <- read.csv(phenofile)
@@ -38,8 +38,11 @@ getindexcase <- function(phenofile){
     print_log(paste("getindexcase: All subjects' ages are avaiable: ", !any(is.na(ages)),sep=" "))
     for(i in 1:length(famid)){
         casesub <- which(pheno[,"BreastCancer"] == "Yes" & pheno[,1]%in% famid[i])
-        ##onesub <- which.min(ages[casesub]) ## younger cases
-        onesub <- which.max(ages[casesub]) ## older cases
+        if(agem=="max"){
+            onesub <- which.max(ages[casesub]) ## older cases
+        }else{
+            onesub <- which.min(ages[casesub]) ## younger cases
+        }
         subs[casesub[onesub]] <- TRUE
     }
     indexcases <- pheno[subs,3] ## subject_IDs
