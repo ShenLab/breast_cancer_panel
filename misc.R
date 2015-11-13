@@ -51,16 +51,15 @@ getindexcase <- function(phenofile,agem="max"){
     indexcases
 }
 
-variant_filtering <- function(onelist,mis,Ecut=0.01,segd=0.95,pp2=TRUE,sig=FALSE,hotf="",alleleFrefile=NULL,popcut=0.05){
+variant_filtering <- function(onelist,mis,Ecut=0.01,segd=0.95,pp2=TRUE,hotf="",alleleFrefile=NULL,popcut=0.05){
     ### onelist: variant list
     ### Ecut: ExAC frequency cut off
     ### segd: segment duplication score cut off in VCF
     ### pp2: whether use PolyPhen2 to predict damaging missense or not
-    ### sig: whether only consider the singleton variants or not
     ### hotf: filtering missense with hotspot information
     print_log(paste("variant_filtering function is running ...", date(),sep=" "))
     
-    filters <- c("filtered","ExACfreq","VCFPASS","noneSegmentalDup","meta-SVM_PP2","singleton","hotspot","alleleFre")
+    filters <- c("filtered","ExACfreq","VCFPASS","noneSegmentalDup","meta-SVM_PP2","hotspot","alleleFre")
     filS <- matrix(FALSE,dim(onelist)[1],length(filters))
     colnames(filS) <- filters
     onelist <- cbind(onelist,filS)
@@ -105,15 +104,7 @@ variant_filtering <- function(onelist,mis,Ecut=0.01,segd=0.95,pp2=TRUE,sig=FALSE
     #subs3 <- nchar(onelist[,"REF"]) != nchar(onelist[,"ALT"]) ### indels
     #subs2 <- subs2 & !subs3
     onelist[subs2 & !subs1,"meta-SVM_PP2"] <- FALSE
-    
-    onelist[,"singleton"] <- TRUE
-    if(sig){
-        vs <- paste(onelist[,1],onelist[,2],onelist[,4],onelist[,5],sep="_") ####!!!!
-        vsdup <- vs[duplicated(vs)]
-        subs1 <- vs %in% vsdup
-        onelist[subs1, "singleton"] <- FALSE
-    }
-    
+        
     onelist[,"hotspot"] <- TRUE
     if(hotf!=""){
         missub <- which(onelist[,"VariantClass"] %in% mis)  ### only missense mutations
@@ -139,13 +130,18 @@ variant_filtering <- function(onelist,mis,Ecut=0.01,segd=0.95,pp2=TRUE,sig=FALSE
     print_log(paste("variant_filtering parameters: Allele Frequency ExAC ", Ecut,sep=" "))
     print_log(paste("variant_filtering parameters: Segment duplication score ", segd,sep=" "))
     print_log(paste("variant_filtering parameters: PolyPhen2 used ", pp2,sep=" "))
-    print_log(paste("variant_filtering parameters: singleton variant only ",sig,sep=" "))
     print_log(paste("variant_filtering parameters: variant filtered by hotspots ", hotf!="", sep=" "))
     print_log(paste("variant_filtering parameters: population frequency filter used ", !is.null(alleleFrefile), sep=" "))
     if(!is.null(alleleFrefile)) print_log(paste("variant_filtering parameters: population frequency cutoff ", popcut, sep=" "))
     print_log(paste("variant_filtering function is done!", date(),sep=" "))
     ##=========================================================================================
     onelist
+}
+
+singleton_variants <- function(casevars,contvars){
+    vs <- c(casevars,contvars)
+    singletons <- setdiff(vs,vs[duplicated(vs)])
+    singletons
 }
 
 burden_test <- function(caselist,contlist,testset=NULL,testtype=NULL,flag,sig=FALSE){

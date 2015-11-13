@@ -68,11 +68,21 @@ tmp <- read.delim(BRCA1_2pathogenicfile)
 pathogenic_sample <- tmp[tmp[,1] %in% c("likely pathogenic","pathogenic"),"Subject_ID"]
 caselist <- caselist[!(caselist[,"Subject_ID"] %in% pathogenic_sample), ]
 contlist <- contlist[!(contlist[,"Subject_ID"] %in% pathogenic_sample), ]
+## keep singleton variants only
+if(sig){
+    print_log(paste("variant_filtering parameters: singleton variant only ",sig,sep=" "))
+    casevars <- paste(caselist[,1],caselist[,2],caselist[,4],caselist[,5],sep="_")
+    contvars <- paste(contlist[,1],contlist[,2],contlist[,4],contlist[,5],sep="_")
+    singletons <- singleton_variants(casevars,contvars)
+    caselist <- caselist[casevars %in% singletons,]
+    contlist <- contlist[contvars %in% singletons,]
+}
 ## variant filtering: filters <- c("filtered","ExACfreq","VCFPASS","noneSegmentalDup","meta-SVM_PP2","singleton","hotspot")
-caselist <- variant_filtering(caselist,mis,Ecut=Ecut,segd=0.95,pp2=TRUE,sig=sig,hotf=hotspotfile,alleleFrefile,popcut=0.05)
+caselist <- variant_filtering(caselist,mis,Ecut=Ecut,segd=0.95,pp2=TRUE,hotf=hotspotfile,alleleFrefile,popcut=0.05)
 caselist <- caselist[caselist[,"filtered"], ]
-contlist <- variant_filtering(contlist,mis,Ecut=Ecut,segd=0.95,pp2=TRUE,sig=FALSE,hotf=hotspotfile,alleleFrefile,popcut=0.05)
+contlist <- variant_filtering(contlist,mis,Ecut=Ecut,segd=0.95,pp2=TRUE,hotf=hotspotfile,alleleFrefile,popcut=0.05)
 contlist <- contlist[contlist[,"filtered"], ]
+
 
 print_log("burden test for gene, variant ...")
 ## =========================burden test for gene, variant=========================================
