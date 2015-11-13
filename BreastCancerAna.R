@@ -25,7 +25,7 @@ contvariantpath <- "/home/local/ARCS/qh2159/breast_cancer/variants/AJconVariantC
 AJcontrolfile <- "/home/local/ARCS/qh2159/breast_cancer/variants/data/AJs_585.txt"
 Cohortfile <- "../resultf/BreastCancer_VariantList_11_12"
 
-
+print_log(paste("burden_test parameters are singleton only: ",sig,"; ExAC frequency: ",Ecut,"; hotspots file: ",hotspotfile,sep=" "))
 ## =========================variant class definition and test gene sets=================================
 VariantClass <- c(".","frameshiftdeletion","frameshiftinsertion","none","nonframeshiftdeletion","nonframeshiftinsertion","nonsynonymousSNV","stopgain","stoploss","synonymousSNV","unknown")
 lof <- c("frameshiftdeletion","frameshiftinsertion","none","stopgain","stoploss",".")
@@ -42,6 +42,7 @@ Panelg <- setdiff(Panelg,c(TSg,DRg,DNAreg))
 Gtop <- read.table(GTExfile)
 allgenes <- union(Gtop[,1],c(TSg,DRg,DNAreg,Panelg))
 
+print_log("variant list filtering ...")
 ## =========================variant list filtering===========================================
 ##getVariantlist(casevariantpath,AJcasefile,namestr=".AllVariants.tsv","../data/Rdata/AJcaselist_11_9")
 ##getVariantlist(contvariantpath,AJcontrolfile,namestr=".tsv","../data/Rdata/AJcontlist_11_9")
@@ -73,7 +74,7 @@ caselist <- caselist[caselist[,"filtered"], ]
 contlist <- variant_filtering(contlist,mis,Ecut=Ecut,segd=0.95,pp2=TRUE,sig=sig,hotf=hotspotfile,alleleFrefile,popcut=0.05)
 contlist <- contlist[contlist[,"filtered"], ]
 
-
+print_log("burden test for gene, variant ...")
 ## =========================burden test for gene, variant=========================================
 ## burden test for all genes, tumor suppressors, cancer drivers genes
 Ggs <- c("top 25%","top 50%","top 75%","top 100%")
@@ -109,9 +110,9 @@ unkTable <- unkTable[order(-as.numeric(unkTable[,"Folds"]),as.numeric(unkTable[,
 variantTable <- burden_test(caselist,contlist,flag=3,sig=sig)
 variantTable <- variantTable[order(-as.numeric(variantTable[,"Folds"]),as.numeric(variantTable[,"Pvalue"])), ]
 
-
+print_log("Output files ...")
 ## =========================output burden test to files=========================================
-outputpath <- paste("../resultf/burdentest_",sig,"_",Ecut,"_",gsub(".txt","",hotspotfile),"/",sep="")
+outputpath <- paste("../resultf/burdentest_",sig,"_",Ecut,"_",gsub(".txt","",basename(hotspotfile)),"/",sep="")
 if(!file.exists(outputpath)){ dir.create(outputpath, showWarnings = TRUE, recursive = FALSE);}
 ### output file names
 setburdenfile <- paste(outputpath,"gene_variant_set.burden.txt",sep="") ### gene set and variant types burden test file
