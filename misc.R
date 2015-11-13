@@ -180,7 +180,7 @@ burden_test <- function(caselist,contlist,testset=NULL,testtype=NULL,flag,sig=FA
             })
             oneTable <- t(oneTable)
         }else if(flag == 3){
-            vars <- union(casevars,contvars)
+            vars <- unique(casevars)
             oneTable <- sapply(vars,function(onevar){
                 a <- sum(casevars %in% onevar)
                 b <- sum(contvars %in% onevar)
@@ -203,7 +203,7 @@ burden_test <- function(caselist,contlist,testset=NULL,testtype=NULL,flag,sig=FA
             })
             oneTable <- t(oneTable)
         }else if(flag == 3){
-            vars <- union(casevars,contvars)
+            vars <- unique(casevars)
             oneTable <- sapply(vars,function(onevar){
                 a <- length(unique(caselist[casevars %in% onevar,"Subject_ID"]))
                 b <- length(unique(contlist[contvars %in% onevar,"Subject_ID"]))

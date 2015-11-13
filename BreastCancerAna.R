@@ -71,7 +71,7 @@ contlist <- contlist[!(contlist[,"Subject_ID"] %in% pathogenic_sample), ]
 ## variant filtering: filters <- c("filtered","ExACfreq","VCFPASS","noneSegmentalDup","meta-SVM_PP2","singleton","hotspot")
 caselist <- variant_filtering(caselist,mis,Ecut=Ecut,segd=0.95,pp2=TRUE,sig=sig,hotf=hotspotfile,alleleFrefile,popcut=0.05)
 caselist <- caselist[caselist[,"filtered"], ]
-contlist <- variant_filtering(contlist,mis,Ecut=Ecut,segd=0.95,pp2=TRUE,sig=sig,hotf=hotspotfile,alleleFrefile,popcut=0.05)
+contlist <- variant_filtering(contlist,mis,Ecut=Ecut,segd=0.95,pp2=TRUE,sig=FALSE,hotf=hotspotfile,alleleFrefile,popcut=0.05)
 contlist <- contlist[contlist[,"filtered"], ]
 
 print_log("burden test for gene, variant ...")
@@ -184,15 +184,16 @@ for(i in 1:length(varsCheck)){
             id3 <- tmp[pheno[match(tmp,pheno[,3]),"BreastCancer"]=="Yes"]
             id4 <- tmp[pheno[match(tmp,pheno[,3]),"BreastCancer"]=="No"]
             id5 <- contlist[contvars %in% varsCheck[i],"Subject_ID"]
-            tmp <- c(varsCheck[i],paste(id1,sep="",collapse=":"), paste(id2,sep="",collapse=":"),paste(id3,sep="",collapse=":"),paste(id4,sep="",collapse=":"),paste(id5,sep="",collapse=":"))
+            tmp <- c(paste(id1,sep="",collapse=":"), paste(id2,sep="",collapse=":"),paste(id3,sep="",collapse=":"),paste(id4,sep="",collapse=":"),paste(id5,sep="",collapse=":"))
             varvariantlist <- rbind(varvariantlist,tmp)
         }
     }
 }
 colnames(varvariantlist) <- c("Yes-Family","No-Family","Yes-Cohort","No-Cohort","Control")
+rownames(varvariantlist) <- rownames(variantlist)
 variantlistCom <- cbind(varvariantlist,variantlist)
 variantlistCom <- variantlistCom[order(variantlistCom[,"Gene_sets"],variantlistCom[,"variant_type"],variantlistCom[,"Gene"]),]
-variantlistSim <- variantlistCom[,c("Gene","Variant","Subject_ID","Yes-Family","No-Family","Yes-Cohort","No-Cohort","Control","variant_type","X.cases","X.controls","AlleleFrequency.ExAC","GT","AD","Gene_sets")]
+variantlistSim <- variantlistCom[,c("Gene","Variant","Subject_ID","Yes-Family","No-Family","Yes-Cohort","No-Cohort","Control","variant_type","#cases","#controls","AlleleFrequency.ExAC","GT","AD","Gene_sets")]
 ## step 3: write result
 qwt(variantlistCom,file=genesetsVarfile,flag=2)
 qwt(indelVars,file=indelsfile)
