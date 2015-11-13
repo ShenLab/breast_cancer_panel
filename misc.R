@@ -117,7 +117,7 @@ variant_filtering <- function(onelist,mis,Ecut=0.01,segd=0.95,pp2=TRUE,sig=FALSE
     onelist[,"hotspot"] <- TRUE
     if(hotf!=""){
         missub <- which(onelist[,"VariantClass"] %in% mis)  ### only missense mutations
-        hotspot <- read.table(hotf)
+        hotspot <- read.delim(hotf,header=FALSE)
         hotspot[,2] <- paste(":",hotspot[,2],":",sep="")
         subhot <- sapply(1:length(missub), function(i) {
             if(onelist[missub[i],"Gene"] %in% hotspot[,1]){
