@@ -3,10 +3,13 @@
 ## ===============================================================================
 source("misc.R")
 
+BreastCancerAna <- function(sig=TRUE,Ecut=0.001,hotf=1){
+
 ## =========================input files===========================================
+if(hotf==1){ hotspotfile <- "../data/hotspots/HMM_hotspots_11_12.txt"; ## HongjianPred hotspots file
+}else{ hotspotfile <- "../data/hotspots/cosmic_hotspots_3.txt"; }## COSMIC hotspots file
 outlierfile <- "/home/local/ARCS/yshen/data/WENDY/BreastCancer/Regeneron/FreezeOneVariantCalling/Outliers_to_be_excluded.list"  ## outlier samples
 BRCA1_2pathogenicfile <- "../data/phenotype/BRCA1_2.txt" ## BRCA1/2 pathogenic samples file
-hotspotfile <- "../data/hotspots/cosmic_hotspots_3.txt" ## COSMIC hotspots file
 alleleFrefile <- "/home/local/ARCS/ads2202/data/AJ_PCA/combined_variant_call/NonBC_Frequencies.expanded.tsv" ## non-breast cancer samples allle frequency
 TSfile <- "../data/hotspots/Tumor_suppressors_11_11.txt" ## collected tumor suppressors
 cancerdriverfile <- "../data/hotspots/Cancer_driver_11_6.txt" ## cancer drivers
@@ -20,20 +23,24 @@ casevariantpath <- "/home/local/ARCS/yshen/data/WENDY/BreastCancer/Regeneron/Fil
 AJcasefile <- "/home/local/ARCS/yshen/data/WENDY/BreastCancer/Regeneron/tablesandlists/All_AJ_samples.list"
 contvariantpath <- "/home/local/ARCS/qh2159/breast_cancer/variants/AJconVariantCalling/"
 AJcontrolfile <- "/home/local/ARCS/qh2159/breast_cancer/variants/data/AJs_585.txt"
+Cohortfile <- "../resultf/BreastCancer_VariantList_11_12"
 
 
-## =========================variant class definition=================================
+## =========================variant class definition and test gene sets=================================
 VariantClass <- c(".","frameshiftdeletion","frameshiftinsertion","none","nonframeshiftdeletion","nonframeshiftinsertion","nonsynonymousSNV","stopgain","stoploss","synonymousSNV","unknown")
 lof <- c("frameshiftdeletion","frameshiftinsertion","none","stopgain","stoploss",".")
 mis <- "nonsynonymousSNV"
 indel <- c("nonframeshiftdeletion","nonframeshiftinsertion")
 syn <- "synonymousSNV"
 unknown <- "unknown"
-print_log(paste("Main: LOF variant defined as : ", paste(lof,sep="",collapse=","), sep=" "))
-print_log(paste("Main: D-MIS variant defined as : ", paste(mis,sep="",collapse=","), sep=" "))
-print_log(paste("Main: indel variant defined as : ", paste(indel,sep="",collapse=","), sep=" "))
-print_log(paste("Main: syn variant defined as : ", syn, sep=" "))
-print_log(paste("Main: unknown variant defined as : ", paste(unknown,sep="",collapse=","), sep=" "))
+
+TSg <- unlist(read.table(TSfile))
+DRg <- unlist(read.table(cancerdriverfile)) ## cancer drivers
+DNAreg <- unlist(read.table(DNArepairfile))
+Panelg <- unlist(read.table(Panelgfile))
+Panelg <- setdiff(Panelg,c(TSg,DRg,DNAreg))
+Gtop <- read.table(GTExfile)
+allgenes <- union(Gtop[,1],c(TSg,DRg,DNAreg,Panelg))
 
 ## =========================variant list filtering===========================================
 ##getVariantlist(casevariantpath,AJcasefile,namestr=".AllVariants.tsv","../data/Rdata/AJcaselist_11_9")
@@ -60,28 +67,15 @@ tmp <- read.delim(BRCA1_2pathogenicfile)
 pathogenic_sample <- tmp[tmp[,1] %in% c("likely pathogenic","pathogenic"),"Subject_ID"]
 caselist <- caselist[!(caselist[,"Subject_ID"] %in% pathogenic_sample), ]
 contlist <- contlist[!(contlist[,"Subject_ID"] %in% pathogenic_sample), ]
-##  synonynous variant
-#caselist <- caselist[!(caselist[,"VariantClass"] %in% syn), ]
-#contlist <- contlist[!(contlist[,"VariantClass"] %in% syn), ]
-##  variant filtering
-## filters <- c("filtered","ExACfreq","VCFPASS","noneSegmentalDup","meta-SVM_PP2","singleton","hotspot")
-sig=FALSE
-caselist <- variant_filtering(caselist,mis,Ecut=0.01,segd=0.95,pp2=TRUE,sig=sig,hotf=hotspotfile,alleleFrefile,popcut=0.05)
+## variant filtering: filters <- c("filtered","ExACfreq","VCFPASS","noneSegmentalDup","meta-SVM_PP2","singleton","hotspot")
+caselist <- variant_filtering(caselist,mis,Ecut=Ecut,segd=0.95,pp2=TRUE,sig=sig,hotf=hotspotfile,alleleFrefile,popcut=0.05)
 caselist <- caselist[caselist[,"filtered"], ]
-contlist <- variant_filtering(contlist,mis,Ecut=0.01,segd=0.95,pp2=TRUE,sig=sig,hotf=hotspotfile,alleleFrefile,popcut=0.05)
+contlist <- variant_filtering(contlist,mis,Ecut=Ecut,segd=0.95,pp2=TRUE,sig=sig,hotf=hotspotfile,alleleFrefile,popcut=0.05)
 contlist <- contlist[contlist[,"filtered"], ]
 
 
 ## =========================burden test for gene, variant=========================================
 ## burden test for all genes, tumor suppressors, cancer drivers genes
-TSg <- unlist(read.table(TSfile))
-DRg <- unlist(read.table(cancerdriverfile)) ## cancer drivers
-DNAreg <- unlist(read.table(DNArepairfile))
-Panelg <- unlist(read.table(Panelgfile))
-Panelg <- setdiff(Panelg,c(TSg,DRg,DNAreg))
-Gtop <- read.table(GTExfile)
-allgenes <- union(Gtop[,1],c(TSg,DRg,DNAreg,Panelg))
-
 Ggs <- c("top 25%","top 50%","top 75%","top 100%")
 GgL <- list(Gtop[1:floor(0.25*dim(Gtop)[1]),1], Gtop[1:floor(0.5*dim(Gtop)[1]),1], Gtop[1:floor(0.75*dim(Gtop)[1]),1],allgenes)
 genesets <- list(TSg,DRg,DNAreg,Panelg)
@@ -117,11 +111,8 @@ variantTable <- variantTable[order(-as.numeric(variantTable[,"Folds"]),as.numeri
 
 
 ## =========================output burden test to files=========================================
-outputpath <- "../resultf/burdentest_all_0.001/"
-### output files
-if(!file.exists(outputpath)){
-    dir.create(outputpath, showWarnings = TRUE, recursive = FALSE)
-}
+outputpath <- paste("../resultf/burdentest_",sig,"_",Ecut,"_",gsub(".txt","",hotspotfile),"/",sep="")
+if(!file.exists(outputpath)){ dir.create(outputpath, showWarnings = TRUE, recursive = FALSE);}
 ### output file names
 setburdenfile <- paste(outputpath,"gene_variant_set.burden.txt",sep="") ### gene set and variant types burden test file
 loffile <- paste(outputpath,"LOF_level.burden.txt",sep="") ###LOF: single gene level burden test
@@ -141,16 +132,22 @@ qwt(variantTable,vburdenfile,flag=2)
 
 
 ## =========================output indels for IGV and variant tables=========================================
-varTable <- read.delim("../resultf/burdentest_PP2_hotspots/variant_level.burden.txt")
-genes <- union(TSg,c(DRg,DNAreg,Panelg))
-variantlist <- caselist[caselist[,"VariantClass"] %in% c(mis,lof) & caselist[,"Gene"] %in% genes, ]
+ListgoSimfile <- paste(outputpath,"VariantList_Simple.txt",sep="")
+indelsfile <- paste(outputpath,"indels_",Ecut,".txt",sep="")
+genesetsVarfile <- paste(outputpath,"geneset_variantlist.txt",sep="")
+##===============================step 1: give variant list information==================
+varTable <- read.delim(vburdenfile)
+genes <- unique(c(TSg,DRg,DNAreg,Panelg))
+vartys <- c(mis,lof,indel)
+variantlist <- caselist[caselist[,"VariantClass"] %in% vartys & caselist[,"Gene"] %in% genes, ]
 vars <- paste(variantlist[,1],variantlist[,2],variantlist[,4],variantlist[,5],sep="_")
 n.var <- length(vars)
 rowTitle <- matrix(0,n.var,10)
-rowTitle[variantlist[,"Gene"] %in% TSg,1] <- "Tumor_suppressor"
-rowTitle[variantlist[,"Gene"] %in% DRg,1] <- "Cancer_driver"
 rowTitle[variantlist[,"Gene"] %in% DNAreg,1] <- "DNA_repair"
 rowTitle[variantlist[,"Gene"] %in% Panelg,1] <- "Panel_genes"
+rowTitle[variantlist[,"Gene"] %in% TSg,1] <- "Tumor_suppressor"
+rowTitle[variantlist[,"Gene"] %in% DRg,1] <- "Cancer_driver"
+rowTitle[variantlist[,"Gene"] %in% intersect(TSg,DRg),1] <- "Cancer_driver_Tumor_suppressor"
 rowTitle[variantlist[,"VariantClass"] %in% lof,2] <- "LOF" 
 rowTitle[variantlist[,"VariantClass"] %in% indel,2] <- "indels"
 rowTitle[variantlist[,"VariantClass"] %in% mis,2] <- "d-mis"
@@ -160,10 +157,45 @@ variantlist <- variantlist[,colnames(variantlist)!="Gene"]
 variantlist <- cbind(rowTitle,variantlist)
 variantlist <- variantlist[order(variantlist[,1],variantlist[,2],-as.numeric(variantlist[,9]),as.numeric(variantlist[,10])),]
 if(sig){
-colnames(variantlist)[1:10] <- c("Gene_sets","variant_type","Gene","Variant","#cases","#controls","n.case","n.cont","Folds","pvalue")
+    colnames(variantlist)[1:10] <- c("Gene_sets","variant_type","Gene","Variant","#cases","#controls","n.case","n.cont","Folds","pvalue")
 }else{
-colnames(variantlist)[1:10] <- c("Gene_sets","variant_type","Gene","Variant","#cases carrier","#controls carrier","#case non-carrier","#control non-carrier","OddsRatio","pvalue")
+    colnames(variantlist)[1:10] <- c("Gene_sets","variant_type","Gene","Variant","#cases carrier","#controls carrier","#case non-carrier","#control non-carrier","OddsRatio","pvalue")
 }
-qwt(variantlist,file="../resultf/burdentest/geneset_variantlist.txt",flag=2)
-indelsfile <- "../resultf/burdentest/indels.txt"
-qwt(variantlist[variantlist[,"variant_type"]=="indels",c("Chromosome","Position","Subject_ID")],file=indelsfile)
+indelVars <- variantlist[variantlist[,"VariantClass"] %in% c("frameshiftdeletion","frameshiftinsertion","nonframeshiftdeletion","nonframeshiftinsertion"),c("Chromosome","Position","Subject_ID")]
+## ===========step 2: give phenotype information on family and other cohort cases=============
+load(Cohortfile)
+pheno <- read.csv(phenofile)
+varsCheck <- variantlist[,"Variant"]
+contvars <- paste(contlist[,1],contlist[,2],contlist[,4],contlist[,5],sep="_")
+casevars <- paste(caselist[,1],caselist[,2],caselist[,4],caselist[,5],sep="_")
+cohortvars <- paste(onelist[,1],onelist[,2],onelist[,4],onelist[,5],sep="_")
+varvariantlist <- c()
+for(i in 1:length(varsCheck)){
+    subj <- unique(caselist[casevars %in% varsCheck[i],"Subject_ID"])
+    if(length(subj)>0){
+        for(j in 1:length(subj)){
+            famj <- pheno[pheno[,3]==subj[j],1]
+            onefamid <- onelist[(onelist[,"Subject_ID"] %in% pheno[pheno[,1] %in% famj,3]) & (cohortvars %in% varsCheck[i]),"Subject_ID"]
+            id1 <- onefamid[pheno[match(onefamid,pheno[,3]),"BreastCancer"]=="Yes"]
+            id2 <- onefamid[pheno[match(onefamid,pheno[,3]),"BreastCancer"]=="No"]
+            tmp <- onelist[!(onelist[,"Subject_ID"] %in% pheno[pheno[,1] %in% famj,3]) & (cohortvars %in% varsCheck[i]),"Subject_ID"]
+            tmp <- intersect(tmp,pheno[,3])
+            id3 <- tmp[pheno[match(tmp,pheno[,3]),"BreastCancer"]=="Yes"]
+            id4 <- tmp[pheno[match(tmp,pheno[,3]),"BreastCancer"]=="No"]
+            id5 <- contlist[contvars %in% varsCheck[i],"Subject_ID"]
+            tmp <- c(varsCheck[i],paste(id1,sep="",collapse=":"), paste(id2,sep="",collapse=":"),paste(id3,sep="",collapse=":"),paste(id4,sep="",collapse=":"),paste(id5,sep="",collapse=":"))
+            varvariantlist <- rbind(varvariantlist,tmp)
+        }
+    }
+}
+colnames(varvariantlist) <- c("Yes-Family","No-Family","Yes-Cohort","No-Cohort","Control")
+variantlistCom <- cbind(varvariantlist,variantlist)
+variantlistCom <- variantlistCom[order(variantlistCom[,"Gene_sets"],variantlistCom[,"variant_type"],variantlistCom[,"Gene"]),]
+variantlistSim <- variantlistCom[,c("Gene","Variant","Subject_ID","Yes-Family","No-Family","Yes-Cohort","No-Cohort","Control","variant_type","X.cases","X.controls","AlleleFrequency.ExAC","GT","AD","Gene_sets")]
+## step 3: write result
+qwt(variantlistCom,file=genesetsVarfile,flag=2)
+qwt(indelVars,file=indelsfile)
+qwt(variantlistSim,file=ListgoSimfile,flag=2)
+
+
+}

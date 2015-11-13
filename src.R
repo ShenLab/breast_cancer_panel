@@ -241,9 +241,74 @@ density_plots <- function(oneVar,outputpath){
             x <- as.numeric(oneVar[,i+2])
         }
         g <- oneVar[,1]
-        plot(density(x[g=="case"]),col=1,type="l",main=paste(VarT[i]," : case-control distribution",sep=""))
+        plot(density(x[g=="case"]),col=1,type="l",main=paste(VarT[i]," : case-control distribution",sep=""),xlab="Number of variants in each subject")
         lines(density(x[g=="control"]),col=2,type="l")
         legend("topright",legend=c("case","control"),lty=rep(1,2),lwd=2,col=1:2)
         dev.off()
     }
+}
+
+variantDis_vcflog <- function(){
+    source("misc.R")
+    source("src.R")
+    outputpath <- "../resultf/"
+    AJcontrolfile <- "/home/local/ARCS/qh2159/breast_cancer/variants/data/AJs_585.txt"
+    phenofile <- "../data/phenotype/WES BCFR phenotypic data.csv" ## phenotype file to get index cases only
+    AJcasefile <- "/home/local/ARCS/yshen/data/WENDY/BreastCancer/Regeneron/tablesandlists/All_AJ_samples.list"
+    cases <- unlist(read.table(AJcasefile))
+    indexcases <- getindexcase(phenofile)
+    load("../resultf/caselist_singleton_0.01")
+    indexcases <- unique(caselist[,"Subject_ID"])
+    controls <- unlist(read.table(AJcontrolfile))
+    
+    caseT <- read.vcflog("/home/local/ARCS/qh2159/breast_cancer/variants/data/BreastCancerSta.txt")
+    caseT <- caseT[caseT[,1] %in% indexcases,]
+    contT <- read.vcflog("/home/local/ARCS/qh2159/breast_cancer/variants/data/vcfStatis.txt")
+    contT <- contT[contT[,1] %in% controls,]
+    
+    pdf(paste(outputpath,"ALL_Dis.pdf",sep=""),height=10,width=10)
+    plot(density(as.numeric(caseT[,2])),col=1,type="l",main="SNPs : case-control distribution",xlab="Number of variants in each subject")
+    lines(density(as.numeric(contT[,2])),col=2,type="l")
+    legend("topright",legend=c("case","control"),lty=rep(1,2),lwd=2,col=1:2)
+    dev.off()
+}
+
+read.vcflog <- function(logfiles){
+    
+    tmp <- readLines(logfiles)
+    aa <- c()
+    k=2
+    while(k<=(length(tmp)-1)){
+        k <- k+1
+        oneline <- tmp[k]
+        if(grepl("Sample Name: ",tmp[k])){
+            oner <- c(unlist(strsplit(tmp[k],": "))[2],unlist(strsplit(tmp[k+1],": "))[2])
+            aa <- rbind(aa,oner)
+            k <- k+1
+        }
+    }
+    
+    aa
+}
+
+getCohortVariantlist <- function(){
+
+    namestr=".AllVariants.tsv"
+    path <- "/home/local/ARCS/yshen/data/WENDY/BreastCancer/Regeneron/Filtering_Oct2015/"
+    samf <- list.files(path=path,pattern=".tsv$")
+    
+    onelist <- c()
+    for(i in 1:length(samf)){
+        tmp <- paste(path,samf[i],sep="")
+        oner <- read.delim(tmp,check.names=FALSE)
+        subj <- gsub(namestr,"",samf[i])
+        oner <- cbind(oner,subj)
+        cols <- colnames(oner)
+        colsub <- c(which(grepl(paste(subj,".GT",sep=""),cols) | grepl(paste(toupper(subj),".GT",sep=""),cols)),which(grepl(paste(subj,".AD",sep=""),cols) | grepl(paste(toupper(subj),".AD",sep=""),cols)),which(subj==cols | paste("X",subj,sep="")==cols | toupper(subj)==cols), dim(oner)[2])
+        colnames(oner)[colsub] <- c("GT","AD","Subject_INFO","Subject_ID")
+        onelist <- rbind(onelist,oner)
+    }
+    
+    save(onelist,file="../resultf/BreastCancer_VariantList_11_12")
+    
 }
