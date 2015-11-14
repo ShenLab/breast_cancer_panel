@@ -182,28 +182,26 @@ casevars <- paste(caselist[,1],caselist[,2],caselist[,4],caselist[,5],sep="_")
 cohortvars <- paste(onelist[,1],onelist[,2],onelist[,4],onelist[,5],sep="_")
 varvariantlist <- c()
 for(i in 1:length(varsCheck)){
-    subj <- unique(caselist[casevars %in% varsCheck[i],"Subject_ID"])
-    if(length(subj)>0){
-        for(j in 1:length(subj)){
-            famj <- pheno[pheno[,3]==subj[j],1]
-            onefamid <- onelist[(onelist[,"Subject_ID"] %in% pheno[pheno[,1] %in% famj,3]) & (cohortvars %in% varsCheck[i]),"Subject_ID"]
-            id1 <- onefamid[pheno[match(onefamid,pheno[,3]),"BreastCancer"]=="Yes"]
-            id2 <- onefamid[pheno[match(onefamid,pheno[,3]),"BreastCancer"]=="No"]
-            tmp <- onelist[!(onelist[,"Subject_ID"] %in% pheno[pheno[,1] %in% famj,3]) & (cohortvars %in% varsCheck[i]),"Subject_ID"]
-            tmp <- intersect(tmp,pheno[,3])
-            id3 <- tmp[pheno[match(tmp,pheno[,3]),"BreastCancer"]=="Yes"]
-            id4 <- tmp[pheno[match(tmp,pheno[,3]),"BreastCancer"]=="No"]
-            id5 <- contlist[contvars %in% varsCheck[i],"Subject_ID"]
-            tmp <- c(paste(id1,sep="",collapse=":"), paste(id2,sep="",collapse=":"),paste(id3,sep="",collapse=":"),paste(id4,sep="",collapse=":"),paste(id5,sep="",collapse=":"))
-            varvariantlist <- rbind(varvariantlist,tmp)
-        }
-    }
+    subj <- unique(caselist[casevars %in% varsCheck[i],"Subject_ID"]) ## only care about case variants
+    famj <- pheno[pheno[,3] %in% subj,1]
+    subs1 <- (onelist[,"Subject_ID"] %in% pheno[pheno[,1] %in% famj,3])
+    subs2 <- (cohortvars %in% varsCheck[i])
+    onefamid <- onelist[subs1 & subs2,"Subject_ID"]
+    id1 <- onefamid[pheno[match(onefamid,pheno[,3]),"BreastCancer"]=="Yes"]
+    id2 <- onefamid[pheno[match(onefamid,pheno[,3]),"BreastCancer"]=="No"]
+    tmp <- onelist[!subs1 & subs2,"Subject_ID"]
+    tmp <- intersect(tmp,pheno[,3])
+    id3 <- tmp[pheno[match(tmp,pheno[,3]),"BreastCancer"]=="Yes"]
+    id4 <- tmp[pheno[match(tmp,pheno[,3]),"BreastCancer"]=="No"]
+    id5 <- contlist[contvars %in% varsCheck[i],"Subject_ID"]
+    tmp <- c(paste(famj,sep="",collapse=":"), paste(id1,sep="",collapse=":"), paste(id2,sep="",collapse=":"),paste(id3,sep="",collapse=":"),paste(id4,sep="",collapse=":"),paste(id5,sep="",collapse=":"))
+    varvariantlist <- rbind(varvariantlist,tmp)
 }
-colnames(varvariantlist) <- c("Yes-Family","No-Family","Yes-Cohort","No-Cohort","Control")
+colnames(varvariantlist) <- c("Family-ID","Yes-Family","No-Family","Yes-Cohort","No-Cohort","Control")
 rownames(varvariantlist) <- rownames(variantlist)
 variantlistCom <- cbind(varvariantlist,variantlist)
 variantlistCom <- variantlistCom[order(variantlistCom[,"Gene_sets"],variantlistCom[,"variant_type"],variantlistCom[,"Gene"]),]
-variantlistSim <- variantlistCom[,c("Gene","Variant","Subject_ID","Yes-Family","No-Family","Yes-Cohort","No-Cohort","Control","variant_type","#cases","#controls","AlleleFrequency.ExAC","GT","AD","Gene_sets")]
+variantlistSim <- variantlistCom[,c("Gene","Variant","Subject_ID","Family-ID","Yes-Family","No-Family","Yes-Cohort","No-Cohort","Control","variant_type","#cases","#controls","AlleleFrequency.ExAC","GT","AD","Gene_sets")]
 ## step 3: write result
 qwt(variantlistCom,file=genesetsVarfile,flag=2)
 qwt(indelVars,file=indelsfile)
