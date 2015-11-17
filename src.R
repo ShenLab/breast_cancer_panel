@@ -267,9 +267,17 @@ variantDis_vcflog <- function(){
     contT <- contT[contT[,1] %in% controls,]
     
     pdf(paste(outputpath,"ALL_Dis.pdf",sep=""),height=10,width=10)
-    plot(density(as.numeric(caseT[,2])),col=1,type="l",main="SNPs : case-control distribution",xlab="Number of variants in each subject")
+    plot(density(as.numeric(caseT[,2])),col=1,type="l",main="SNPs : case-control distribution",xlab="Number of variants in each subject",xlim=c(min(c(as.numeric(caseT[,2]),as.numeric(contT[,2]))),max(c(as.numeric(caseT[,2]),as.numeric(contT[,2])))))
     lines(density(as.numeric(contT[,2])),col=2,type="l")
     legend("topright",legend=c("case","control"),lty=rep(1,2),lwd=2,col=1:2)
+    dev.off()
+    
+    pdf(paste(outputpath,"cases_Dis.pdf",sep=""),height=10,width=10)
+    hist(as.numeric(caseT[,2]),main="SNPs : case distribution",xlab="Number of variants in each subject")
+    dev.off()
+
+    pdf(paste(outputpath,"controls_Dis.pdf",sep=""),height=10,width=10)
+    hist(as.numeric(contT[,2]),main="SNPs : contorl distribution",xlab="Number of variants in each subject")
     dev.off()
 }
 
@@ -310,5 +318,19 @@ getCohortVariantlist <- function(){
     }
     
     save(onelist,file="../resultf/BreastCancer_VariantList_11_12")
+    
+}
+
+
+shortTable_nonsingletons <- function(){
+    source("misc.R")
+    lof <- c("frameshiftdeletion","frameshiftinsertion","none","stopgain","stoploss",".")
+    mis <- "nonsynonymousSNV"
+    variantlist <- read.delim("../resultf/burdentest_FALSE_0.001_HMM_hotspots_11_12/geneset_variantlist.txt")
+    subs <- (variantlist[,"VariantClass"] %in% c(lof,mis)) & (variantlist[,"OddsRatio"]>1)
+    cols <- setdiff(1:dim(variantlist)[2],c(1:6,61:67))
+    shortV <- variantlist[subs,cols] 
+    shortV <- shortV[order(-shortV[,"OddsRatio"],-shortV[,"X.cases.carrier"],shortV[,"Variant"]),]
+    qwt(shortV,file="../resultf/burdentest_FALSE_0.001_HMM_hotspots_11_12/shortList_genesets.txt",flag=2)
     
 }
