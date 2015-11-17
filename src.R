@@ -187,8 +187,8 @@ variantDis <- function(){
     qwt(varTypes,file=paste(outputpath,"Jewish_case_control_variants.txt",sep=""),flag=2)
     qwt(varTypes1,file=paste(outputpath,"Jewish_case_control_variants_filtered_singleton.txt",sep=""),flag=2)
  
-    density_plots(varTypes,"../resultf/plots_all/")
-    density_plots(varTypes1,"../resultf/plots_singleton_0.01/")
+    density_plots(varTypes[,3:7],varTypes[,1],"../resultf/plots_all/")
+    density_plots(varTypes1[,3:7],varTypes1[,1],"../resultf/plots_singleton_0.01/")
     
 }
 
@@ -225,24 +225,18 @@ variantDis_one <- function(caselist,contlist){
     varTypes  
 }
 
-density_plots <- function(oneVar,outputpath){
+density_plots <- function(oneVar,g,outputpath,VarT=c("LOF","MIS","indel","synonymous","unknown","ALL")){
     if(!file.exists(outputpath)){
         dir.create(outputpath, showWarnings = TRUE, recursive = FALSE)
     }
-    
-    tmp <- oneVar[,3:7]
-    mode(tmp) <- "numeric"
-    VarT <- c("LOF","MIS","indel","synonymous","unknown","ALL")
-    for(i in 1:6){
+    mode(oneVar) <- "numeric"
+
+    for(i in 1:dim(oneVar)[2]){
         pdf(paste(outputpath,VarT[i],"_Dis.pdf",sep=""),height=10,width=10)
-        if(i==6){
-            x <- as.numeric(rowSums(tmp))
-        }else{
-            x <- as.numeric(oneVar[,i+2])
-        }
-        g <- oneVar[,1]
-        plot(density(x[g=="case"]),col=1,type="l",main=paste(VarT[i]," : case-control distribution",sep=""),xlab="Number of variants in each subject")
-        lines(density(x[g=="control"]),col=2,type="l")
+        x1 <- density(oneVar[g=="case",i])
+        x2 <- density(oneVar[g=="control",i])
+        plot(x1,col=1,type="l",main=paste(VarT[i]," : case-control distribution",sep=""),xlab="Number of variants in each subject",xlim=c(min(oneVar[,i]),max(oneVar[,i])),ylim=c(0,max(c(x1$y,x2$y))))
+        lines(x2,col=2,type="l")
         legend("topright",legend=c("case","control"),lty=rep(1,2),lwd=2,col=1:2)
         dev.off()
     }
@@ -253,50 +247,25 @@ variantDis_vcflog <- function(){
     source("src.R")
     outputpath <- "../resultf/"
     AJcontrolfile <- "/home/local/ARCS/qh2159/breast_cancer/variants/data/AJs_585.txt"
-    phenofile <- "../data/phenotype/WES BCFR phenotypic data.csv" ## phenotype file to get index cases only
-    AJcasefile <- "/home/local/ARCS/yshen/data/WENDY/BreastCancer/Regeneron/tablesandlists/All_AJ_samples.list"
-    cases <- unlist(read.table(AJcasefile))
-    indexcases <- getindexcase(phenofile)
-    load("../resultf/caselist_singleton_0.01")
-    indexcases <- unique(caselist[,"Subject_ID"])
     controls <- unlist(read.table(AJcontrolfile))
+    load("../resultf/caselist_FALSE_0.01_HMM")
+    indexcases <- unique(caselist[,"Subject_ID"])
+    casestaf <- "../data/BR_20151116.hardfiltered.stats_hq.tsv"
+    contstaf <- "../data/AJ_20151102.hardfiltered.stats_hq.tsv"
     
-    caseT <- read.vcflog("/home/local/ARCS/qh2159/breast_cancer/variants/data/BreastCancerSta.txt")
-    caseT <- caseT[caseT[,1] %in% indexcases,]
-    contT <- read.vcflog("/home/local/ARCS/qh2159/breast_cancer/variants/data/vcfStatis.txt")
-    contT <- contT[contT[,1] %in% controls,]
+    varT=c("synonymous","Missense","indels","Frameshift","ALL")
+    tmp <- read.table(casestaf,fill=T)
+    varTa <- t(tmp[c(21,22,4,25,3),match(indexcases,tmp[2,])])
+    varTa <- cbind("case",indexcases,varTa)
+    colnames(varTa) <- c("Group","Subject_ID",varT)
+    tmp <- read.table(contstaf,fill=T)
+    varTa1 <- t(tmp[c(21,22,4,25,3),match(controls,tmp[2,])])
+    varTa1 <- cbind("control",controls,varTa1)
+    colnames(varTa1) <- c("Group","Subject_ID",varT)
     
-    pdf(paste(outputpath,"ALL_Dis.pdf",sep=""),height=10,width=10)
-    plot(density(as.numeric(caseT[,2])),col=1,type="l",main="SNPs : case-control distribution",xlab="Number of variants in each subject",xlim=c(min(c(as.numeric(caseT[,2]),as.numeric(contT[,2]))),max(c(as.numeric(caseT[,2]),as.numeric(contT[,2])))))
-    lines(density(as.numeric(contT[,2])),col=2,type="l")
-    legend("topright",legend=c("case","control"),lty=rep(1,2),lwd=2,col=1:2)
-    dev.off()
-    
-    pdf(paste(outputpath,"cases_Dis.pdf",sep=""),height=10,width=10)
-    hist(as.numeric(caseT[,2]),main="SNPs : case distribution",xlab="Number of variants in each subject")
-    dev.off()
+    Ta <- rbind(varTa,varTa1)
+    density_plots(Ta[,3:7],Ta[,1],"../resultf/VariantSta/",VarT=varT)
 
-    pdf(paste(outputpath,"controls_Dis.pdf",sep=""),height=10,width=10)
-    hist(as.numeric(contT[,2]),main="SNPs : contorl distribution",xlab="Number of variants in each subject")
-    dev.off()
-}
-
-read.vcflog <- function(logfiles){
-    
-    tmp <- readLines(logfiles)
-    aa <- c()
-    k=2
-    while(k<=(length(tmp)-1)){
-        k <- k+1
-        oneline <- tmp[k]
-        if(grepl("Sample Name: ",tmp[k])){
-            oner <- c(unlist(strsplit(tmp[k],": "))[2],unlist(strsplit(tmp[k+1],": "))[2])
-            aa <- rbind(aa,oner)
-            k <- k+1
-        }
-    }
-    
-    aa
 }
 
 getCohortVariantlist <- function(){
@@ -321,7 +290,6 @@ getCohortVariantlist <- function(){
     
 }
 
-
 shortTable_nonsingletons <- function(){
     source("misc.R")
     lof <- c("frameshiftdeletion","frameshiftinsertion","none","stopgain","stoploss",".")
@@ -333,4 +301,42 @@ shortTable_nonsingletons <- function(){
     shortV <- shortV[order(-shortV[,"OddsRatio"],-shortV[,"X.cases.carrier"],shortV[,"Variant"]),]
     qwt(shortV,file="../resultf/burdentest_FALSE_0.001_HMM_hotspots_11_12/shortList_genesets.txt",flag=2)
     
+}
+
+
+qqplot_variantLevel <- function(){
+    
+    ## qq plots for pvalues in variant level
+    library(Haplin)
+    outputpath <- "../resultf/burdentest_FALSE_0.01_HMM_hotspots_11_12/variant_level.burden.txt"
+    
+    TSfile <- "../data/hotspots/Tumor_suppressors_11_11.txt" ## collected tumor suppressors
+    cancerdriverfile <- "../data/hotspots/Cancer_driver_11_6.txt" ## cancer drivers
+    DNArepairfile <- "../data/hotspots/DNA_repair_11_6.txt" ## DNA repair genes
+    Panelgfile <-  "../../genelist/Genelist2.txt" ## Panel genes    
+    TSg <- unlist(read.table(TSfile))
+    DRg <- unlist(read.table(cancerdriverfile)) ## cancer drivers
+    DNAreg <- unlist(read.table(DNArepairfile))
+    Panelg <- unlist(read.table(Panelgfile))
+    Panelg <- setdiff(Panelg,c(TSg,DRg,DNAreg))
+    
+    
+    lof <- c("frameshiftdeletion","frameshiftinsertion","none","stopgain","stoploss",".")
+    mis <- "nonsynonymousSNV"
+    indel <- c("nonframeshiftdeletion","nonframeshiftinsertion")
+    syn <- "synonymousSNV"
+    
+    load("../resultf/caselist_FALSE_0.01_HMM")
+    pT <- read.table(burdetable)
+    
+    if(file.exists(gfile)){
+        gT <- read.delim(gfile,sep="\t")
+        pvals <- gT[,"pvalue"]
+        names(pvals) <- gT[,"Gene"]
+        pdf(file=paste(dirstr,"Gene_",sig,"_",poptype[pop],"_",vartype[fig],"_",flag,".pdf",sep=""),width=10,height=10)
+        pQQ(pvals, nlabs = sum(pvals<0.05), conf = 0.95, mark = 0.05)
+        
+        dev.off()
+    }
+
 }
