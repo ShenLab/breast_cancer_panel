@@ -303,12 +303,16 @@ shortTable_nonsingletons <- function(){
     
 }
 
-
 qqplot_variantLevel <- function(){
     
+    source("src.R")
     ## qq plots for pvalues in variant level
-    library(Haplin)
-    outputpath <- "../resultf/burdentest_FALSE_0.01_HMM_hotspots_11_12/variant_level.burden.txt"
+    burdentable <- "../resultf/burdentest_TRUE_0.001_HMM_hotspots_11_12/variant_level.burden.txt"
+    outputpath <- "../resultf/qqplots_TRUE_0.001_HMM/"
+    
+    if(!file.exists(outputpath)){
+        dir.create(outputpath, showWarnings = TRUE, recursive = FALSE)
+    }
     
     TSfile <- "../data/hotspots/Tumor_suppressors_11_11.txt" ## collected tumor suppressors
     cancerdriverfile <- "../data/hotspots/Cancer_driver_11_6.txt" ## cancer drivers
@@ -319,24 +323,55 @@ qqplot_variantLevel <- function(){
     DNAreg <- unlist(read.table(DNArepairfile))
     Panelg <- unlist(read.table(Panelgfile))
     Panelg <- setdiff(Panelg,c(TSg,DRg,DNAreg))
-    
+    allgenes <- unique(c(TSg,DRg,DNAreg)) #!!!!!!
     
     lof <- c("frameshiftdeletion","frameshiftinsertion","none","stopgain","stoploss",".")
     mis <- "nonsynonymousSNV"
     indel <- c("nonframeshiftdeletion","nonframeshiftinsertion")
     syn <- "synonymousSNV"
-    
+    varT <- list(lof,mis,indel,syn)
+    varstr <- c("LOF","D-mis","indels","Synonymous")
     load("../resultf/caselist_FALSE_0.01_HMM")
-    pT <- read.table(burdetable)
+    casevars <- paste(caselist[,1],caselist[,2],caselist[,4],caselist[,5],sep="_")
+    pT <- read.delim(burdentable)
     
-    if(file.exists(gfile)){
-        gT <- read.delim(gfile,sep="\t")
-        pvals <- gT[,"pvalue"]
-        names(pvals) <- gT[,"Gene"]
-        pdf(file=paste(dirstr,"Gene_",sig,"_",poptype[pop],"_",vartype[fig],"_",flag,".pdf",sep=""),width=10,height=10)
-        pQQ(pvals, nlabs = sum(pvals<0.05), conf = 0.95, mark = 0.05)
-        
+    for(i in 1:length(varT)){
+        subs <- which(pT[,2] %in% casevars[caselist[,"VariantClass"] %in% varT[[i]]])
+        pval <- pT[subs,"Pvalue"]
+        subcol <- which(pT[subs,1]%in% allgenes)
+        pdf(file=paste(outputpath,varstr[i],".pdf",sep=""),width=10,height=10)
+        PQQ(pval,subcol=subcol,main=paste("QQ plots of ", varstr[i],sep=""),labels=pT[subs,1])
         dev.off()
     }
 
+}
+
+PQQ <- function(pval,ps=0.05,subcol=NULL,main="",labels=NULL){
+    
+    x <- sort(-log10(runif(length(pval),0,1)))
+    y <- sort(-log10(pval))
+    yix <- sort(-log10(pval), index.return = TRUE)$ix
+    
+    plot(x,y,xlab="Excepted P-value (-log10 scale)",ylab="Observed P-value (-log10 scale)",main=main,xaxs="i",yaxs="i",xlim=c(0,max(x)+0.2),ylim=c(0,max(y)+0.2))
+    lines(c(0,-log10(ps)),c(-log10(ps),-log10(ps)),type="l",col=1,lty=2)
+    lines(c(-log10(ps),-log10(ps)),c(0,-log10(ps)),type="l",col=1,lty=2)
+    abline(0,1,lwd=3,col=1)
+    if(!is.null(subcol)){
+        subs <- match(subcol,yix)
+        lines(x[subs],y[subs],col=2,type="p",pch=19)
+    }
+    if(!is.null(labels)){
+        library(wordcloud)
+        #subs <- which((y > -log10(ps)) & (x > -log10(ps)))
+        subs <- (length(y)-19):length(y)
+        nc <- wordlayout(x[subs],y[subs],labels[yix[subs]],cex=0.8)
+        text(nc[,1],nc[,2],labels[yix[subs]],cex=0.8)
+        #textplot(x[subs],y[subs],words=labels[yix[subs]],col=2,cex=0.8)
+        if(!is.null(subcol)){
+            insub <- match(subcol,yix)
+            insub <- intersect(insub,subs)
+            text(nc[match(insub,subs),1],nc[match(insub,subs),2],labels[yix[insub]],cex=0.8,col=2)
+        }
+    }
+    
 }
