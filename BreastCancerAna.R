@@ -143,17 +143,18 @@ qwt(variantTable,vburdenfile,flag=2)
 
 
 ## =========================output indels for IGV and variant tables=========================================
-ListgoSimfile <- paste(outputpath,"VariantList_Simple.txt",sep="")
 indelsfile <- paste(outputpath,"indels_",Ecut,".txt",sep="")
-genesetsVarfile <- paste(outputpath,"geneset_variantlist.txt",sep="")
+genesetsVarfile <- paste(outputpath,"Panel_genes_variantlist.txt",sep="")
+restVarfile <- paste(outputpath,"Variantlist.txt",sep="")
 ##===============================step 1: give variant list information==================
 varTable <- read.delim(vburdenfile)
 genes <- unique(c(TSg,DRg,DNAreg,Panelg))
 vartys <- c(mis,lof,indel)
-variantlist <- caselist[caselist[,"VariantClass"] %in% vartys & caselist[,"Gene"] %in% genes, ]
+variantlist <- caselist[caselist[,"VariantClass"] %in% vartys, ]
 vars <- paste(variantlist[,1],variantlist[,2],variantlist[,4],variantlist[,5],sep="_")
 n.var <- length(vars)
 rowTitle <- matrix(0,n.var,10)
+rowTitle[,1] <- "non-Panel_genes"
 rowTitle[variantlist[,"Gene"] %in% DNAreg,1] <- "DNA_repair"
 rowTitle[variantlist[,"Gene"] %in% Panelg,1] <- "Panel_genes"
 rowTitle[variantlist[,"Gene"] %in% TSg,1] <- "Tumor_suppressor"
@@ -176,6 +177,16 @@ indelVars <- variantlist[variantlist[,"VariantClass"] %in% c("frameshiftdeletion
 ## ===========step 2: give phenotype information on family and other cohort cases=============
 load(Cohortfile)
 pheno <- read.csv(phenofile)
+if(sig){ ## singleton delete several columns
+    delcols <- c("Control","#cases","#controls","Folds","pvalue","filtered","ExACfreq","VCFPASS","noneSegmentalDup","meta-SVM_PP2","hotspot","alleleFre")
+    variantlist <- variantlist[,!(colnames(variantlist) %in% delcols)]
+}else{  ## filtered by p value 0.05 and delete repeat rows
+    variantlist <- variantlist[as.numeric(variantlist[,"pvalue"]) < 0.05,]
+    univar <- unique(variantlist[,"Variant"])
+    variantlist <- variantlist[match(univar,variantlist[,"Variant"]),]
+    delcols <- c("Subject_ID","filtered","ExACfreq","VCFPASS","noneSegmentalDup","meta-SVM_PP2","hotspot","alleleFre")
+    variantlist <- variantlist[,!(colnames(variantlist) %in% delcols)]
+}
 varsCheck <- variantlist[,"Variant"]
 contvars <- paste(contlist[,1],contlist[,2],contlist[,4],contlist[,5],sep="_")
 casevars <- paste(caselist[,1],caselist[,2],caselist[,4],caselist[,5],sep="_")
@@ -201,11 +212,10 @@ colnames(varvariantlist) <- c("Family-ID","Yes-Family","No-Family","Yes-Cohort",
 rownames(varvariantlist) <- rownames(variantlist)
 variantlistCom <- cbind(varvariantlist,variantlist)
 variantlistCom <- variantlistCom[order(variantlistCom[,"Gene_sets"],variantlistCom[,"variant_type"],variantlistCom[,"Gene"]),]
-variantlistSim <- variantlistCom[,c("Gene","Variant","Subject_ID","Family-ID","Yes-Family","No-Family","Yes-Cohort","No-Cohort","Control","variant_type","#cases","#controls","AlleleFrequency.ExAC","GT","AD","Gene_sets")]
-## step 3: write result
-qwt(variantlistCom,file=genesetsVarfile,flag=2)
-qwt(indelVars,file=indelsfile)
-qwt(variantlistSim,file=ListgoSimfile,flag=2)
 
+## step 3: write result
+qwt(variantlistCom[variantlistCom[,"Gene"] %in% genes,],file=genesetsVarfile,flag=2)
+qwt(variantlistCom[variantlistCom[,"Gene_sets"] %in% "non-Panel_genes",],file=restVarfile,flag=2)
+qwt(indelVars,file=indelsfile)
 
 }
