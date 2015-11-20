@@ -51,6 +51,48 @@ getindexcase <- function(phenofile,agem="max"){
     indexcases
 }
 
+VariantSta <- function(casef,contf,cases,controls,outputpath){
+    ## print to log
+    print_log(paste("VariantSta function is running ...", date(),sep=" "))
+    print_log(paste("VariantSta: the number of cases is: ", length(unique(cases)),sep=" "))
+    print_log(paste("VariantSta: the number is controls is: ", length(unique(contorls)),sep=" "))
+    
+    ## running
+    if(!file.exists(outputpath)){ dir.create(outputpath, showWarnings = TRUE, recursive = FALSE);}
+    varT=c("synonymous","Missense","indels","Frameshift","ALL")
+    tmp <- read.table(casef,fill=T)
+    varTa <- t(tmp[c(21,22,4,25,3),match(cases,tmp[2,])])
+    varTa <- cbind("case",cases,varTa)
+    colnames(varTa) <- c("Group","Subject_ID",varT)
+    tmp <- read.table(contf,fill=T)
+    varTa1 <- t(tmp[c(21,22,4,25,3),match(controls,tmp[2,])])
+    varTa1 <- cbind("control",controls,varTa1)
+    colnames(varTa1) <- c("Group","Subject_ID",varT)        
+    Ta <- rbind(varTa,varTa1)
+    n <- dim(Ta)[2]
+    density_plots(Ta[,3:n],Ta[,1],outputpath,VarT=varT)
+    
+    ## done
+    print_log(paste("VariantSta function is done!", date(),sep=" "))
+}
+
+density_plots <- function(oneVar,g,outputpath,VarT=c("LOF","MIS","indel","synonymous","unknown","ALL")){
+    if(!file.exists(outputpath)){
+        dir.create(outputpath, showWarnings = TRUE, recursive = FALSE)
+    }
+    mode(oneVar) <- "numeric"
+    
+    for(i in 1:dim(oneVar)[2]){
+        pdf(paste(outputpath,VarT[i],"_Dis.pdf",sep=""),height=10,width=10)
+        x1 <- density(oneVar[g=="case",i])
+        x2 <- density(oneVar[g=="control",i])
+        plot(x1,col=1,type="l",main=paste(VarT[i]," : case-control distribution",sep=""),xlab="Number of variants in each subject",xlim=c(min(oneVar[,i]),max(oneVar[,i])),ylim=c(0,max(c(x1$y,x2$y))))
+        lines(x2,col=2,type="l")
+        legend("topright",legend=c("case","control"),lty=rep(1,2),lwd=2,col=1:2)
+        dev.off()
+    }
+}
+
 variant_filtering <- function(onelist,mis,Ecut=0.01,segd=0.95,pp2=TRUE,hotf="",alleleFrefile=NULL,popcut=0.05){
     ### onelist: variant list
     ### Ecut: ExAC frequency cut off
@@ -221,6 +263,67 @@ burden_test <- function(caselist,contlist,testset=NULL,testtype=NULL,flag,sig=FA
     ##========================================================================================
     oneTable
 }
+
+qqplot_variantLevel <- function(burdentable,outputpath,Panelg,varT,caselist){
+    
+    ## print to log
+    print_log(paste("qqplot_variantLevel function is running ...", date(),sep=" "))
+   
+    if(!file.exists(outputpath)){ dir.create(outputpath, showWarnings = TRUE, recursive = FALSE);}
+    varstr <- c("LOF","D-mis","indels","Synonymous")
+    casevars <- paste(caselist[,1],caselist[,2],caselist[,4],caselist[,5],sep="_")
+    pT <- read.delim(burdentable)
+    for(i in 1:length(varT)){
+        subs <- which(pT[,2] %in% casevars[caselist[,"VariantClass"] %in% varT[[i]]])
+        pval <- pT[subs,"Pvalue"]
+        subcol <- which(pT[subs,1]%in% Panelg)
+        pdf(file=paste(outputpath,varstr[i],".pdf",sep=""),width=10,height=10)
+        PQQ(pval,subcol=subcol,main=paste("QQ plots of ", varstr[i],sep=""),labels=pT[subs,1])
+        dev.off()
+    }
+    
+    ## 
+    print_log(paste("qqplot_variantLevel is done!", date(),sep=" "))
+    
+}
+
+PQQ <- function(pval,ps=0.05,subcol=NULL,main="",labels=NULL,nlab=20){
+    ##nlab: number of points with labels
+    
+    x <- sort(-log10(runif(length(pval),0,1)))
+    y <- sort(-log10(pval))
+    yix <- sort(-log10(pval), index.return = TRUE)$ix
+    
+    plot(x,y,xlab="Excepted P-value (-log10 scale)",ylab="Observed P-value (-log10 scale)",main=main,xaxs="i",yaxs="i",xlim=c(0,max(x)+0.2),ylim=c(0,max(y)+0.2))
+    lines(c(0,-log10(ps)),c(-log10(ps),-log10(ps)),type="l",col=1,lty=2)
+    lines(c(-log10(ps),-log10(ps)),c(0,-log10(ps)),type="l",col=1,lty=2)
+    abline(0,1,lwd=3,col=1)
+    if(!is.null(subcol)){
+        subs <- match(subcol,yix)
+        lines(x[subs],y[subs],col=2,type="p",pch=19)
+    }
+    if(!is.null(labels)){
+        library(wordcloud)
+        subs <- which((y > -log10(ps)) & (x > -log10(ps)))
+        if(length(y)>=nlab){ tmpsubs <- (length(y)-nlab+1):length(y);
+        }else{ tmpsubs <- 1:length(y);}
+        subs <- intersect(subs,tmpsubs)
+        
+        if(length(subs) >= 1){
+            nc <- wordlayout(x[subs],y[subs],labels[yix[subs]],cex=0.8)
+            text(nc[,1],nc[,2],labels[yix[subs]],cex=0.8)
+            #textplot(x[subs],y[subs],words=labels[yix[subs]],col=2,cex=0.8)
+            if(!is.null(subcol)){
+                insub <- match(subcol,yix)
+                insub <- intersect(insub,subs)
+                text(nc[match(insub,subs),1],nc[match(insub,subs),2],labels[yix[insub]],cex=0.8,col=2)
+            }
+        }
+    }
+    
+}
+
+
 
 qwt <- function(x,filer,sep="\t",flag=0){
     if(flag==0){

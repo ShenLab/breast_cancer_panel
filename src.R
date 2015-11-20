@@ -10,6 +10,14 @@ phenoinfo <- function(){
     pheno
 }
 
+getHispanicCases <- function(){
+    source("src.R")
+    source("misc.R")
+    pheno <- phenoinfo()
+    HIcases <- pheno[pheno[,"HISPFAM"]=="H" & pheno[,"AJFAM"]!="J",3]
+    qwt(HIcases,file="../data/HispanicCases548.txt")
+}
+
 FamilyDis <- function(pheno,familyf,casef){
 
     ### case and non-case
@@ -225,49 +233,6 @@ variantDis_one <- function(caselist,contlist){
     varTypes  
 }
 
-density_plots <- function(oneVar,g,outputpath,VarT=c("LOF","MIS","indel","synonymous","unknown","ALL")){
-    if(!file.exists(outputpath)){
-        dir.create(outputpath, showWarnings = TRUE, recursive = FALSE)
-    }
-    mode(oneVar) <- "numeric"
-
-    for(i in 1:dim(oneVar)[2]){
-        pdf(paste(outputpath,VarT[i],"_Dis.pdf",sep=""),height=10,width=10)
-        x1 <- density(oneVar[g=="case",i])
-        x2 <- density(oneVar[g=="control",i])
-        plot(x1,col=1,type="l",main=paste(VarT[i]," : case-control distribution",sep=""),xlab="Number of variants in each subject",xlim=c(min(oneVar[,i]),max(oneVar[,i])),ylim=c(0,max(c(x1$y,x2$y))))
-        lines(x2,col=2,type="l")
-        legend("topright",legend=c("case","control"),lty=rep(1,2),lwd=2,col=1:2)
-        dev.off()
-    }
-}
-
-variantDis_vcflog <- function(){
-    source("misc.R")
-    source("src.R")
-    outputpath <- "../resultf/"
-    AJcontrolfile <- "/home/local/ARCS/qh2159/breast_cancer/variants/data/AJs_585.txt"
-    controls <- unlist(read.table(AJcontrolfile))
-    load("../resultf/caselist_FALSE_0.01_HMM")
-    indexcases <- unique(caselist[,"Subject_ID"])
-    casestaf <- "../data/BR_20151116.hardfiltered.stats_hq.tsv"
-    contstaf <- "../data/AJ_20151102.hardfiltered.stats_hq.tsv"
-    
-    varT=c("synonymous","Missense","indels","Frameshift","ALL")
-    tmp <- read.table(casestaf,fill=T)
-    varTa <- t(tmp[c(21,22,4,25,3),match(indexcases,tmp[2,])])
-    varTa <- cbind("case",indexcases,varTa)
-    colnames(varTa) <- c("Group","Subject_ID",varT)
-    tmp <- read.table(contstaf,fill=T)
-    varTa1 <- t(tmp[c(21,22,4,25,3),match(controls,tmp[2,])])
-    varTa1 <- cbind("control",controls,varTa1)
-    colnames(varTa1) <- c("Group","Subject_ID",varT)
-    
-    Ta <- rbind(varTa,varTa1)
-    density_plots(Ta[,3:7],Ta[,1],"../resultf/VariantSta/",VarT=varT)
-
-}
-
 getCohortVariantlist <- function(){
 
     namestr=".AllVariants.tsv"
@@ -287,91 +252,5 @@ getCohortVariantlist <- function(){
     }
     
     save(onelist,file="../resultf/BreastCancer_VariantList_11_12")
-    
-}
-
-shortTable_nonsingletons <- function(){
-    source("misc.R")
-    lof <- c("frameshiftdeletion","frameshiftinsertion","none","stopgain","stoploss",".")
-    mis <- "nonsynonymousSNV"
-    variantlist <- read.delim("../resultf/burdentest_FALSE_0.001_HMM_hotspots_11_12/geneset_variantlist.txt")
-    subs <- (variantlist[,"VariantClass"] %in% c(lof,mis)) & (variantlist[,"OddsRatio"]>1)
-    cols <- setdiff(1:dim(variantlist)[2],c(1:6,61:67))
-    shortV <- variantlist[subs,cols] 
-    shortV <- shortV[order(-shortV[,"OddsRatio"],-shortV[,"X.cases.carrier"],shortV[,"Variant"]),]
-    qwt(shortV,file="../resultf/burdentest_FALSE_0.001_HMM_hotspots_11_12/shortList_genesets.txt",flag=2)
-    
-}
-
-qqplot_variantLevel <- function(){
-    
-    source("src.R")
-    ## qq plots for pvalues in variant level
-    burdentable <- "../resultf/burdentest_TRUE_0.001_HMM_hotspots_11_12/variant_level.burden.txt"
-    outputpath <- "../resultf/qqplots_TRUE_0.001_HMM/"
-    
-    if(!file.exists(outputpath)){
-        dir.create(outputpath, showWarnings = TRUE, recursive = FALSE)
-    }
-    
-    TSfile <- "../data/hotspots/Tumor_suppressors_11_11.txt" ## collected tumor suppressors
-    cancerdriverfile <- "../data/hotspots/Cancer_driver_11_6.txt" ## cancer drivers
-    DNArepairfile <- "../data/hotspots/DNA_repair_11_6.txt" ## DNA repair genes
-    Panelgfile <-  "../../genelist/Genelist2.txt" ## Panel genes    
-    TSg <- unlist(read.table(TSfile))
-    DRg <- unlist(read.table(cancerdriverfile)) ## cancer drivers
-    DNAreg <- unlist(read.table(DNArepairfile))
-    Panelg <- unlist(read.table(Panelgfile))
-    Panelg <- setdiff(Panelg,c(TSg,DRg,DNAreg))
-    allgenes <- unique(c(TSg,DRg,DNAreg)) #!!!!!!
-    
-    lof <- c("frameshiftdeletion","frameshiftinsertion","none","stopgain","stoploss",".")
-    mis <- "nonsynonymousSNV"
-    indel <- c("nonframeshiftdeletion","nonframeshiftinsertion")
-    syn <- "synonymousSNV"
-    varT <- list(lof,mis,indel,syn)
-    varstr <- c("LOF","D-mis","indels","Synonymous")
-    load("../resultf/caselist_FALSE_0.01_HMM")
-    casevars <- paste(caselist[,1],caselist[,2],caselist[,4],caselist[,5],sep="_")
-    pT <- read.delim(burdentable)
-    
-    for(i in 1:length(varT)){
-        subs <- which(pT[,2] %in% casevars[caselist[,"VariantClass"] %in% varT[[i]]])
-        pval <- pT[subs,"Pvalue"]
-        subcol <- which(pT[subs,1]%in% allgenes)
-        pdf(file=paste(outputpath,varstr[i],".pdf",sep=""),width=10,height=10)
-        PQQ(pval,subcol=subcol,main=paste("QQ plots of ", varstr[i],sep=""),labels=pT[subs,1])
-        dev.off()
-    }
-
-}
-
-PQQ <- function(pval,ps=0.05,subcol=NULL,main="",labels=NULL){
-    
-    x <- sort(-log10(runif(length(pval),0,1)))
-    y <- sort(-log10(pval))
-    yix <- sort(-log10(pval), index.return = TRUE)$ix
-    
-    plot(x,y,xlab="Excepted P-value (-log10 scale)",ylab="Observed P-value (-log10 scale)",main=main,xaxs="i",yaxs="i",xlim=c(0,max(x)+0.2),ylim=c(0,max(y)+0.2))
-    lines(c(0,-log10(ps)),c(-log10(ps),-log10(ps)),type="l",col=1,lty=2)
-    lines(c(-log10(ps),-log10(ps)),c(0,-log10(ps)),type="l",col=1,lty=2)
-    abline(0,1,lwd=3,col=1)
-    if(!is.null(subcol)){
-        subs <- match(subcol,yix)
-        lines(x[subs],y[subs],col=2,type="p",pch=19)
-    }
-    if(!is.null(labels)){
-        library(wordcloud)
-        #subs <- which((y > -log10(ps)) & (x > -log10(ps)))
-        subs <- (length(y)-19):length(y)
-        nc <- wordlayout(x[subs],y[subs],labels[yix[subs]],cex=0.8)
-        text(nc[,1],nc[,2],labels[yix[subs]],cex=0.8)
-        #textplot(x[subs],y[subs],words=labels[yix[subs]],col=2,cex=0.8)
-        if(!is.null(subcol)){
-            insub <- match(subcol,yix)
-            insub <- intersect(insub,subs)
-            text(nc[match(insub,subs),1],nc[match(insub,subs),2],labels[yix[insub]],cex=0.8,col=2)
-        }
-    }
     
 }
