@@ -254,3 +254,37 @@ getCohortVariantlist <- function(){
     save(onelist,file="../resultf/BreastCancer_VariantList_11_12")
     
 }
+
+doublecheck <- function(){
+    source("misc.R")
+    source("src.R")
+    varfile <- "../resultf/burdentest_FALSE_0.01_HMM_hotspots_11_12/Panel_genes_variantlist.txt"
+    onevar <- read.delim(varfile)
+    onevar <- onevar[onevar[,"Gene"]=="MSH3",]
+    
+    ## write indels
+    oneids <- c()
+    for(i in 2:5){
+        tmp <- unlist(strsplit(onevar[1,i],":"))
+        oneids <- union(oneids,tmp)
+    }
+    onevarf <- matrix(0,length(oneids),3)
+    onevarf[,1] <- onevar[1,"Chromosome"]
+    onevarf[,2] <- onevar[1,"Position"]
+    onevarf[,3] <- oneids
+    qwt(onevarf,file="../single_check/MSH3_IGV.txt")
+        
+    pheno <- phenoinfo()
+    onephe <- pheno[pheno[,3] %in% oneids,]
+    qwt(onephe,file="../single_check/MSH3_pheno.txt",flag=2)
+    
+    pedigree <- read.csv("/home/local/ARCS/qh2159/breast_cancer/Panel/data/phenotype/ALL_pedigree.csv") # ALLadd_pedigree.csv
+    indids <- pheno[pheno[,3] %in% oneids,2]
+    oneped <- pedigree[pedigree[,2] %in% indids | pedigree[,3] %in% indids | pedigree[,4] %in% indids,]
+    oneped <- cbind(oneped,oneped[,2:4])
+    oneped[oneped[,5] %in% pheno[,2],5] <- pheno[match(oneped[oneped[,5] %in% pheno[,2],5],pheno[,2]), 3]
+    oneped[oneped[,6] %in% pheno[,2],6] <- pheno[match(oneped[oneped[,6] %in% pheno[,2],6],pheno[,2]), 3]
+    oneped[oneped[,7] %in% pheno[,2],7] <- pheno[match(oneped[oneped[,7] %in% pheno[,2],7],pheno[,2]), 3]
+    qwt(oneped,file="../single_check/MSH3_pedigree.txt",flag=2)
+    
+}
