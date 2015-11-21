@@ -1,5 +1,5 @@
 ## ===============================================================================
-## Jewish burden test
+## burden test
 ## ===============================================================================
 source("misc.R")
 
@@ -45,7 +45,7 @@ if(swi==1){
 }else if(swi==2){
     caselistf <- "../data/Rdata/HIcaselist_11_20"
     contlistf <- "../data/Rdata/HIcontlist_11_20"  
-    contstaf <- AJcontstaf
+    contstaf <- HIcontstaf
 }
 
 
@@ -168,6 +168,7 @@ variantTable <- variantTable[order(-as.numeric(variantTable[,"Folds"]),as.numeri
 print_log("Output burden files ...")
 ### output file names
 outputpath1 <- paste(outputpath,"burden/",sep="")
+if(!file.exists(outputpath1)){ dir.create(outputpath1, showWarnings = TRUE, recursive = FALSE);}
 setburdenfile <- paste(outputpath1,"gene_variant_set.burden.txt",sep="") ### gene set and variant types burden test file
 loffile <- paste(outputpath1,"LOF_level.burden.txt",sep="") ###LOF: single gene level burden test
 misfile <- paste(outputpath1,"MIS_level.burden.txt",sep="") ###MIS: single gene level burden test                 
@@ -206,7 +207,7 @@ rowTitle[,4:10] <- as.matrix(varTable[match(vars,varTable[,2]),c(2:8)])
 variantlist <- variantlist[,colnames(variantlist)!="Gene"]
 variantlist <- cbind(rowTitle,variantlist)
 variantlist <- variantlist[order(variantlist[,1],variantlist[,2],-as.numeric(variantlist[,9]),as.numeric(variantlist[,10])),]
-if(sig){
+if(FALSE){
     colnames(variantlist)[1:10] <- c("Gene_sets","variant_type","Gene","Variant","#cases","#controls","n.case","n.cont","Folds","pvalue")
 }else{
     colnames(variantlist)[1:10] <- c("Gene_sets","variant_type","Gene","Variant","#cases carrier","#controls carrier","#case non-carrier","#control non-carrier","OddsRatio","pvalue")
@@ -218,7 +219,7 @@ indelVars <- variantlist[variantlist[,"VariantClass"] %in% c("frameshiftdeletion
 load(Cohortfile)
 pheno <- read.csv(phenofile)
 if(sig){ ## singleton delete several columns
-    delcols <- c("Control","#cases","#controls","Folds","pvalue","filtered","ExACfreq","VCFPASS","noneSegmentalDup","meta-SVM_PP2","hotspot","alleleFre")
+    delcols <- c("Control","#cases carrier","#controls carrier","OddsRatio","pvalue","filtered","ExACfreq","VCFPASS","noneSegmentalDup","meta-SVM_PP2","hotspot","alleleFre")
     variantlist <- variantlist[,!(colnames(variantlist) %in% delcols)]
 }else{  ## filtered by p value 0.05 and delete repeat rows
     variantlist <- variantlist[as.numeric(variantlist[,"pvalue"]) < 0.05,]

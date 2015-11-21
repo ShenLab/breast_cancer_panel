@@ -55,7 +55,7 @@ VariantSta <- function(casef,contf,cases,controls,outputpath){
     ## print to log
     print_log(paste("VariantSta function is running ...", date(),sep=" "))
     print_log(paste("VariantSta: the number of cases is: ", length(unique(cases)),sep=" "))
-    print_log(paste("VariantSta: the number is controls is: ", length(unique(contorls)),sep=" "))
+    print_log(paste("VariantSta: the number is controls is: ", length(unique(controls)),sep=" "))
     
     ## running
     if(!file.exists(outputpath)){ dir.create(outputpath, showWarnings = TRUE, recursive = FALSE);}
@@ -204,7 +204,7 @@ burden_test <- function(caselist,contlist,testset=NULL,testtype=NULL,flag,sig=FA
     casevars <- paste(caselist[,1],caselist[,2],caselist[,4],caselist[,5],sep="_") 
     contvars <- paste(contlist[,1],contlist[,2],contlist[,4],contlist[,5],sep="_")
     
-    if(sig){
+    if(FALSE){
         if(flag == 1){
             a <- dim(caselist)[1]
             b <- dim(contlist)[1]
