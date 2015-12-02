@@ -14,7 +14,6 @@ if(hotf==1){ hotspotfile <- "../data/hotspots/HMM_hotspots_11_12.txt"; ## Hongji
 }else{ hotspotfile <- "../data/hotspots/cosmic_hotspots_3.txt"; }## COSMIC hotspots file
 outlierfile <- "/home/local/ARCS/yshen/data/WENDY/BreastCancer/Regeneron/FreezeOneVariantCalling/Outliers_to_be_excluded.list"  ## outlier samples
 BRCA1_2pathogenicfile <- "../data/phenotype/BRCA1_2.txt" ## BRCA1/2 pathogenic samples file
-alleleFrefile <- "/home/local/ARCS/ads2202/data/AJ_PCA/combined_variant_call/NonBC_Frequencies.expanded.tsv" ## non-breast cancer samples allle frequency
 TSfile <- "../data/hotspots/Tumor_suppressors_11_11.txt" ## collected tumor suppressors
 cancerdriverfile <- "../data/hotspots/Cancer_driver_11_6.txt" ## cancer drivers
 DNArepairfile <- "../data/hotspots/DNA_repair_11_6.txt" ## DNA repair genes
@@ -24,7 +23,7 @@ phenofile <- "../data/phenotype/WES BCFR phenotypic data.csv" ## phenotype file 
 dupIDs <- c("222357","222966") ## duplicated with Subject ID 222966 ## duplicated subject
 ## variant files and case, control samples ## check the log file to see the variant filtering details
 casevariantpath <- "/home/local/ARCS/yshen/data/WENDY/BreastCancer/Regeneron/Filtering_Oct2015/"
-contvariantpath <- "/home/local/ARCS/qh2159/breast_cancer/variants/AJconVariantCalling/"
+AJcontvariantpath <- "/home/local/ARCS/qh2159/breast_cancer/variants/AJconVariantCalling/"
 HIcontvariantpath <- "/home/local/ARCS/qh2159/breast_cancer/variants/HIconVariantCalling/"
 AJcasefile <- "/home/local/ARCS/yshen/data/WENDY/BreastCancer/Regeneron/tablesandlists/All_AJ_samples.list"
 HIcasefile <- "/home/local/ARCS/qh2159/breast_cancer/Panel/data/HispanicCases548.txt"
@@ -32,17 +31,19 @@ AJcontrolfile <- "/home/local/ARCS/qh2159/breast_cancer/variants/data/AJs_585.tx
 HIcontrolfile <- "/home/local/ARCS/qh2159/breast_cancer/variants/data/HIs_341.txt"
 Cohortfile <- "../resultf/BreastCancer_VariantList_11_12"
 ## variant count statistics
-casestaf <- "../data/BR_20151116.hardfiltered.stats_hq.tsv"
-AJcontstaf <- "../data/AJ_20151102.hardfiltered.stats_hq.tsv"
-HIcontstaf <- "../data/Hispanic.stats._hq.tsv"
+casestaf <- "../data/BR_20151201.hardfiltered.stats_hq.tsv"
+AJcontstaf <- "../data/AJ_20151201.hardfiltered.stats_hq.tsv"
+HIcontstaf <- "../data/Hispanic_20151201.stats_hq.tsv"
 
 
 ## switch to the right files for burden test
 if(swi==1){
+    alleleFrefile <- "/home/local/ARCS/ads2202/data/AJ_PCA/combined_variant_call/NonBC_Frequencies.expanded.tsv" ##AJ: not in our cohort 
     caselistf <- "../data/Rdata/AJcaselist_11_9"
     contlistf <- "../data/Rdata/AJcontlist_11_9"
     contstaf <- AJcontstaf
 }else if(swi==2){
+    alleleFrefile <- NULL
     caselistf <- "../data/Rdata/HIcaselist_11_20"
     contlistf <- "../data/Rdata/HIcontlist_11_20"  
     contstaf <- HIcontstaf
@@ -81,7 +82,7 @@ allgenes <- union(Gtop[,1],c(TSg,DRg,DNAreg,Panelg))
 ## =========================variant list filtering===========================================
 ##getVariantlist(casevariantpath,AJcasefile,namestr=".AllVariants.tsv","../data/Rdata/AJcaselist_11_9")
 ##getVariantlist(casevariantpath,HIcasefile,namestr=".AllVariants.tsv","../data/Rdata/HIcaselist_11_20")
-##getVariantlist(contvariantpath,AJcontrolfile,namestr=".tsv","../data/Rdata/AJcontlist_11_9")
+##getVariantlist(AJcontvariantpath,AJcontrolfile,namestr=".tsv","../data/Rdata/AJcontlist_11_9")
 ##getVariantlist(HIcontvariantpath,HIcontrolfile,namestr=".tsv","../data/Rdata/HIcontlist_11_20")
 ### ====================================getVariantlist save as Rdata==
 print_log("variant list filtering ...")

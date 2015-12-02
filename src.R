@@ -43,10 +43,10 @@ FamilyDis <- function(pheno,familyf,casef){
     
     pdf(file=familyf,width=12,height=10)
     par(mai=c(2,2,1,1))
-    mp <- barplot(t(famdis[,c(4,3,2,1)]),ylim=c(0,max(rowSums(famdis))+5), space=0.4, col=c("green","cyan","blue","red") ,cex.axis=1.6,xlab="Number of family members",ylab="Number of families",cex.lab=2,legend = c("No Breast Cancer(Male)","No Breast Cancer(Female)","Breast Cancer(Male)","Breast Cancer(Female)"),main="Family Distribution",cex.main=2 )
+    mp <- barplot(t(famdis[,c(4,3,2,1)]),ylim=c(0,max(rowSums(famdis))+15), space=0.4, col=c("green","cyan","blue","red") ,cex.axis=1.6,xlab="Number of family members",ylab="Number of families",cex.lab=2,legend = c("No Breast Cancer(Male)","No Breast Cancer(Female)","Breast Cancer(Male)","Breast Cancer(Female)"),main="Family Distribution",cex.main=2 )
     axis(1, at=mp, labels=tmp1,cex.axis=2)
     text(x=mp,y=rowSums(famdis),labels=testr,pos=3,cex=0.8)
-    text(x=mp[5],y=max(rowSums(famdis))/2+30,labels="(#subject, #case(F), #case(M), #non-case(F), #non-case(M))",cex=1)
+    text(x=mp[5]+5,y=max(rowSums(famdis))/2+10,labels="(#subject, #case(F), #case(M), #non-case(F), #non-case(M))",cex=1)
     dev.off()   
     
     ## the number of cases in each family
@@ -91,7 +91,7 @@ PopulationDis <- function(){
     AJpheno <- pheno[pheno[,3] %in% AJs,]
     FamilyDis(AJpheno,"../data/phenotype/JewishFamily.pdf","../data/phenotype/Jewishcase_perFamily.pdf")
     
-    Hpheno <- pheno[pheno[,"HISPFAM"] %in% "H",]
+    Hpheno <- pheno[pheno[,"HISPFAM"] %in% "H" & pheno[,"AJFAM"]!="J",]
     FamilyDis(Hpheno,"../data/phenotype/HisFamily.pdf","../data/phenotype/Hiscase_perFamily.pdf")
 
 }
@@ -255,6 +255,101 @@ getCohortVariantlist <- function(){
     
 }
 
+getLargeFamily <- function(){
+    source("misc.R")
+    source("src.R")
+    mis <- "nonsynonymousSNV"
+    pheno <- phenoinfo()
+    nfam <- table(pheno[,1])
+    LargeFam <- names(nfam[nfam>=7])
+    Lpheno <- pheno[pheno[,1] %in% LargeFam,]
+    subjects <- unique(Lpheno[,3])
+    load("../resultf/BreastCancer_VariantList_11_12")
+    onelist <- onelist[onelist[,"Subject_ID"] %in% subjects,]
+    
+    outlierfile <- "/home/local/ARCS/yshen/data/WENDY/BreastCancer/Regeneron/FreezeOneVariantCalling/Outliers_to_be_excluded.list"  ## outlier samples
+    outliers <- unlist(read.table(outlierfile))
+    outliers <- sapply(1:length(outliers),function(i) {tmp=unlist(strsplit(outliers[i],"_"));setdiff(gsub("\\D","",tmp),c("",paste("00",1:9,sep="")));})
+    
+    onelist <- onelist[!(onelist[,"Subject_ID"] %in% outliers), ]
+    onelist <- variant_filtering(onelist,mis,Ecut=0.01,segd=0.95,pp2=TRUE,hotf="",alleleFrefile=NULL,popcut=0.05)
+    onelist <- onelist[onelist[,"filtered"], ]
+    
+    qwt(Lpheno,file="../resultf/LargeFamilyPhenotype.txt",flag=2)
+    qwt(onelist,file="../resultf/LargeFamilyVariants.txt",flag=2)
+    
+}
+
+variantLargeFamily <- function(){
+    # low in control data, high in family cases and low in unaffected memebers
+    pedigree <- read.csv("/home/local/ARCS/qh2159/breast_cancer/Panel/data/phenotype/ALL_pedigree.csv")
+    onelist <- read.delim("../resultf/LargeFamilyVariants.txt")
+    pheno <- read.delim("../resultf/LargeFamilyPhenotype.txt")
+    
+    subAJ <- pheno[pheno[,"AJFAM"]=="J",3]
+    contlistf <- "../data/Rdata/AJcontlist_11_9"
+    wfile="../resultf/LargeFamilyJewish.txt"
+    Variantcounting(pheno,subAJ,onelist,contlistf,wfile)
+    
+    subAJ <- pheno[pheno[,"HISPFAM"]=="H",3]
+    contlistf <- "../data/Rdata/HIcontlist_11_20"
+    wfile="../resultf/LargeFamilyHispanic.txt"
+    Variantcounting(pheno,subAJ,onelist,contlistf,wfile)
+
+}
+
+Variantcounting <- function(pheno,subAJ,onelist,contlistf,wfile){
+    source("misc.R")
+    subAJf <- subAJ[pheno[match(subAJ,pheno[,3]),"BreastCancer"]=="Yes"]
+    subAJu <- subAJ[pheno[match(subAJ,pheno[,3]),"BreastCancer"]=="No"]
+    caseAJf <- onelist[onelist[,"Subject_ID"] %in% subAJf,]
+    caseAJu <- onelist[onelist[,"Subject_ID"] %in% subAJu,]
+    load(contlistf)
+    contlist <- onelist
+    
+    fvar <- paste(caseAJf[,1],caseAJf[,2],caseAJf[,4],caseAJf[,5],sep="_")
+    uvar <- paste(caseAJu[,1],caseAJu[,2],caseAJu[,4],caseAJu[,5],sep="_")
+    convar <- paste(contlist[,1],contlist[,2],contlist[,4],contlist[,5],sep="_")
+    
+    ffvar <- table(fvar)
+    fuvar <- table(uvar)
+    fcvar <- table(convar)
+    
+    utmp <- setdiff(names(fuvar),names(ffvar))
+    
+    atmp <- setdiff(union(names(ffvar),names(fuvar)),names(fcvar))
+    fcvar[atmp] <- 0 
+    atmp <- setdiff(names(ffvar),names(fuvar))
+    fuvar[atmp] <- 0
+    
+    
+    unifvar <- unique(fvar)
+    s <- (ffvar[unifvar]+1)/(fuvar[unifvar]+2*fcvar[unifvar]+1)
+    s1 <- - fuvar[utmp] 
+    aa <- cbind(c(unifvar,utmp),c(s,s1))  
+    aa <- cbind(aa,0,0,0)
+    n1 <- length(unifvar)
+    n2 <- length(c(unifvar,utmp))
+    aa[1:n1,3] <- ffvar[unifvar]
+    aa[1:n1,4] <- fuvar[unifvar]
+    aa[1:n1,5] <- fcvar[unifvar]
+    aa[(n1+1):n2,4] <- fuvar[utmp]
+    aa[(n1+1):n2,5] <- fcvar[utmp]
+
+    wvar <- rbind(caseAJf,caseAJu)
+    vars <- paste(wvar[,1],wvar[,2],wvar[,4],wvar[,5],sep="_")
+    wvar <- cbind(aa[match(vars,aa[,1]),2:5],wvar)
+    wvar <- wvar[order(-as.numeric(wvar[,1])),]
+    colnames(wvar)[1:4] <- c("score","affect","unaffect","control")
+    wvar <- wvar[,!(colnames(wvar) %in% c("filtered","ExACfreq","VCFPASS","noneSegmentalDup","meta.SVM_PP2","hotspot","alleleFre"))]
+    wvar <- wvar[,c(dim(wvar)[2],1:(dim(wvar)[2]-1))]
+    wvar <- cbind(pheno[match(wvar[,"Subject_ID"],pheno[,3]),c("FAMILYID","BreastCancer")],wvar)
+    colnames(wvar)[1] <- "FamilyID"
+    
+    qwt(wvar,file=wfile,flag=2)
+
+}
+
 doublecheck <- function(){
     source("misc.R")
     source("src.R")
@@ -287,4 +382,106 @@ doublecheck <- function(){
     oneped[oneped[,7] %in% pheno[,2],7] <- pheno[match(oneped[oneped[,7] %in% pheno[,2],7],pheno[,2]), 3]
     qwt(oneped,file="../single_check/MSH3_pedigree.txt",flag=2)
     
+    
+    pheno <- phenoinfo()
+    affs <- pheno[pheno[,"BreastCancer"]=="Yes",3]
+    uffs <- pheno[pheno[,"BreastCancer"]=="No",3]
+    AJcasefile <- "/home/local/ARCS/yshen/data/WENDY/BreastCancer/Regeneron/tablesandlists/All_AJ_samples.list"
+    HIcasefile <- "/home/local/ARCS/qh2159/breast_cancer/Panel/data/HispanicCases548.txt"
+    Ajs <- unlist(read.table(AJcasefile))
+    His <- unlist(read.table(HIcasefile))
+    
+    fams <- pheno[match(oneids,pheno[,3]),1]
+    allmems <- pheno[pheno[,1] %in% fams,3]
+    tyvar <- read.delim("../single_check/MSH3_detail.txt",header=FALSE)
+    tys <- c("ins","substitute","complex","substitute/del")
+    numT <- matrix(0,4,4)
+    conl <- setdiff(allmems,oneids)
+    conNum <- c(sum(conl %in% intersect(affs,Ajs)),sum(conl %in% intersect(uffs,Ajs)),sum(conl %in% intersect(affs,His)),sum(conl %in% intersect(uffs,His)))
+    for (i in 1:4){
+        numT[i,] <- c(sum(oneids %in% intersect(intersect(affs,Ajs),tyvar[tyvar[,4] %in% tys[i],3])),sum(oneids %in% intersect(intersect(uffs,Ajs),tyvar[tyvar[,4] %in% tys[i],3])),sum(oneids %in% intersect(intersect(affs,His),tyvar[tyvar[,4] %in% tys[i],3])),sum(oneids %in% intersect(intersect(uffs,His),tyvar[tyvar[,4] %in% tys[i],3])) )
+    }
+    
+}
+
+depth_variant <- function(){
+
+	AJindexf <- "/home/local/ARCS/qh2159/breast_cancer/variants/AJdepth/indexAJ.ldepth.mean"
+	AJcontf <- "/home/local/ARCS/qh2159/breast_cancer/variants/AJdepth/AJ.ldepth.mean"
+
+	HIindexf <- "/home/local/ARCS/qh2159/breast_cancer/variants/HIdepth/indexHI.ldepth.mean"
+	HIcontf <- "/home/local/ARCS/qh2159/breast_cancer/variants/HIdepth/HI.ldepth.mean"
+	
+	onedepthcompare(AJindexf,AJcontf)
+	onedepthcompare(HIindexf,HIcontf)
+}
+
+onedepthcompare <- function(AJindexf,AJcontf){
+
+  	indexf <- read.delim(AJindexf)
+        contf  <- read.delim(AJcontf)
+        caseV <- paste(indexf[,1],indexf[,2],sep="_")
+        contV <- paste(contf[,1],contf[,2],sep="_")
+
+
+	interV <- intersect(caseV,contV)
+	unicase <- indexf[!(caseV %in% interV),]
+	unicont <- contf[!(contV %in% interV),]
+
+
+        chr=c(1:22,"X")
+        for(i in 1:length(chr)){
+
+                a1= unicase[unicase[,1]==chr[i],2]
+                a2= unicont[unicont[,1]==chr[i],2]
+
+                a1M <- matrix(a1,ncol=length(a2),nrow=length(a1),byrow=FALSE)
+                a2M <- matrix(a2,ncol=length(a2),nrow=length(a1),byrow=TRUE)
+                print(sum(abs(a1M-a2M)<=30))
+
+        }
+}
+
+filtered_indexcases  <- function(){
+
+source("misc.R")
+
+load("../data/Rdata/AJcaselist_11_9")
+phenofile <- "../data/phenotype/WES BCFR phenotypic data.csv"
+indexcases <- getindexcase(phenofile)
+subjs <- unique(onelist[,"Subject_ID"])
+aa <- intersect(subjs,indexcases)
+
+outlierfile <- "/home/local/ARCS/yshen/data/WENDY/BreastCancer/Regeneron/FreezeOneVariantCalling/Outliers_to_be_excluded.list"  ## outlier samples
+outliers <- unlist(read.table(outlierfile))
+outliers <- sapply(1:length(outliers),function(i) {tmp=unlist(strsplit(outliers[i],"_"));setdiff(gsub("\\D","",tmp),c("",paste("00",1:9,sep="")));})
+aa <- setdiff(aa,outliers)
+
+BRCA1_2pathogenicfile <- "../data/phenotype/BRCA1_2.txt" 
+tmp <- read.delim(BRCA1_2pathogenicfile)
+pathogenic_sample <- tmp[tmp[,1] %in% c("likely pathogenic","pathogenic"),"Subject_ID"]
+aa <- setdiff(aa,pathogenic_sample)
+qwt(aa,file="../data/AJindexcases265.txt")
+
+load("../data/Rdata/HIcaselist_11_20")
+subjs <- unique(onelist[,"Subject_ID"])
+aa <- intersect(subjs,indexcases)
+aa <- setdiff(aa,outliers)
+aa <- setdiff(aa,pathogenic_sample)
+qwt(aa,file="../data/HIindexcases138.txt")
+
+}
+
+oneVariantSta <- function(){
+
+source("misc.R")
+outputpath="../resultf/"
+casestaf <- "../data/BR_20151202.hardfiltered.stats_hq.tsv"
+contstaf <- "../data/contAJ_20151202.hardfiltered.stats_hq.tsv"
+indexcase <- unlist(read.table("../data/AJindexcases265.txt"))
+conts <- unlist(read.table("/home/local/ARCS/qh2159/breast_cancer/variants/data/AJs_585.txt"))
+
+VariantSta(casestaf,contstaf,indexcase,conts,paste(outputpath,"variantSta_overlap/",sep=""))
+
+
 }
