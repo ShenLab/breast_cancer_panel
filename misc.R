@@ -122,7 +122,7 @@ variant_filtering <- function(onelist,mis,Ecut=0.01,segd=0.95,pp2=TRUE,hotf="",a
     }
     
     ### filtered more details in VCF
-    badvars <- c('QD_Bad_SNP','FS_Bad_SNP','FS_Mid_SNP;QD_Mid_SNP','LowQuality','LowQD_Indel','LowQuality','VQSRTrancheSNP99.90to100.00','VQSRTrancheINDEL99.90to100.00')
+    badvars <- c('QD_Bad_SNP','FS_Bad_SNP','FS_Mid_SNP;QD_Mid_SNP','LowQuality','LowQD_Indel','LowQuality','VQSRTrancheSNP99.90to100.00','VQSRTrancheINDEL99.90to100.00','VQSRTrancheINDEL99.00to99.90')
     subs1 <- sapply(1:dim(onelist)[1],function(i){
         tmp <- unlist(strsplit(onelist[i,"FILTER"],";"))
         a1 <- intersect(tmp,badvars)
