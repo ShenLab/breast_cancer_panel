@@ -11,7 +11,8 @@ BreastCancerAna <- function(sig=TRUE,Ecut=0.001,hotf=1,swi=1){
     
 ## =========================input files===========================================
 if(hotf==1){ hotspotfile <- "../data/hotspots/HMM_hotspots_11_12.txt"; ## HongjianPred hotspots file
-}else{ hotspotfile <- "../data/hotspots/cosmic_hotspots_3.txt"; }## COSMIC hotspots file
+}else if(hotf==2){ hotspotfile <- "../data/hotspots/cosmic_hotspots_3.txt"; ## COSMIC hotspots file
+}else{hotspotfile="";}
 outlierfile <- "/home/local/ARCS/yshen/data/WENDY/BreastCancer/Regeneron/FreezeOneVariantCalling/Outliers_to_be_excluded.list"  ## outlier samples
 BRCA1_2pathogenicfile <- "../data/phenotype/BRCA1_2.txt" ## BRCA1/2 pathogenic samples file
 TSfile <- "../data/hotspots/Tumor_suppressors_11_11.txt" ## collected tumor suppressors
@@ -34,7 +35,7 @@ Cohortfile <- "../resultf/BreastCancer_VariantList_11_12"
 casestaf <- "../data/BR_20151201.hardfiltered.stats_hq.tsv"
 AJcontstaf <- "../data/AJ_20151201.hardfiltered.stats_hq.tsv"
 HIcontstaf <- "../data/Hispanic_20151201.stats_hq.tsv"
-
+vburdenfile <- "../resultf/variant_level.burden.txt"  ### look src.R
 
 ## switch to the right files for burden test
 if(swi==1){
@@ -67,7 +68,10 @@ mis <- "nonsynonymousSNV"
 indel <- c("nonframeshiftdeletion","nonframeshiftinsertion")
 syn <- "synonymousSNV"
 unknown <- "unknown"
-varT <- list(lof,mis,indel,syn)
+stopins <- c("stopgain","stoploss")
+splices <- c("none",".")
+singleLOF <- c("stopgain","stoploss","none",".")
+varT <- list(lof,mis,indel,syn,stopins,splices,singleLOF)
 
 TSg <- unlist(read.table(TSfile))
 DRg <- unlist(read.table(cancerdriverfile)) ## cancer drivers
@@ -160,9 +164,6 @@ synTable <- burden_test(caselist,contlist,testtype=syn,flag=2,sig=sig)
 synTable <- synTable[order(-as.numeric(synTable[,"Folds"]),as.numeric(synTable[,"Pvalue"])), ]
 unkTable <- burden_test(caselist,contlist,testtype=unknown,flag=2,sig=sig)
 unkTable <- unkTable[order(-as.numeric(unkTable[,"Folds"]),as.numeric(unkTable[,"Pvalue"])), ]
-## single variant level burden test
-variantTable <- burden_test(caselist,contlist,flag=3,sig=sig)
-variantTable <- variantTable[order(-as.numeric(variantTable[,"Folds"]),as.numeric(variantTable[,"Pvalue"])), ]
 
 
 ## =========================output burden test to files=========================================
@@ -176,7 +177,7 @@ misfile <- paste(outputpath1,"MIS_level.burden.txt",sep="") ###MIS: single gene 
 indelfile <- paste(outputpath1,"indel_level.burden.txt",sep="") ###indel: single gene level burden test
 synfile <- paste(outputpath1,"syn_level.burden.txt",sep="") ###synonymous
 unkfile <- paste(outputpath1,"Unknown_level.burden.txt",sep="") ### unknown
-vburdenfile <- paste(outputpath1,"variant_level.burden.txt",sep="") ### single variant level burden test
+
 ## write to files
 qwt(setburdens,setburdenfile,flag=2)
 qwt(LOFTable,loffile,flag=2)
@@ -184,7 +185,6 @@ qwt(MISTable,misfile,flag=2)
 qwt(indelTable,indelfile,flag=2)
 qwt(synTable,synfile,flag=2)
 qwt(unkTable,unkfile,flag=2)
-qwt(variantTable,vburdenfile,flag=2)
 
 
 ##======output indels for IGV and variant tables: step 1: give variant list information==================
@@ -219,9 +219,11 @@ indelVars <- variantlist[variantlist[,"VariantClass"] %in% c("frameshiftdeletion
 ##======output indels for IGV and variant tables: step 2: give phenotype information on family and other cohort cases=============
 load(Cohortfile)
 pheno <- read.csv(phenofile)
+if(swi==1) pheno <- pheno[pheno[,"AJFAM"]=="J", ]
+if(swi==2) pheno <- pheno[pheno[,"HISPFAM"]=="H" & pheno[,"AJFAM"]!="J", ]
 if(sig){ ## singleton delete several columns
     delcols <- c("Control","#cases carrier","#controls carrier","OddsRatio","pvalue","filtered","ExACfreq","VCFPASS","noneSegmentalDup","meta-SVM_PP2","hotspot","alleleFre")
-    variantlist <- variantlist[,!(colnames(variantlist) %in% delcols)]
+    variantlist <- variantlist[,!(colnames(variantlist) %in% delcols)]   
 }else{  ## filtered by p value 0.05 and delete repeat rows
     variantlist <- variantlist[as.numeric(variantlist[,"pvalue"]) < 0.05,]
     univar <- unique(variantlist[,"Variant"])

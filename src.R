@@ -483,5 +483,62 @@ conts <- unlist(read.table("/home/local/ARCS/qh2159/breast_cancer/variants/data/
 
 VariantSta(casestaf,contstaf,indexcase,conts,paste(outputpath,"variantSta_overlap/",sep=""))
 
+}
+
+interested_genes <- function(){
+
+genes <- c("MSH3","PARP4","PTPRF","ARID1B","POT1","SETD2","FBXW7","HOXD11")
+varlist1 <- "../resultf/burdentest_FALSE_0.01_HMM_hotspots_11_12/Panel_genes_variantlist.txt"
+varlist2 <- "../resultf/burdentest_FALSE_0.01_HMM_hotspots_11_12/Variantlist.txt"
+
+var1 <- read.delim(varlist1)
+var2 <- read.delim(varlist2)
+
+vars <- rbind(var1,var2)
+testg <- c()
+testv <- c()
+for(i in 1:length(genes)){
+	tmps <- which(vars[,"Gene"]==genes[i])
+	testv <- c(testv,vars[tmps,"Variant"])
+	testg <- c(testg,rep(genes[i],length(tmps)))
+}
+
+phenofile <- "../data/phenotype/WES BCFR phenotypic data.csv"
+load("../resultf/BreastCancer_VariantList_11_12")
+pheno <- phenoinfo()
+onevar <- paste(onelist[,1],onelist[,2],onelist[,4],onelist[,5],sep="_")
+
+for(i in 1:length(testv)){
+	oneVariant(testv[i],testg[i],onelist,onevar,pheno)
+}
 
 }
+
+oneVariant <- function(var,gene,onelist,onevar,pheno){
+	pops <- paste(pheno[,"AJFAM"],pheno[,"HISPFAM"],sep="")
+	samids <- onelist[onevar==var,"Subject_ID"]
+	famids <- pheno[match(samids,pheno[,3]),1]
+	indids <- pheno[match(samids,pheno[,3]),2]
+	popids <- pops[match(samids,pheno[,3])]
+	affids <- pheno[match(samids,pheno[,3]),"BreastCancer"]
+
+	oneC <- matrix(0,length(famids),4)
+	for(i in 1:length(famids)){
+		onefams <- pheno[pheno[,1]==famids[i],3]
+		oneC[i,1] <- sum((samids %in% onefams) & affids=="Yes")
+		oneC[i,2] <- sum((samids %in% onefams) & affids=="No")
+		oneC[i,3] <- sum(pheno[match(onefams,pheno[,3]),"BreastCancer"]=="Yes")
+		oneC[i,4] <- sum(pheno[match(onefams,pheno[,3]),"BreastCancer"]=="No")
+	}
+
+	oneT <- cbind(famids,indids,samids,popids,affids,oneC)
+	oneT[is.na(oneT)] <- ""
+	colnames(oneT) <- c("FAMILYID","INDIVIDUALID","SUBJECTID","POP","AFFSTATUS","#case-with","#control-with","#CASE","#CONTROL")
+	qwt(oneT,file=paste("../single_check/",gene,"_",var,".txt",sep=""),flag=2)
+
+	## output IGV indels
+	tmp <- unlist(strsplit(var,"_"))
+	indf <- cbind(tmp[1],tmp[2],samids)
+	qwt(indf,file=paste("../single_check/",gene,"_",var,"_IGVs.txt",sep=""))
+}
+
