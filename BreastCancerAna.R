@@ -156,7 +156,7 @@ for(i in 1:length(genesets)){
 ## single gene level burden test
 tablelist <- list()
 for(i in 1:length(vartypes)){
-    oneTable <- burden_test(caselist,contlist,testtype=vartypes[i],flag=2,sig=sig)
+    oneTable <- burden_test(caselist,contlist,testtype=vartypes[[i]],flag=2,sig=sig)
     oneTable <- oneTable[order(-as.numeric(oneTable[,"Folds"]),as.numeric(oneTable[,"Pvalue"])), ]
     tablelist[[i]] <- oneTable
 }
