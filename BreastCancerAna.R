@@ -63,7 +63,7 @@ if(!file.exists(outputpath)){ dir.create(outputpath, showWarnings = TRUE, recurs
 ## =========================variant class definition and test gene sets=================================
 print_log(paste("burden_test parameters are singleton only: ",sig,"; ExAC frequency: ",Ecut,"; hotspots file: ",hotspotfile,sep=" "))
 VariantClass <- c(".","frameshiftdeletion","frameshiftinsertion","none","nonframeshiftdeletion","nonframeshiftinsertion","nonsynonymousSNV","stopgain","stoploss","synonymousSNV","unknown")
-lof <- c("frameshiftdeletion","frameshiftinsertion","none","stopgain","stoploss",".")
+lof <- c("frameshiftdeletion","frameshiftinsertion")
 mis <- "nonsynonymousSNV"
 indel <- c("nonframeshiftdeletion","nonframeshiftinsertion")
 syn <- "synonymousSNV"
@@ -139,8 +139,8 @@ Ggs <- c("top 25%","top 50%","top 75%","top 100%")
 GgL <- list(Gtop[1:floor(0.25*dim(Gtop)[1]),1], Gtop[1:floor(0.5*dim(Gtop)[1]),1], Gtop[1:floor(0.75*dim(Gtop)[1]),1],allgenes)
 genesets <- list(TSg,DRg,DNAreg,Panelg)
 genesetnames <- c("Tumor suppressors","Cancer drivers","DNA repairs","Panel genes")
-vartypes <- list(lof,mis,indel,NULL,syn,unknown)
-vartypenames <- c("LOF","D-MIS","Indels","ALL variants","Synonymous","Unknown")
+vartypes <- list(stopins,splices,singleLOF,lof,mis,indel,NULL,syn,unknown)
+vartypenames <- c("stopgain_loss","splicing","singleLOF","indelLOF","D-MIS","Indels","ALL variants","Synonymous","Unknown")
 
 setburdens <- c()
 for(i in 1:length(genesets)){
@@ -154,17 +154,12 @@ for(i in 1:length(genesets)){
     }
 }
 ## single gene level burden test
-LOFTable <- burden_test(caselist,contlist,testtype=lof,flag=2,sig=sig)
-LOFTable <- LOFTable[order(-as.numeric(LOFTable[,"Folds"]),as.numeric(LOFTable[,"Pvalue"])), ]
-MISTable <- burden_test(caselist,contlist,testtype=mis,flag=2,sig=sig)
-MISTable <- MISTable[order(-as.numeric(MISTable[,"Folds"]),as.numeric(MISTable[,"Pvalue"])), ]
-indelTable <- burden_test(caselist,contlist,testtype=indel,flag=2,sig=sig)
-indelTable <- indelTable[order(-as.numeric(indelTable[,"Folds"]),as.numeric(indelTable[,"Pvalue"])), ]
-synTable <- burden_test(caselist,contlist,testtype=syn,flag=2,sig=sig)
-synTable <- synTable[order(-as.numeric(synTable[,"Folds"]),as.numeric(synTable[,"Pvalue"])), ]
-unkTable <- burden_test(caselist,contlist,testtype=unknown,flag=2,sig=sig)
-unkTable <- unkTable[order(-as.numeric(unkTable[,"Folds"]),as.numeric(unkTable[,"Pvalue"])), ]
-
+tablelist <- list()
+for(i in 1:length(vartypes)){
+    oneTable <- burden_test(caselist,contlist,testtype=vartypes[i],flag=2,sig=sig)
+    oneTable <- oneTable[order(-as.numeric(oneTable[,"Folds"]),as.numeric(oneTable[,"Pvalue"])), ]
+    tablelist[[i]] <- oneTable
+}
 
 ## =========================output burden test to files=========================================
 print_log("Output burden files ...")
@@ -172,20 +167,11 @@ print_log("Output burden files ...")
 outputpath1 <- paste(outputpath,"burden/",sep="")
 if(!file.exists(outputpath1)){ dir.create(outputpath1, showWarnings = TRUE, recursive = FALSE);}
 setburdenfile <- paste(outputpath1,"gene_variant_set.burden.txt",sep="") ### gene set and variant types burden test file
-loffile <- paste(outputpath1,"LOF_level.burden.txt",sep="") ###LOF: single gene level burden test
-misfile <- paste(outputpath1,"MIS_level.burden.txt",sep="") ###MIS: single gene level burden test                 
-indelfile <- paste(outputpath1,"indel_level.burden.txt",sep="") ###indel: single gene level burden test
-synfile <- paste(outputpath1,"syn_level.burden.txt",sep="") ###synonymous
-unkfile <- paste(outputpath1,"Unknown_level.burden.txt",sep="") ### unknown
-
-## write to files
 qwt(setburdens,setburdenfile,flag=2)
-qwt(LOFTable,loffile,flag=2)
-qwt(MISTable,misfile,flag=2)
-qwt(indelTable,indelfile,flag=2)
-qwt(synTable,synfile,flag=2)
-qwt(unkTable,unkfile,flag=2)
-
+for(i in 1:length(vartypes)){
+    onefile <- paste(outputpath1,vartypenames[i],"_level.burden.txt",sep="")
+    qwt(tablelist[[i]],onefile,flag=2)
+}
 
 ##======output indels for IGV and variant tables: step 1: give variant list information==================
 varTable <- read.delim(vburdenfile)

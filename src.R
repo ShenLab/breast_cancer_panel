@@ -166,6 +166,46 @@ qwt(ts,"../data/hotspots/Tumor_suppressors_11_11.txt")
 
 }
 
+singleVarianttest <- function(){
+    
+    caselistf <- "../data/Rdata/AJcaselist_11_9"
+    contlistf <- "../data/Rdata/AJcontlist_11_9"
+    indexf <- "../data/AJindexcases265.txt"
+    indexcases <- unlist(read.table(indexf))
+    mis <- "nonsynonymousSNV"
+    Ecut=0.01
+    pheno <- phenoinfo()
+    cases <- pheno[pheno[,"BreastCancer"]=="Yes",3]
+    
+    load(caselistf)
+    caselist <- onelist
+    indexlist <- caselist[caselist[,"Subject_ID"] %in% indexcases, ]
+    caselist <- caselist[caselist[,"Subject_ID"] %in% cases, ]
+    rm(onelist)
+    load(contlistf)
+    contlist <- onelist
+    rm(onelist)
+    
+    
+    caselist <- variant_filtering(caselist,mis,Ecut=Ecut,segd=0.95,pp2=TRUE,hotf="",alleleFrefile=NULL,popcut=0.05)
+    caselist <- caselist[caselist[,"filtered"], ]
+    
+    indexlist <- variant_filtering(indexlist,mis,Ecut=Ecut,segd=0.95,pp2=TRUE,hotf="",alleleFrefile=NULL,popcut=0.05)
+    indexlist <- indexlist[indexlist[,"filtered"], ]
+    
+    contlist <- variant_filtering(contlist,mis,Ecut=Ecut,segd=0.95,pp2=TRUE,hotf="",alleleFrefile=NULL,popcut=0.05)
+    contlist <- contlist[contlist[,"filtered"], ]
+    
+    vburdenfile <- "../resultf/variant_level.burden.txt"
+    variantTable <- burden_test(indexlist,contlist,flag=3,sig=FALSE)
+    qwt(variantTable,file=vburdenfile,flag=2) 
+    
+    vburdenfile <- "../resultf/variant_level.burden_affected_control.txt"
+    vT <- burden_test(caselist,contlist,flag=3,sig=FALSE)
+    qwt(vT,file=vburdenfile,flag=2)
+
+}
+
 variantDis <- function(){
     source("misc.R")
     source("src.R")
