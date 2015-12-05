@@ -204,7 +204,7 @@ burden_test <- function(caselist,contlist,testset=NULL,testtype=NULL,flag,sig=FA
     casevars <- paste(caselist[,1],caselist[,2],caselist[,4],caselist[,5],sep="_") 
     contvars <- paste(contlist[,1],contlist[,2],contlist[,4],contlist[,5],sep="_")
     
-    if(FALSE){
+    if(flag==1){
         if(flag == 1){
             a <- dim(caselist)[1]
             b <- dim(contlist)[1]
