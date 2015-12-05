@@ -39,7 +39,7 @@ vburdenfile <- "../resultf/variant_level.burden.txt"  ### look src.R
 
 ## switch to the right files for burden test
 if(swi==1){
-    alleleFrefile <- "/home/local/ARCS/ads2202/data/AJ_PCA/combined_variant_call/NonBC_Frequencies.expanded.tsv" ##AJ: not in our cohort 
+    alleleFrefile <- "/home/local/ARCS/yshen/data/WENDY/BreastCancer/AJ_CONTROLS/combined_variant_call/NonBC_Frequencies.expanded.tsv" ##AJ: not in our cohort 
     caselistf <- "../data/Rdata/AJcaselist_11_9"
     contlistf <- "../data/Rdata/AJcontlist_11_9"
     contstaf <- AJcontstaf
@@ -175,7 +175,7 @@ for(i in 1:length(vartypes)){
 
 ##======output indels for IGV and variant tables: step 1: give variant list information==================
 varTable <- read.delim(vburdenfile)
-vartys <- c(mis,lof,indel)
+vartys <- c(stopins,splices,singleLOF,mis,lof,indel)
 variantlist <- caselist[caselist[,"VariantClass"] %in% vartys, ]
 vars <- paste(variantlist[,1],variantlist[,2],variantlist[,4],variantlist[,5],sep="_")
 n.var <- length(vars)
@@ -186,7 +186,7 @@ rowTitle[variantlist[,"Gene"] %in% Panelg,1] <- "Panel_genes"
 rowTitle[variantlist[,"Gene"] %in% TSg,1] <- "Tumor_suppressor"
 rowTitle[variantlist[,"Gene"] %in% DRg,1] <- "Cancer_driver"
 rowTitle[variantlist[,"Gene"] %in% intersect(TSg,DRg),1] <- "Cancer_driver_Tumor_suppressor"
-rowTitle[variantlist[,"VariantClass"] %in% lof,2] <- "LOF" 
+rowTitle[variantlist[,"VariantClass"] %in% c(stopins,splices,singleLOF,lof),2] <- "LOF" 
 rowTitle[variantlist[,"VariantClass"] %in% indel,2] <- "indels"
 rowTitle[variantlist[,"VariantClass"] %in% mis,2] <- "d-mis"
 rowTitle[,3] <- variantlist[,"Gene"]
