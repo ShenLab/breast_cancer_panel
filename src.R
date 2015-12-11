@@ -214,7 +214,7 @@ singleVarianttest <- function(){
     nonsvars <- paste(nonslist[,1],nonslist[,2],nonslist[,4],nonslist[,5],sep="_")
 
     id3set <- sapply(1:dim(burdenlist)[1],function(i){
-	c(paste(unique(indexlist[indexvars == burdenlist[i,2],"Subject_ID"]),sep="",collapse="_"),paste(unique(caselist[casevars == burdenlist[i,2],"Subject_ID"]),sep="",collapse="_"),paste(unique(nonslist[nonsvars == burdenlist[i,2],"Subject_ID"]),sep="",collpase="_") ,paste(unique(contlist[contvars == burdenlist[i,2],"Subject_ID"]),sep="",collapse="_"))	
+	c(paste(unique(indexlist[indexvars == burdenlist[i,2],"Subject_ID"]),sep="",collapse="_"),paste(unique(caselist[casevars == burdenlist[i,2],"Subject_ID"]),sep="",collapse="_"),paste(unique(nonslist[nonsvars == burdenlist[i,2],"Subject_ID"]),sep="",collapse="_"),paste(unique(contlist[contvars == burdenlist[i,2],"Subject_ID"]),sep="",collapse="_"))	
 	})
     id3set <- t(id3set)
     colnames(id3set) <- c("index_case","non-index_case","non_case_cohort","control")
