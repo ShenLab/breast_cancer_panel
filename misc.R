@@ -264,13 +264,12 @@ burden_test <- function(caselist,contlist,testset=NULL,testtype=NULL,flag,sig=FA
     oneTable
 }
 
-qqplot_variantLevel <- function(burdentable,outputpath,Panelg,varT,caselist){
+qqplot_variantLevel <- function(burdentable,outputpath,Panelg,varT,varstr,caselist){
     
     ## print to log
     print_log(paste("qqplot_variantLevel function is running ...", date(),sep=" "))
    
     if(!file.exists(outputpath)){ dir.create(outputpath, showWarnings = TRUE, recursive = FALSE);}
-    varstr <- c("LOF","D-mis","indels","Synonymous")
     casevars <- paste(caselist[,1],caselist[,2],caselist[,4],caselist[,5],sep="_")
     pT <- read.delim(burdentable)
     for(i in 1:length(varT)){

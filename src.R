@@ -516,10 +516,10 @@ oneVariantSta <- function(){
 
 source("misc.R")
 outputpath="../resultf/"
-casestaf <- "../data/BR_20151202.hardfiltered.stats_hq.tsv"
-contstaf <- "../data/contAJ_20151202.hardfiltered.stats_hq.tsv"
+casestaf <- "../data/BR_20151209.hardfiltered.stats_hq.tsv"
+contstaf <- "../data/contAJ_20151209.hardfiltered.stats_hq.tsv"
 indexcase <- unlist(read.table("../data/AJindexcases265.txt"))
-conts <- unlist(read.table("/home/local/ARCS/qh2159/breast_cancer/variants/data/AJs_585.txt"))
+conts <- unlist(read.table("/home/local/ARCS/qh2159/breast_cancer/variants/data/AJs_557.txt"))
 
 VariantSta(casestaf,contstaf,indexcase,conts,paste(outputpath,"variantSta_overlap/",sep=""))
 
