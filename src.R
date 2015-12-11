@@ -176,11 +176,13 @@ singleVarianttest <- function(){
     Ecut=0.01
     pheno <- phenoinfo()
     cases <- pheno[pheno[,"BreastCancer"]=="Yes",3]
+    nons <- pheno[pheno[,"BreastCancer"]=="No",3]
     
     load(caselistf)
     caselist <- onelist
     indexlist <- caselist[caselist[,"Subject_ID"] %in% indexcases, ]
     caselist <- caselist[caselist[,"Subject_ID"] %in% cases, ]
+    nonslist <- caselist[caselist[,"Subject_ID"] %in% nons,]
     rm(onelist)
     load(contlistf)
     contlist <- onelist
@@ -199,6 +201,25 @@ singleVarianttest <- function(){
     vburdenfile <- "../resultf/variant_level.burden.txt"
     variantTable <- burden_test(indexlist,contlist,flag=3,sig=FALSE)
     qwt(variantTable,file=vburdenfile,flag=2) 
+
+    ## add annotation information 
+    indexvars <- paste(indexlist[,1],indexlist[,2],indexlist[,4],indexlist[,5],sep="_") 
+    burdenf <- read.delim(vburdenfile)
+    burdenlist <- cbind(burdenf,indexlist[match(burdenf[,2],indexvars),])
+    burdenlist <- burdenlist[,!(colnames(burdenlist) %in% "Subject_ID")]
+    ## add index cases, non-index cases, non-index controls and control ID for each variants
+    caselist <- caselist[caselist[,"Subject_ID"] %in% setdiff(cases,indexcases),]
+    casevars <- paste(caselist[,1],caselist[,2],caselist[,4],caselist[,5],sep="_") 
+    contvars <- paste(contlist[,1],contlist[,2],contlist[,4],contlist[,5],sep="_")
+    nonsvars <- paste(nonslist[,1],nonslist[,2],nonslist[,4],nonslist[,5],sep="_")
+
+    id3set <- sapply(1:dim(burdenlist)[1],function(i){
+	c(paste(unique(indexlist[indexvars == burdenlist[i,2],"Subject_ID"]),sep="",collapse="_"),paste(unique(caselist[casevars == burdenlist[i,2],"Subject_ID"]),sep="",collapse="_"),paste(unique(nonslist[nonsvars == burdenlist[i,2],"Subject_ID"]),sep="",collpase="_") ,paste(unique(contlist[contvars == burdenlist[i,2],"Subject_ID"]),sep="",collapse="_"))	
+	})
+    id3set <- t(id3set)
+    colnames(id3set) <- c("index_case","non-index_case","non_case_cohort","control")
+    burdenlist <- cbind(burdenlist,id3set)
+    qwt(burdenlist,file="../resultf/variant_level_burden_anno.txt",flag=2)
     
     vburdenfile <- "../resultf/variant_level.burden_affected_control.txt"
     vT <- burden_test(caselist,contlist,flag=3,sig=FALSE)
@@ -527,14 +548,17 @@ VariantSta(casestaf,contstaf,indexcase,conts,paste(outputpath,"variantSta_overla
 
 interested_genes <- function(){
 
-genes <- c("MSH3","PARP4","PTPRF","ARID1B","POT1","SETD2","FBXW7","HOXD11")
-varlist1 <- "../resultf/burdentest_FALSE_0.01_HMM_hotspots_11_12/Panel_genes_variantlist.txt"
-varlist2 <- "../resultf/burdentest_FALSE_0.01_HMM_hotspots_11_12/Variantlist.txt"
+#varlist1 <- "../resultf/burdentest_FALSE_0.01_HMM_hotspots_11_12/Panel_genes_variantlist.txt"
+#varlist2 <- "../resultf/burdentest_FALSE_0.01_HMM_hotspots_11_12/Variantlist.txt"
+#var1 <- read.delim(varlist1)
+#var2 <- read.delim(varlist2)
+#vars <- rbind(var1,var2)
 
-var1 <- read.delim(varlist1)
-var2 <- read.delim(varlist2)
+vars <- read.delim("../resultf/variant_level.burden.txt")
+#genes <- c("MSH3","PARP4","PTPRF","ARID1B","POT1","SETD2","FBXW7","HOXD11")
+genes <- c("BTN3A3","C20orf96","SLC34A2","PTPRP","VAMP5","SHROOM4","RPGR","HLA-A","MTR","PAPLN","NPEPL","CNOT1","HLA-C","SCYL1","IFI35","ARFGAP3","IFNA7")
 
-vars <- rbind(var1,var2)
+
 testg <- c()
 testv <- c()
 for(i in 1:length(genes)){
