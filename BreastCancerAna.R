@@ -71,7 +71,9 @@ unknown <- "unknown"
 stopins <- c("stopgain","stoploss")
 splices <- c("none",".")
 singleLOF <- c("stopgain","stoploss","none",".")
+### only for QQ plots
 varT <- list(lof,mis,indel,syn,stopins,splices,singleLOF)
+varTnames <- c("lof_indel","d-mis","mis-indel","Synonymous","Stopgain_loss","splicing","singleLOF")
 
 TSg <- unlist(read.table(TSfile))
 DRg <- unlist(read.table(cancerdriverfile)) ## cancer drivers
@@ -248,7 +250,7 @@ qwt(variantlistCom[variantlistCom[,"Gene"] %in% genes,],file=genesetsVarfile,fla
 qwt(variantlistCom[variantlistCom[,"Gene_sets"] %in% "non-Panel_genes",],file=restVarfile,flag=2)
 qwt(indelVars,file=indelsfile)
 ## step 3: show the qq plots for nonsingleton variant
-if(!sig){ qqplot_variantLevel(vburdenfile,paste(outputpath,"qqplots/",sep=""),genes,varT,caselist);}
+if(!sig){ qqplot_variantLevel(vburdenfile,paste(outputpath,"qqplots/",sep=""),genes,varT,varTnames,caselist);}
 
 
 
