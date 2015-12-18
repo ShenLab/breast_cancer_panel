@@ -168,8 +168,8 @@ qwt(ts,"../data/hotspots/Tumor_suppressors_11_11.txt")
 
 singleVarianttest <- function(){
     
-    caselistf <- "../data/Rdata/AJcaselist_11_9"
-    contlistf <- "../data/Rdata/AJcontlist_11_9"
+    caselistf <- "../data/Rdata/AJcaselist_12_17"
+    contlistf <- "../data/Rdata/AJcontlist_12_17"
     indexf <- "../data/AJindexcases265.txt"
     indexcases <- unlist(read.table(indexf))
     mis <- "nonsynonymousSNV"

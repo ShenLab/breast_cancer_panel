@@ -117,7 +117,7 @@ contlist <- onelist
 rm(onelist)
 
 ## variant count statistics: double check for batches effect
-VariantSta(casestaf,contstaf,unique(caselist[,"Subject_ID"]),unique(contlist[,"Subject_ID"]),paste(outputpath,"variantSta/",sep=""))
+VariantSta(contstaf,contstaf,unique(caselist[,"Subject_ID"]),unique(contlist[,"Subject_ID"]),paste(outputpath,"variantSta/",sep=""))
 
 ##============================== keep singleton variants only
 if(sig){
