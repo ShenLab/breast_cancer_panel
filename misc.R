@@ -322,7 +322,7 @@ PQQ <- function(pval,ps=0.05,subcol=NULL,main="",labels=NULL,nlab=20){
             if(!is.null(subcol)){
                 insub <- match(subcol,yix)
                 insub <- intersect(insub,subs)
-                text(nc[match(insub,subs),1],nc[match(insub,subs),2],labels[yix[insub]],cex=0.8,col=2)
+                if( length(insub)>0 ) text(nc[match(insub,subs),1],nc[match(insub,subs),2],labels[yix[insub]],cex=0.8,col=2)
             }
         }
     }

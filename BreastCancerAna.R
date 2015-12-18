@@ -177,7 +177,7 @@ for(i in 1:length(vartypes)){
 }
 
 ##======output indels for IGV and variant tables: step 1: give variant list information==================
-varTable <- read.delim(vburdenfile)
+varTable <- read.delim(vburdenfile,check.names=FALSE)
 vartys <- c(stopins,splices,singleLOF,mis,lof,indel)
 variantlist <- caselist[caselist[,"VariantClass"] %in% vartys, ]
 vars <- paste(variantlist[,1],variantlist[,2],variantlist[,4],variantlist[,5],sep="_")
