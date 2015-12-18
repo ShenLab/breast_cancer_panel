@@ -182,22 +182,18 @@ singleVarianttest <- function(){
     caselist <- onelist
     indexlist <- caselist[caselist[,"Subject_ID"] %in% indexcases, ]
     nonslist <- caselist[caselist[,"Subject_ID"] %in% nons, ]
-    caselist <- caselist[caselist[,"Subject_ID"] %in% cases, ]
+    caselist <- caselist[caselist[,"Subject_ID"] %in% setdiff(cases,indexcases), ]
     rm(onelist)
     load(contlistf)
     contlist <- onelist
     rm(onelist)
     
-    
-    caselist <- variant_filtering(caselist,mis,Ecut=Ecut,segd=0.95,pp2=TRUE,hotf="",alleleFrefile=NULL,popcut=0.05)
-    caselist <- caselist[caselist[,"filtered"], ]
-    
     indexlist <- variant_filtering(indexlist,mis,Ecut=Ecut,segd=0.95,pp2=TRUE,hotf="",alleleFrefile=NULL,popcut=0.05)
     indexlist <- indexlist[indexlist[,"filtered"], ]
-    
     contlist <- variant_filtering(contlist,mis,Ecut=Ecut,segd=0.95,pp2=TRUE,hotf="",alleleFrefile=NULL,popcut=0.05)
     contlist <- contlist[contlist[,"filtered"], ]
     
+    ## single variant burden test in index cases and controls
     vburdenfile <- "../resultf/variant_level.burden.txt"
     variantTable <- burden_test(indexlist,contlist,flag=3,sig=FALSE)
     qwt(variantTable,file=vburdenfile,flag=2) 
@@ -207,12 +203,11 @@ singleVarianttest <- function(){
     burdenf <- read.delim(vburdenfile)
     burdenlist <- cbind(burdenf,indexlist[match(burdenf[,2],indexvars),])
     burdenlist <- burdenlist[,!(colnames(burdenlist) %in% "Subject_ID")]
+    
     ## add index cases, non-index cases, non-index controls and control ID for each variants
-    caselist <- caselist[caselist[,"Subject_ID"] %in% setdiff(cases,indexcases),]
     casevars <- paste(caselist[,1],caselist[,2],caselist[,4],caselist[,5],sep="_") 
     contvars <- paste(contlist[,1],contlist[,2],contlist[,4],contlist[,5],sep="_")
     nonsvars <- paste(nonslist[,1],nonslist[,2],nonslist[,4],nonslist[,5],sep="_")
-
     id3set <- sapply(1:dim(burdenlist)[1],function(i){
 	c(paste(unique(indexlist[indexvars == burdenlist[i,2],"Subject_ID"]),sep="",collapse="_"),paste(unique(caselist[casevars == burdenlist[i,2],"Subject_ID"]),sep="",collapse="_"),paste(unique(nonslist[nonsvars == burdenlist[i,2],"Subject_ID"]),sep="",collapse="_"),paste(unique(contlist[contvars == burdenlist[i,2],"Subject_ID"]),sep="",collapse="_"))	
 	})
@@ -221,10 +216,21 @@ singleVarianttest <- function(){
     burdenlist <- cbind(burdenlist,id3set)
     qwt(burdenlist,file="../resultf/variant_level_burden_anno.txt",flag=2)
     
-    vburdenfile <- "../resultf/variant_level.burden_affected_control.txt"
-    vT <- burden_test(caselist,contlist,flag=3,sig=FALSE)
-    qwt(vT,file=vburdenfile,flag=2)
-
+    ## add case, non-case frequency in our breast cancer cohort
+    n.case <- length(unique(indexlist[,"Subject_ID"])) + length(unique(caselist[,"Subject_ID"]))
+    n.noncase <- length(unique(nonslist[,"Subject_ID"]))
+    burdenlist <- read.delim("../resultf/variant_level_burden_anno.txt")
+    fre <- sapply(1:dim(burdenlist)[1],function(i) c( length(unlist(strsplit(burdenlist[i,"index_case"],"_"))) + length(unlist(strsplit(burdenlist[i,"non.index_case"],"_"))), length(unlist(strsplit(burdenlist[i,"non_case_cohort"],"_"))), n.case, n.noncase))
+    fre <- t(fre)
+    fre[,3] <- fre[,3] - fre[,1]
+    fre[,4] <- fre[,4] - fre[,2]
+    fre <- cbind(fre,(fre[,1]/fre[,3])/(fre[,2]/fre[,4]))
+    ps <- sapply(1:dim(fre)[1], function(i) fisher.test(matrix(fre[i,1:4],2,2))$p.value )
+    fre <- cbind(fre,ps)
+    colnames(fre) <- c("#caseAJ716","#noncaseAJ716","#noshotcase","#noshotnoncase","#foldcase-non","#p_case_noncase")
+    burdenlist <- cbind(burdenlist,fre)
+    qwt(burdenlist,file="../resultf/variant_level_burden_anno_Fre.txt",flag=2)
+    
 }
 
 variantDis <- function(){

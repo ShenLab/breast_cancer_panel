@@ -6,7 +6,7 @@ source("misc.R")
 BreastCancerAna <- function(sig=TRUE,Ecut=0.001,hotf=1,swi=1){
 ### sig: test for singleton variant only or not
 ### Ecut: ExAC frequency cutoff
-### hotf: 1: hotspots predicted based on HMM (hongjian); 2: hotspots defined by cosmic site with recurrent >=3 
+### hotf: 1: hotspots predicted based on HMM (hongjian); 2: hotspots defined by cosmic site with recurrent >=3; 3: not filter missense by hotspot
 ### swi: 1: Jewish case and control; 2: Hispanic case and contorl
     
 ## =========================input files===========================================
@@ -35,7 +35,7 @@ Cohortfile <- "../resultf/BreastCancer_VariantList_11_12"
 casestaf <- "../data/BR_new_12_16.tsv"
 AJcontstaf <- "../data/contAJ_20151209.hardfiltered.stats_hq.tsv"
 HIcontstaf <- ""
-vburdenfile <- "../resultf/variant_level.burden.txt"  ### look src.R
+vburdenfile <- "../resultf/variant_level_burden_anno_Fre.txt"  ### look src.R
 
 ## switch to the right files for burden test
 if(swi==1){
@@ -92,7 +92,7 @@ allgenes <- union(Gtop[,1],c(TSg,DRg,DNAreg,Panelg))
 ##getVariantlist(HIcontvariantpath,HIcontrolfile,namestr=".tsv","../data/Rdata/HIcontlist_11_20")
 ##getVariantlist(casevariantpath,AJcasefile,namestr=".tsv","../data/Rdata/AJcaselist_12_17")
 ##getVariantlist(AJcontvariantpath,AJcontrolfile,namestr=".tsv","../data/Rdata/AJcontlist_12_17")
-### ====================================getVariantlist save as Rdata==
+### ====================================getVariantlist save as Rdata===========================
 print_log("variant list filtering ...")
 load(caselistf)
 caselist <- onelist
@@ -111,7 +111,7 @@ tmp <- read.delim(BRCA1_2pathogenicfile)
 pathogenic_sample <- tmp[tmp[,1] %in% c("likely pathogenic","pathogenic"),"Subject_ID"]
 caselist <- caselist[!(caselist[,"Subject_ID"] %in% pathogenic_sample), ]
 
-## ====================================get control variant list==
+## ====================================get control variant list============================================
 load(contlistf)
 contlist <- onelist
 rm(onelist)
@@ -182,38 +182,48 @@ vartys <- c(stopins,splices,singleLOF,mis,lof,indel)
 variantlist <- caselist[caselist[,"VariantClass"] %in% vartys, ]
 vars <- paste(variantlist[,1],variantlist[,2],variantlist[,4],variantlist[,5],sep="_")
 n.var <- length(vars)
-rowTitle <- matrix(0,n.var,10)
+rowTitle <- matrix(0,n.var,11)
 rowTitle[,1] <- "non-Panel_genes"
 rowTitle[variantlist[,"Gene"] %in% DNAreg,1] <- "DNA_repair"
 rowTitle[variantlist[,"Gene"] %in% Panelg,1] <- "Panel_genes"
 rowTitle[variantlist[,"Gene"] %in% TSg,1] <- "Tumor_suppressor"
 rowTitle[variantlist[,"Gene"] %in% DRg,1] <- "Cancer_driver"
 rowTitle[variantlist[,"Gene"] %in% intersect(TSg,DRg),1] <- "Cancer_driver_Tumor_suppressor"
-rowTitle[variantlist[,"VariantClass"] %in% c(stopins,splices,singleLOF,lof),2] <- "LOF" 
-rowTitle[variantlist[,"VariantClass"] %in% indel,2] <- "indels"
+rowTitle[variantlist[,"VariantClass"] %in% lof,2] <- "indels_inframe" 
+rowTitle[variantlist[,"VariantClass"] %in% c(stopins,splices,singleLOF),2] <- "LOF"
+rowTitle[variantlist[,"VariantClass"] %in% indel,2] <- "indels_nonframe"
 rowTitle[variantlist[,"VariantClass"] %in% mis,2] <- "d-mis"
 rowTitle[,3] <- variantlist[,"Gene"]
 rowTitle[,4:10] <- as.matrix(varTable[match(vars,varTable[,2]),c(2:8)])
+# corrected Pvalue by each variant type
+rowTitle[rowTitle[,2] == "indels_inframe",11] <-  as.numeric(rowTitle[rowTitle[,2] == "indels_inframe",10]) * length(unique(vars[variantlist[,"VariantClass"] %in% lof]))
+rowTitle[rowTitle[,2] == "LOF",11] <-  as.numeric(rowTitle[rowTitle[,2] == "LOF",10]) * length(unique(vars[variantlist[,"VariantClass"] %in% c(stopins,splices,singleLOF)]))
+rowTitle[rowTitle[,2] == "indels_nonframe",11] <-  as.numeric(rowTitle[rowTitle[,2] == "indels_nonframe",10]) * length(unique(vars[variantlist[,"VariantClass"] %in% indel]))
+rowTitle[rowTitle[,2] == "d-mis",11] <-  as.numeric(rowTitle[rowTitle[,2] == "d-mis",10]) * length(unique(vars[variantlist[,"VariantClass"] %in% mis]))
 variantlist <- variantlist[,colnames(variantlist)!="Gene"]
 variantlist <- cbind(rowTitle,variantlist)
-variantlist <- variantlist[order(variantlist[,1],variantlist[,2],-as.numeric(variantlist[,9]),as.numeric(variantlist[,10])),]
 if(FALSE){
-    colnames(variantlist)[1:10] <- c("Gene_sets","variant_type","Gene","Variant","#cases","#controls","n.case","n.cont","Folds","pvalue")
+    colnames(variantlist)[1:11] <- c("Gene_sets","variant_type","Gene","Variant","#cases","#controls","n.case","n.cont","Folds","pvalue","CorrectedP")
 }else{
-    colnames(variantlist)[1:10] <- c("Gene_sets","variant_type","Gene","Variant","#cases carrier","#controls carrier","#case non-carrier","#control non-carrier","OddsRatio","pvalue")
+    colnames(variantlist)[1:11] <- c("Gene_sets","variant_type","Gene","Variant","#cases carrier","#controls carrier","#case non-carrier","#control non-carrier","OddsRatio","pvalue","CorrectedP")
 }
+variantlist <- cbind(variantlist, varTable[match(vars,varTable[,2]),c("#caseAJ716","#noncaseAJ716","#noshotcase","#noshotnoncase","#foldcase-non","#p_case_noncase")])
+variantlist <- variantlist[order(as.numeric(variantlist[,10])),]
 indelVars <- variantlist[variantlist[,"VariantClass"] %in% c("frameshiftdeletion","frameshiftinsertion","nonframeshiftdeletion","nonframeshiftinsertion"),c("Chromosome","Position","Subject_ID")]
 
 
 ##======output indels for IGV and variant tables: step 2: give phenotype information on family and other cohort cases=============
 load(Cohortfile)
 pheno <- read.csv(phenofile)
-if(swi==1) pheno <- pheno[pheno[,"AJFAM"]=="J", ]
-if(swi==2) pheno <- pheno[pheno[,"HISPFAM"]=="H" & pheno[,"AJFAM"]!="J", ]
+AJlist <- unlist(read.table(AJcasefile))
+if(swi==1) pheno <- pheno[pheno[,3] %in% AJlist, ]##pheno <- pheno[pheno[,"AJFAM"]=="J", ] ## update by PCA results
+if(swi==2) pheno <- pheno[!(pheno[,3] %in% AJlist), ]
+
 if(sig){ ## singleton delete several columns
     delcols <- c("Control","#cases carrier","#controls carrier","OddsRatio","pvalue","filtered","ExACfreq","VCFPASS","noneSegmentalDup","meta-SVM_PP2","hotspot","alleleFre")
     variantlist <- variantlist[,!(colnames(variantlist) %in% delcols)]   
-}else{  ## filtered by p value 0.05 and delete repeat rows
+}else{  ## filtered by p value 0.05 and delete repeat rows, and oddratios > 1
+    variantlist <- variantlist[as.numeric(variantlist[,"OddsRatio"]) >= 1,]
     variantlist <- variantlist[as.numeric(variantlist[,"pvalue"]) < 0.05,]
     univar <- unique(variantlist[,"Variant"])
     variantlist <- variantlist[match(univar,variantlist[,"Variant"]),]
@@ -244,9 +254,9 @@ for(i in 1:length(varsCheck)){
 colnames(varvariantlist) <- c("Family-ID","Yes-Family","No-Family","Yes-Cohort","No-Cohort","Control")
 rownames(varvariantlist) <- rownames(variantlist)
 variantlistCom <- cbind(varvariantlist,variantlist)
-variantlistCom <- variantlistCom[order(variantlistCom[,"Gene_sets"],variantlistCom[,"variant_type"],variantlistCom[,"Gene"]),]
+#variantlistCom <- variantlistCom[order(variantlistCom[,"Gene_sets"],variantlistCom[,"variant_type"],variantlistCom[,"Gene"]),]
 
-##=======================write result
+##=======================write result======================
 qwt(variantlistCom[variantlistCom[,"Gene"] %in% genes,],file=genesetsVarfile,flag=2)
 qwt(variantlistCom[variantlistCom[,"Gene_sets"] %in% "non-Panel_genes",],file=restVarfile,flag=2)
 qwt(indelVars,file=indelsfile)

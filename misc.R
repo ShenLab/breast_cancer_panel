@@ -61,7 +61,14 @@ VariantSta <- function(casef,contf,cases,controls,outputpath){
     if(!file.exists(outputpath)){ dir.create(outputpath, showWarnings = TRUE, recursive = FALSE);}
     varT=c("synonymous","Missense","indels","Frameshift","ALL")
     tmp <- read.table(casef,fill=T)
-    varTa <- t(tmp[c(21,22,4,25,3),match(cases,tmp[2,])])
+    
+    if(all(cases %in% tmp[2,])){
+        subs <- match(cases,tmp[2,])
+    }else{
+        subs <- sapply(1:length(cases),function(i) which(grepl(cases[i],tmp[2,])))
+    }
+    varTa <- t(tmp[c(21,22,4,25,3),subs])
+    
     varTa <- cbind("case",cases,varTa)
     colnames(varTa) <- c("Group","Subject_ID",varT)
     tmp <- read.table(contf,fill=T)
@@ -273,11 +280,11 @@ qqplot_variantLevel <- function(burdentable,outputpath,Panelg,varT,varstr,caseli
     casevars <- paste(caselist[,1],caselist[,2],caselist[,4],caselist[,5],sep="_")
     pT <- read.delim(burdentable)
     for(i in 1:length(varT)){
-        subs <- which(pT[,2] %in% casevars[caselist[,"VariantClass"] %in% varT[[i]]])
+        subs <- which(pT[,"Variant"] %in% casevars[caselist[,"VariantClass"] %in% varT[[i]]])
         pval <- pT[subs,"Pvalue"]
-        subcol <- which(pT[subs,1]%in% Panelg)
+        subcol <- which(pT[subs,"Gene"]%in% Panelg)
         pdf(file=paste(outputpath,varstr[i],".pdf",sep=""),width=10,height=10)
-        PQQ(pval,subcol=subcol,main=paste("QQ plots of ", varstr[i],sep=""),labels=pT[subs,1])
+        PQQ(pval,subcol=subcol,main=paste("QQ plots of ", varstr[i],sep=""),labels=pT[subs,"Gene"])
         dev.off()
     }
     
