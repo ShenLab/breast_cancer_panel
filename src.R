@@ -181,8 +181,8 @@ singleVarianttest <- function(){
     load(caselistf)
     caselist <- onelist
     indexlist <- caselist[caselist[,"Subject_ID"] %in% indexcases, ]
+    nonslist <- caselist[caselist[,"Subject_ID"] %in% nons, ]
     caselist <- caselist[caselist[,"Subject_ID"] %in% cases, ]
-    nonslist <- caselist[caselist[,"Subject_ID"] %in% nons,]
     rm(onelist)
     load(contlistf)
     contlist <- onelist
@@ -546,6 +546,54 @@ VariantSta(casestaf,contstaf,indexcase,conts,paste(outputpath,"variantSta_overla
 
 }
 
+twoVariantSta <- function(){
+
+source("misc.R")
+outputpath="../resultf/variantSta_badInter/"
+casef <- "../data/BR_new_12_16.tsv"
+contf <- "../data/contAJ_20151209.hardfiltered.stats_hq.tsv"
+cases <- unlist(read.table("../data/AJindexcases265.txt"))
+controls <- unlist(read.table("/home/local/ARCS/qh2159/breast_cancer/variants/data/AJs_557.txt"))
+
+if(!file.exists(outputpath)){ dir.create(outputpath, showWarnings = TRUE, recursive = FALSE);}
+    varT=c("synonymous","Missense","indels","Frameshift","ALL")
+    tmp <- read.table(casef,fill=T)
+    varTa <- t(tmp[c(21,22,4,25,3),match(cases,tmp[2,])])
+    varTa <- cbind("case",cases,varTa)
+    colnames(varTa) <- c("Group","Subject_ID",varT)
+    tmp <- read.table(contf,fill=T)
+    varTa1 <- t(tmp[c(21,22,4,25,3),match(controls,tmp[2,])])
+    varTa1 <- cbind("control",controls,varTa1)
+    colnames(varTa1) <- c("Group","Subject_ID",varT)
+    Ta <- rbind(varTa,varTa1)
+    n <- dim(Ta)[2]
+    Ta0 <- Ta
+
+
+    casef <- "../data/BR_new_12_16.badInter.tsv"
+    contf <- "../data/contAJ_20151215.badInter.stats_hq.tsv"
+     
+    tmp <- read.table(casef,fill=T)
+    varTa <- t(tmp[c(21,22,4,25,3),match(cases,tmp[2,])])
+    varTa <- cbind("case",cases,varTa)
+    colnames(varTa) <- c("Group","Subject_ID",varT)
+    tmp <- read.table(contf,fill=T)
+    varTa1 <- t(tmp[c(21,22,4,25,3),match(controls,tmp[2,])])
+    varTa1 <- cbind("control",controls,varTa1)
+    colnames(varTa1) <- c("Group","Subject_ID",varT)
+    Ta <- rbind(varTa,varTa1)
+
+    a1 = Ta0[,3:7]
+    mode(a1) <- "numeric"
+    a2 = Ta[,3:7]
+    mode(a2) <- "numeric"
+    Ta[,3:7] <- a1 - a2   
+ 
+    density_plots(Ta[,3:n],Ta[,1],outputpath,VarT=varT)
+
+}
+
+
 interested_genes <- function(){
 
 #varlist1 <- "../resultf/burdentest_FALSE_0.01_HMM_hotspots_11_12/Panel_genes_variantlist.txt"
@@ -554,18 +602,26 @@ interested_genes <- function(){
 #var2 <- read.delim(varlist2)
 #vars <- rbind(var1,var2)
 
-vars <- read.delim("../resultf/variant_level.burden.txt")
+vars <- read.delim("../resultf/variant_level_burden_anno.txt")
+vars <- vars[vars[,"VariantClass"] %in% c("frameshiftdeletion","frameshiftinsertion","nonsynonymousSNV","nonframeshiftdeletion","nonframeshiftinsertion","stopgain","stoploss","none","."), ]
+
 #genes <- c("MSH3","PARP4","PTPRF","ARID1B","POT1","SETD2","FBXW7","HOXD11")
-genes <- c("BTN3A3","C20orf96","SLC34A2","PTPRP","VAMP5","SHROOM4","RPGR","HLA-A","MTR","PAPLN","NPEPL","CNOT1","HLA-C","SCYL1","IFI35","ARFGAP3","IFNA7")
+genes <- c("BTN3A3","C20orf96","SLC34A2","PTPRF","VAMP5","SHROOM4","RPGR","HLA-A","MTR","PAPLN","NPEPL1","CNOT1","HLA-C","SCYL1","IFI35","ARFGAP3","IFNA7")
 
 
 testg <- c()
 testv <- c()
 for(i in 1:length(genes)){
-	tmps <- which(vars[,"Gene"]==genes[i])
+	tmps <- which( vars[,"Gene"]==genes[i] & as.numeric(vars[,"Pvalue"]) < 0.001 )  ##!!!!!!!
 	testv <- c(testv,vars[tmps,"Variant"])
 	testg <- c(testg,rep(genes[i],length(tmps)))
 }
+
+Pv <- sapply(1:length(testv),function(i) unlist(strsplit(testv[i],"_"))[1:2])
+Pv <- t(Pv)
+Pv <- paste(Pv[,1],":",as.numeric(Pv[,2]),"-",as.numeric(Pv[,2]),sep="")
+Pv <- cbind(Pv, testg)
+qwt(Pv,file="../single_check/variant_table.txt")
 
 phenofile <- "../data/phenotype/WES BCFR phenotypic data.csv"
 load("../resultf/BreastCancer_VariantList_11_12")
