@@ -17,7 +17,7 @@ getVariantlist <- function(path,IDfile,namestr=".tsv",savefile){
         subj <- gsub(namestr,"",samf[i])
         oner <- cbind(oner,subj)
         cols <- colnames(oner)
-        colsub <- c(which(grepl(paste(subj,".GT",sep=""),cols) | grepl(paste(toupper(subj),".GT",sep=""),cols)),which(grepl(paste(subj,".AD",sep=""),cols) | grepl(paste(toupper(subj),".AD",sep=""),cols)),which(subj==cols | paste("X",subj,sep="")==cols | toupper(subj)==cols), dim(oner)[2])
+        colsub <- c(which(grepl(toupper(subj),toupper(cols))), dim(oner)[2])
         colnames(oner)[colsub] <- c("GT","AD","Subject_INFO","Subject_ID")
         onelist <- rbind(onelist,oner)
     }

@@ -23,25 +23,25 @@ GTExfile <- "/home/local/ARCS/qh2159/breast_cancer/geneexpression/GTEx/expg_rank
 phenofile <- "../data/phenotype/WES BCFR phenotypic data.csv" ## phenotype file to get index cases only
 dupIDs <- c("222357","222966") ## duplicated with Subject ID 222966 ## duplicated subject
 ## variant files and case, control samples ## check the log file to see the variant filtering details
-casevariantpath <- "/home/local/ARCS/yshen/data/WENDY/BreastCancer/Regeneron/Filtering_Oct2015/"
+casevariantpath <- "/home/local/ARCS/qh2159/breast_cancer/variants/FreezeOneCommon/"
 AJcontvariantpath <- "/home/local/ARCS/qh2159/breast_cancer/variants/AJconVariantCalling/"
 HIcontvariantpath <- "/home/local/ARCS/qh2159/breast_cancer/variants/HIconVariantCalling/"
 AJcasefile <- "/home/local/ARCS/yshen/data/WENDY/BreastCancer/Regeneron/tablesandlists/All_AJ_samples.list"
 HIcasefile <- "/home/local/ARCS/qh2159/breast_cancer/Panel/data/HispanicCases548.txt"
-AJcontrolfile <- "/home/local/ARCS/qh2159/breast_cancer/variants/data/AJs_585.txt"
+AJcontrolfile <- "/home/local/ARCS/qh2159/breast_cancer/variants/data/AJs_557.txt"
 HIcontrolfile <- "/home/local/ARCS/qh2159/breast_cancer/variants/data/HIs_341.txt"
 Cohortfile <- "../resultf/BreastCancer_VariantList_11_12"
 ## variant count statistics
-casestaf <- "../data/BR_20151201.hardfiltered.stats_hq.tsv"
-AJcontstaf <- "../data/AJ_20151201.hardfiltered.stats_hq.tsv"
-HIcontstaf <- "../data/Hispanic_20151201.stats_hq.tsv"
+casestaf <- "../data/BR_new_12_16.tsv"
+AJcontstaf <- "../data/contAJ_20151209.hardfiltered.stats_hq.tsv"
+HIcontstaf <- ""
 vburdenfile <- "../resultf/variant_level.burden.txt"  ### look src.R
 
 ## switch to the right files for burden test
 if(swi==1){
     alleleFrefile <- "/home/local/ARCS/yshen/data/WENDY/BreastCancer/AJ_CONTROLS/combined_variant_call/NonBC_Frequencies.expanded.tsv" ##AJ: not in our cohort 
-    caselistf <- "../data/Rdata/AJcaselist_11_9"
-    contlistf <- "../data/Rdata/AJcontlist_11_9"
+    caselistf <- "../data/Rdata/AJcaselist_12_17"
+    contlistf <- "../data/Rdata/AJcontlist_12_17"
     contstaf <- AJcontstaf
 }else if(swi==2){
     alleleFrefile <- NULL
@@ -90,6 +90,8 @@ allgenes <- union(Gtop[,1],c(TSg,DRg,DNAreg,Panelg))
 ##getVariantlist(casevariantpath,HIcasefile,namestr=".AllVariants.tsv","../data/Rdata/HIcaselist_11_20")
 ##getVariantlist(AJcontvariantpath,AJcontrolfile,namestr=".tsv","../data/Rdata/AJcontlist_11_9")
 ##getVariantlist(HIcontvariantpath,HIcontrolfile,namestr=".tsv","../data/Rdata/HIcontlist_11_20")
+##getVariantlist(casevariantpath,AJcasefile,namestr=".tsv","../data/Rdata/AJcaselist_12_17")
+##getVariantlist(AJcontvariantpath,AJcontrolfile,namestr=".tsv","../data/Rdata/AJcontlist_12_17")
 ### ====================================getVariantlist save as Rdata==
 print_log("variant list filtering ...")
 load(caselistf)
@@ -104,16 +106,15 @@ outliers <- sapply(1:length(outliers),function(i) {tmp=unlist(strsplit(outliers[
 caselist <- caselist[!(caselist[,"Subject_ID"] %in% outliers), ]
 ## exclude the duplicated subjects
 if(all(dupIDs %in% caselist[,"Subject_ID"])) caselist <- caselist[caselist[,"Subject_ID"]!=dupIDs[1], ]
+## remove out the BRCA1/2 pathogenic cases
+tmp <- read.delim(BRCA1_2pathogenicfile)
+pathogenic_sample <- tmp[tmp[,1] %in% c("likely pathogenic","pathogenic"),"Subject_ID"]
+caselist <- caselist[!(caselist[,"Subject_ID"] %in% pathogenic_sample), ]
 
 ## ====================================get control variant list==
 load(contlistf)
 contlist <- onelist
 rm(onelist)
-## remove out the BRCA1/2 pathogenic cases
-tmp <- read.delim(BRCA1_2pathogenicfile)
-pathogenic_sample <- tmp[tmp[,1] %in% c("likely pathogenic","pathogenic"),"Subject_ID"]
-caselist <- caselist[!(caselist[,"Subject_ID"] %in% pathogenic_sample), ]
-contlist <- contlist[!(contlist[,"Subject_ID"] %in% pathogenic_sample), ]
 
 ## variant count statistics: double check for batches effect
 VariantSta(casestaf,contstaf,unique(caselist[,"Subject_ID"]),unique(contlist[,"Subject_ID"]),paste(outputpath,"variantSta/",sep=""))
