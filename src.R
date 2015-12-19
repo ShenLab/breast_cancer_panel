@@ -72,7 +72,8 @@ FamilyDis <- function(pheno,familyf,casef){
     
     pdf(file=casef,width=12,height=10)
     par(mai=c(2,2,1,1))
-    mp <- barplot(t(barM),ylim=c(0,max(rowSums(barM))+5), space=0.6, col=c("black","cyan","blue","red","yellow","green") ,cex.axis=1.6,xlab="Number of family members",ylab="",cex.lab=2,legend = c("no case","1 case","2 case","3 case","4 case","5 case"),main="Number of cases in each family",cex.main=2)
+    mp <- barplot(t(barM),ylim=c(0,max(rowSums(barM))+5), space=0.6, col=c("black","cyan","blue","red","yellow","green") ,cex.axis=1.6,xlab="Number of family members",ylab="Number of families",cex.lab=2 ,main="Number of cases in each family",cex.main=2)
+    legend("topright",legend=c("0 case","1 case","2 case","3 case","4 case","5 case"), col=c("black","cyan","blue","red","yellow","green"),cex=2.2,pch=15)
     axis(1, at=mp, labels=nrow,cex.axis=2)
     text(x=mp,y=rowSums(barM),labels=testr,pos=3,cex=0.8)
     dev.off()
@@ -548,7 +549,7 @@ contstaf <- "../data/contAJ_20151209.hardfiltered.stats_hq.tsv"
 indexcase <- unlist(read.table("../data/AJindexcases265.txt"))
 conts <- unlist(read.table("/home/local/ARCS/qh2159/breast_cancer/variants/data/AJs_557.txt"))
 
-VariantSta(casestaf,contstaf,indexcase,conts,paste(outputpath,"variantSta_overlap/",sep=""))
+VariantSta(contstaf,contstaf,indexcase,conts,paste(outputpath,"variantSta_overlap/",sep=""))
 
 }
 

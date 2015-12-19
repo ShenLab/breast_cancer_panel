@@ -90,12 +90,13 @@ density_plots <- function(oneVar,g,outputpath,VarT=c("LOF","MIS","indel","synony
     mode(oneVar) <- "numeric"
     
     for(i in 1:dim(oneVar)[2]){
-        pdf(paste(outputpath,VarT[i],"_Dis.pdf",sep=""),height=10,width=10)
+        pdf(paste(outputpath,VarT[i],"_Dis.pdf",sep=""),height=8,width=10)
+        par(mai=c(2,1,1,1))
         x1 <- density(oneVar[g=="case",i])
         x2 <- density(oneVar[g=="control",i])
-        plot(x1,col=1,type="l",main=paste(VarT[i]," : case-control distribution",sep=""),xlab="Number of variants in each subject",xlim=c(min(oneVar[,i]),max(oneVar[,i])),ylim=c(0,max(c(x1$y,x2$y))))
+        plot(x1,col=1,type="l",main=paste(VarT[i]," : case-control distribution",sep=""),xlab="Number of coding variants",xlim=c(min(oneVar[,i]),max(oneVar[,i])),ylim=c(0,max(c(x1$y,x2$y))),cex.lab=1.5,cex.axis=1.5)
         lines(x2,col=2,type="l")
-        legend("topright",legend=c("case","control"),lty=rep(1,2),lwd=2,col=1:2)
+        legend("topright",legend=c("case","control"),lty=rep(1,2),lwd=2,col=1:2,cex=1.5)
         dev.off()
     }
 }
@@ -330,6 +331,9 @@ PQQ <- function(pval,ps=0.05,subcol=NULL,main="",labels=NULL,nlab=20){
 }
 
 
+plot_hq <- function(x,y,type,col,main,xlab,ylab,ylim,xlim){
+    plot(x,y,type=type,col=col,main=main,xlab=xlab,ylab=ylab,ylim=ylim,xlim=xlim,cex.lab=1.5,cex.axis=1.5)
+}
 
 qwt <- function(x,filer,sep="\t",flag=0){
     if(flag==0){
