@@ -609,20 +609,22 @@ interested_genes <- function(){
 #var2 <- read.delim(varlist2)
 #vars <- rbind(var1,var2)
 
-vars <- read.delim("../resultf/variant_level_burden_anno.txt")
+vars <- read.delim("../resultf/variant_level_burden_anno_Fre.txt")
 vars <- vars[vars[,"VariantClass"] %in% c("frameshiftdeletion","frameshiftinsertion","nonsynonymousSNV","nonframeshiftdeletion","nonframeshiftinsertion","stopgain","stoploss","none","."), ]
 
 #genes <- c("MSH3","PARP4","PTPRF","ARID1B","POT1","SETD2","FBXW7","HOXD11")
-genes <- c("BTN3A3","C20orf96","SLC34A2","PTPRF","VAMP5","SHROOM4","RPGR","HLA-A","MTR","PAPLN","NPEPL1","CNOT1","HLA-C","SCYL1","IFI35","ARFGAP3","IFNA7")
+#genes <- c("BTN3A3","C20orf96","SLC34A2","PTPRF","VAMP5","SHROOM4","RPGR","HLA-A","MTR","PAPLN","NPEPL1","CNOT1","HLA-C","SCYL1","IFI35","ARFGAP3","IFNA7")
 
+genes <- c("CYP4A22","PER3","CNOT1","AGMO","PCDHGB3","CTBS","GIGYF2","DCAF8L2","LRP1B","SDK1")
 
 testg <- c()
 testv <- c()
 for(i in 1:length(genes)){
-	tmps <- which( vars[,"Gene"]==genes[i] & as.numeric(vars[,"Pvalue"]) < 0.001 )  ##!!!!!!!
-	testv <- c(testv,vars[tmps,"Variant"])
+	tmps <- which( vars[,"Gene"]==genes[i] & as.numeric(vars[,"Pvalue"]) < 0.05 )  ##!!!!!!!
+	testv <- c(testv,paste(vars[tmps,"Chromosome"],vars[tmps,"Position"],sep="_"))
 	testg <- c(testg,rep(genes[i],length(tmps)))
 }
+#testv[2] <- "16_58577315_GAA_GAAAA"
 
 Pv <- sapply(1:length(testv),function(i) unlist(strsplit(testv[i],"_"))[1:2])
 Pv <- t(Pv)
@@ -633,8 +635,8 @@ qwt(Pv,file="../single_check/variant_table.txt")
 phenofile <- "../data/phenotype/WES BCFR phenotypic data.csv"
 load("../resultf/BreastCancer_VariantList_11_12")
 pheno <- phenoinfo()
-onevar <- paste(onelist[,1],onelist[,2],onelist[,4],onelist[,5],sep="_")
-
+#onevar <- paste(onelist[,1],onelist[,2],onelist[,4],onelist[,5],sep="_")
+onevar <- paste(onelist[,1],onelist[,2],sep="_")
 for(i in 1:length(testv)){
 	oneVariant(testv[i],testg[i],onelist,onevar,pheno)
 }

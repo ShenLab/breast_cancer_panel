@@ -281,10 +281,11 @@ qqplot_variantLevel <- function(burdentable,outputpath,Panelg,varT,varstr,caseli
     casevars <- paste(caselist[,1],caselist[,2],caselist[,4],caselist[,5],sep="_")
     pT <- read.delim(burdentable)
     for(i in 1:length(varT)){
-        subs <- which(pT[,"Variant"] %in% casevars[caselist[,"VariantClass"] %in% varT[[i]]])
+        subs <- which((pT[,"Variant"] %in% casevars[caselist[,"VariantClass"] %in% varT[[i]]]) & (pT[,"Folds"] >= 1))
         pval <- pT[subs,"Pvalue"]
         subcol <- which(pT[subs,"Gene"]%in% Panelg)
-        pdf(file=paste(outputpath,varstr[i],".pdf",sep=""),width=10,height=10)
+        pdf(file=paste(outputpath,varstr[i],".pdf",sep=""),width=12,height=10)
+        par(mai=c(2,1,1,1))
         PQQ(pval,subcol=subcol,main=paste("QQ plots of ", varstr[i],sep=""),labels=pT[subs,"Gene"])
         dev.off()
     }
@@ -301,7 +302,7 @@ PQQ <- function(pval,ps=0.05,subcol=NULL,main="",labels=NULL,nlab=20){
     y <- sort(-log10(pval))
     yix <- sort(-log10(pval), index.return = TRUE)$ix
     
-    plot(x,y,xlab="Excepted P-value (-log10 scale)",ylab="Observed P-value (-log10 scale)",main=main,xaxs="i",yaxs="i",xlim=c(0,max(x)+0.2),ylim=c(0,max(y)+0.2))
+    plot(x,y,xlab="Excepted P-value (-log10 scale)",ylab="Observed P-value (-log10 scale)",main=main,xaxs="i",yaxs="i",xlim=c(0,max(c(x,y))+0.1),ylim=c(0,max(c(x,y))+0.1),cex.lab=1.5,cex.axis=1.5)
     lines(c(0,-log10(ps)),c(-log10(ps),-log10(ps)),type="l",col=1,lty=2)
     lines(c(-log10(ps),-log10(ps)),c(0,-log10(ps)),type="l",col=1,lty=2)
     abline(0,1,lwd=3,col=1)
@@ -318,12 +319,12 @@ PQQ <- function(pval,ps=0.05,subcol=NULL,main="",labels=NULL,nlab=20){
         
         if(length(subs) >= 1){
             nc <- wordlayout(x[subs],y[subs],labels[yix[subs]],cex=0.8)
-            text(nc[,1],nc[,2],labels[yix[subs]],cex=0.8)
+            text(nc[,1],nc[,2],labels[yix[subs]],cex=1.2)
             #textplot(x[subs],y[subs],words=labels[yix[subs]],col=2,cex=0.8)
             if(!is.null(subcol)){
                 insub <- match(subcol,yix)
                 insub <- intersect(insub,subs)
-                if( length(insub)>0 ) text(nc[match(insub,subs),1],nc[match(insub,subs),2],labels[yix[insub]],cex=0.8,col=2)
+                if( length(insub)>0 ) text(nc[match(insub,subs),1],nc[match(insub,subs),2],labels[yix[insub]],cex=1.2,col=2)
             }
         }
     }
