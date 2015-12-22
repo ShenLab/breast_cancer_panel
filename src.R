@@ -232,6 +232,28 @@ singleVarianttest <- function(){
     burdenlist <- cbind(burdenlist,fre)
     qwt(burdenlist,file="../resultf/variant_level_burden_anno_Fre.txt",flag=2)
     
+    ## add psedu controls information
+    n.case=336
+    burdenlist <- read.delim("../resultf/variant_level_burden_anno_Fre.txt",check.names=FALSE)
+    Cohortfile <- "../resultf/BreastCancer_VariantList_11_12"
+    load(Cohortfile)
+    conts <- read.csv("/home/local/ARCS/qh2159/breast_cancer/Panel/data/phenotype/controls_Qiang.csv")
+    pcontlist <- onelist[onelist[,"Subject_ID"] %in% conts[,3],]
+    
+    pconvars <- paste(pcontlist[,1],pcontlist[,2],pcontlist[,4],pcontlist[,5],sep="_")
+    pcset <- sapply(1:dim(burdenlist)[1],function(i){
+        paste(unique(pcontlist[pconvars == burdenlist[i,2],"Subject_ID"]),sep="",collapse="_")	
+    })
+    
+    n.pcont <- length(unique(pcontlist[,"Subject_ID"]))
+    fre <- sapply(1:dim(burdenlist)[1],function(i) length(unlist(strsplit(pcset[i],"_"))))
+    fre <- cbind(fre,(burdenlist[,"#caseAJ716"]/n.case)/(fre/n.pcont))
+    ps <- sapply(1:dim(fre)[1], function(i) fisher.test(matrix(c(burdenlist[i,"#caseAJ716"],fre[i,1],n.case-burdenlist[i,"#caseAJ716"],n.pcont-fre[i,1]),2,2))$p.value )
+    fre <- cbind(fre,ps)
+    fre <- cbind(pcset,fre)
+    colnames(fre) <- c("pseducontrols","#pseducontrol","#foldcase-pseducontrols","#p_case_pseducontrols")
+    burdenlist <- cbind(burdenlist,fre)
+    qwt(burdenlist,file="../resultf/variant_level_burden_anno_Fre_Pseducont.txt",flag=2)
 }
 
 variantDis <- function(){
@@ -671,3 +693,12 @@ oneVariant <- function(var,gene,onelist,onevar,pheno){
 	qwt(indf,file=paste("../single_check/",gene,"_",var,"_IGVs.txt",sep=""))
 }
 
+
+PARP4 <- function(){
+	source("src.R")
+	pheno <- phenoinfo()
+	PARP4sam <- unlist(read.table("../single_check/PARP4.txt"))
+	PARP4Phe <- pheno[pheno[,3] %in% PARP4sam,]
+	PARP4Phe[is.na(PARP4Phe)] <- ""
+	qwt(PARP4Phe,file="../single_check/Pheno_PARP4.txt",flag=2)	
+}
