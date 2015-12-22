@@ -579,15 +579,21 @@ twoVariantSta <- function(){
 
 source("misc.R")
 outputpath="../resultf/variantSta_badInter/"
-casef <- "../data/BR_new_12_16.tsv"
 contf <- "../data/contAJ_20151209.hardfiltered.stats_hq.tsv"
+casef <- contf
 cases <- unlist(read.table("../data/AJindexcases265.txt"))
 controls <- unlist(read.table("/home/local/ARCS/qh2159/breast_cancer/variants/data/AJs_557.txt"))
 
-if(!file.exists(outputpath)){ dir.create(outputpath, showWarnings = TRUE, recursive = FALSE);}
+    if(!file.exists(outputpath)){ dir.create(outputpath, showWarnings = TRUE, recursive = FALSE);}
     varT=c("synonymous","Missense","indels","Frameshift","ALL")
+    
     tmp <- read.table(casef,fill=T)
-    varTa <- t(tmp[c(21,22,4,25,3),match(cases,tmp[2,])])
+    if(all(cases %in% tmp[2,])){
+        subs <- match(cases,tmp[2,])
+    }else{
+        subs <- sapply(1:length(cases),function(i) which(grepl(cases[i],tmp[2,])))
+    }
+    varTa <- t(tmp[c(21,22,4,25,3),subs])
     varTa <- cbind("case",cases,varTa)
     colnames(varTa) <- c("Group","Subject_ID",varT)
     tmp <- read.table(contf,fill=T)
@@ -598,12 +604,15 @@ if(!file.exists(outputpath)){ dir.create(outputpath, showWarnings = TRUE, recurs
     n <- dim(Ta)[2]
     Ta0 <- Ta
 
-
-    casef <- "../data/BR_new_12_16.badInter.tsv"
     contf <- "../data/contAJ_20151215.badInter.stats_hq.tsv"
-     
-    tmp <- read.table(casef,fill=T)
-    varTa <- t(tmp[c(21,22,4,25,3),match(cases,tmp[2,])])
+    casef <- contf
+    tmp <- read.table(casef,fill=T)    
+    if(all(cases %in% tmp[2,])){
+        subs <- match(cases,tmp[2,])
+    }else{
+        subs <- sapply(1:length(cases),function(i) which(grepl(cases[i],tmp[2,])))
+    }
+    varTa <- t(tmp[c(21,22,4,25,3),subs])
     varTa <- cbind("case",cases,varTa)
     colnames(varTa) <- c("Group","Subject_ID",varT)
     tmp <- read.table(contf,fill=T)
@@ -702,3 +711,41 @@ PARP4 <- function(){
 	PARP4Phe[is.na(PARP4Phe)] <- ""
 	qwt(PARP4Phe,file="../single_check/Pheno_PARP4.txt",flag=2)	
 }
+
+fold1_2Sam <- function(){
+
+gg <- c()
+for(c in seq(100,1000,100)){
+for(d in seq(100,3000,100))
+{
+for(b in seq(50,floor(0.5*d),50)){
+a <- floor(1.2*(b/d)*c)
+if(a < 0.3*c){
+tmp <- fisher.test(matrix(c(a,b,c-a,d-b),2,2))$p.value
+tmp <- c(a,b,c,d,tmp)
+gg <- rbind(gg,tmp)
+}
+}
+}
+}
+colnames(gg) <- c("carrier","non_carrier","cases","controls","pvalue")
+gg <- gg[gg[,5] < 0.05, ]
+qwt(gg,file="Sign_1.2.txt",flag=2)
+
+
+gg <- c()
+c=265
+a=82
+for(d in seq(200,7200,10))
+{
+b <-  floor(d*(a/c)/1.2)
+tmp <- fisher.test(matrix(c(a,b,c-a,d-b),2,2))$p.value
+tmp <- c(a,b,c,d,tmp)
+gg <- rbind(gg,tmp)
+}
+plot(seq(200,7200,10),gg[,5],col=2,type='l',xlab="Number of controls",ylab="Pvalue")
+abline(h=0.05,lwd=2)
+
+}
+
+

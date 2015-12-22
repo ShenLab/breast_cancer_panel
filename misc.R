@@ -5,7 +5,12 @@ getVariantlist <- function(path,IDfile,namestr=".tsv",savefile){
     IDs <- unlist(read.table(IDfile))
     samf <- paste(IDs,namestr,sep="")
     files <- list.files(path=path,pattern=".tsv$")
-    samf <- intersect(samf,files)
+    samf <- files[match(samf,files)]
+	
+    if(any(is.na(samf))){
+	subs <- sapply(1:length(IDs), function(i) which(grepl(IDs[i], files)) )
+	samf <- files[subs]
+    }
     
     print_log(paste("getVariantlist: All samples have variant files in the given path:", all(samf %in% files),sep=" "))
     print_log(paste("getVariantlist: The number of subjects in this variant list are:", length(samf), sep=" "))
@@ -14,8 +19,9 @@ getVariantlist <- function(path,IDfile,namestr=".tsv",savefile){
     for(i in 1:length(samf)){
         tmp <- paste(path,samf[i],sep="")
         oner <- read.delim(tmp,check.names=FALSE)
-        subj <- gsub(namestr,"",samf[i])
-        oner <- cbind(oner,subj)
+        #subj <- gsub(namestr,"",samf[i])
+    	subj <- IDs[i]
+	oner <- cbind(oner,subj)
         cols <- colnames(oner)
         colsub <- c(which(grepl(toupper(subj),toupper(cols))), dim(oner)[2])
         colnames(oner)[colsub] <- c("GT","AD","Subject_INFO","Subject_ID")
@@ -96,7 +102,9 @@ density_plots <- function(oneVar,g,outputpath,VarT=c("LOF","MIS","indel","synony
         x2 <- density(oneVar[g=="control",i])
         plot(x1,col=1,type="l",main=paste(VarT[i]," : case-control distribution",sep=""),xlab="Number of coding variants",xlim=c(min(oneVar[,i]),max(oneVar[,i])),ylim=c(0,max(c(x1$y,x2$y))),cex.lab=1.5,cex.axis=1.5)
         lines(x2,col=2,type="l")
-        legend("topright",legend=c("case","control"),lty=rep(1,2),lwd=2,col=1:2,cex=1.5)
+        abline(v=mean(oneVar[g=="case",i]),col=1,lty=2)
+	abline(v=mean(oneVar[g=="control",i]),col=2,lty=2)
+	legend("topright",legend=c("case","control"),lty=rep(1,2),lwd=2,col=1:2,cex=1.5)
         dev.off()
     }
 }
