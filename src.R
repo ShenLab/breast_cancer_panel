@@ -712,6 +712,22 @@ PARP4 <- function(){
 	qwt(PARP4Phe,file="../single_check/Pheno_PARP4.txt",flag=2)	
 }
 
+
+filtered_LargeFam <- function(){
+	source("misc.R")
+	mis <- "nonsynonymousSNV"
+	path= "/home/local/ARCS/qh2159/breast_cancer/variants/families" 
+	samf  <- list.files(path=path,pattern=".tsv$",full.names=TRUE)
+	for(i in 1:length(samf)){
+        	oner <- read.delim(samf[i],check.names=FALSE)
+		if(dim(oner)[1]>0){
+    		oner <- variant_filtering(oner,mis,Ecut=0.01,segd=0.95,pp2=TRUE,hotf="",alleleFrefile=NULL,popcut=0.05)	
+		oner <- oner[oner[,"filtered"],]
+    		qwt(oner,file=gsub(".tsv","filtered.tsv",samf[i]),flag=2)
+		}
+	}
+}
+
 fold1_2Sam <- function(){
 
 gg <- c()

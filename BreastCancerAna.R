@@ -89,7 +89,7 @@ allgenes <- union(Gtop[,1],c(TSg,DRg,DNAreg,Panelg))
 ##getVariantlist(casevariantpath,AJcasefile,namestr=".AllVariants.tsv","../data/Rdata/AJcaselist_11_9")
 ##getVariantlist(casevariantpath,HIcasefile,namestr=".AllVariants.tsv","../data/Rdata/HIcaselist_11_20")
 ##getVariantlist(AJcontvariantpath,AJcontrolfile,namestr=".tsv","../data/Rdata/AJcontlist_11_9")
-##getVariantlist(HIcontvariantpath,HIcontrolfile,namestr=".tsv","../data/Rdata/HIcontlist_11_20")
+##getVariantlist(HIcontvariantpath,HIcontrolfile,namestr=".tsv","../data/Rdata/HIcontlist_12_29")
 ##getVariantlist(casevariantpath,AJcasefile,namestr=".tsv","../data/Rdata/AJcaselist_12_17")
 ##getVariantlist(AJcontvariantpath,AJcontrolfile,namestr=".tsv","../data/Rdata/AJcontlist_12_17")
 ### ====================================getVariantlist save as Rdata===========================

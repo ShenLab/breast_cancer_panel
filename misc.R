@@ -65,28 +65,35 @@ VariantSta <- function(casef,contf,cases,controls,outputpath){
     
     ## running
     if(!file.exists(outputpath)){ dir.create(outputpath, showWarnings = TRUE, recursive = FALSE);}
-    varT=c("synonymous","Missense","indels","Frameshift","ALL")
-    tmp <- read.table(casef,fill=T)
-    
-    if(all(cases %in% tmp[2,])){
-        subs <- match(cases,tmp[2,])
-    }else{
-        subs <- sapply(1:length(cases),function(i) which(grepl(cases[i],tmp[2,])))
-    }
-    varTa <- t(tmp[c(21,22,4,25,3),subs])
-    
-    varTa <- cbind("case",cases,varTa)
-    colnames(varTa) <- c("Group","Subject_ID",varT)
-    tmp <- read.table(contf,fill=T)
-    varTa1 <- t(tmp[c(21,22,4,25,3),match(controls,tmp[2,])])
-    varTa1 <- cbind("control",controls,varTa1)
-    colnames(varTa1) <- c("Group","Subject_ID",varT)        
+    varT=c("ALL","SNVs","InDels","Frameshift","Missense","Silent")
+    varTa <- VariantStaonef(casef,cases,varT,"case")
+    varTa1 <- VariantStaonef(contf,controls,varT,"control")
     Ta <- rbind(varTa,varTa1)
     n <- dim(Ta)[2]
     density_plots(Ta[,3:n],Ta[,1],outputpath,VarT=varT)
     
     ## done
     print_log(paste("VariantSta function is done!", date(),sep=" "))
+}
+
+VariantStaonef <- function(casef,cases,varT,group){
+
+    tmp <- read.delim(casef,sep="\t",header=FALSE)
+    idsub <- which(tmp[,1]=="Samples:")[1]
+    if(all(cases %in% tmp[idsub,])){
+        subs <- match(cases,tmp[idsub,])
+    }else{
+        subs <- sapply(1:length(cases),function(i) which(grepl(cases[i],tmp[idsub,])))
+    }
+    tsub <- match(varT[2:length(varT)],tmp[,1])
+    varTa <- t(tmp[tsub,subs])
+    atmp <- as.matrix(tmp[tsub[1:2],subs])
+    mode(atmp) <- "numeric"
+    varTa <- cbind(colSums(atmp),varTa)
+    varTa <- cbind(group,cases,varTa)
+    colnames(varTa) <- c("Group","Subject_ID",varT)
+    
+    varTa
 }
 
 density_plots <- function(oneVar,g,outputpath,VarT=c("LOF","MIS","indel","synonymous","unknown","ALL")){
@@ -100,7 +107,7 @@ density_plots <- function(oneVar,g,outputpath,VarT=c("LOF","MIS","indel","synony
         par(mai=c(2,1,1,1))
         x1 <- density(oneVar[g=="case",i])
         x2 <- density(oneVar[g=="control",i])
-        plot(x1,col=1,type="l",main=paste(VarT[i]," : case-control distribution",sep=""),xlab="Number of coding variants",xlim=c(min(oneVar[,i]),max(oneVar[,i])),ylim=c(0,max(c(x1$y,x2$y))),cex.lab=1.5,cex.axis=1.5)
+        plot(x1,col=1,type="l",main=paste(VarT[i]," : case-control distribution",sep=""),xlab=paste("Number of ",VarT[i]," variants",sep=""),xlim=c(min(oneVar[,i]),max(oneVar[,i])),ylim=c(0,max(c(x1$y,x2$y))),cex.lab=1.5,cex.axis=1.5)
         lines(x2,col=2,type="l")
         abline(v=mean(oneVar[g=="case",i]),col=1,lty=2)
 	abline(v=mean(oneVar[g=="control",i]),col=2,lty=2)
