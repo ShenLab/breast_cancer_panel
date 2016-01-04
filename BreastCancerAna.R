@@ -55,7 +55,7 @@ if(swi==1){
 
 ##====================define the output files===================================================================
 pop=c("Jewish","Hispanic")
-outputpath <- paste("../resultf/burdentest_",sig,"_",Ecut,"_",gsub(".txt","",basename(hotspotfile)),"_",pop[swi],"/",sep="")
+outputpath <- paste("../resultf/burdentest_",sig,"_",Ecut,"_",gsub(".txt","",basename(hotspotfile)),"_",pop[swi],format(Sys.Date(),format="%B_%d_%Y"),"/",sep="")
 indelsfile <- paste(outputpath,"indels_",Ecut,".txt",sep="")
 genesetsVarfile <- paste(outputpath,"Panel_genes_variantlist.txt",sep="")
 restVarfile <- paste(outputpath,"Variantlist.txt",sep="")
