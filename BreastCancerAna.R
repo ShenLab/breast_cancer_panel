@@ -31,23 +31,25 @@ HIcasefile <- "/home/local/ARCS/qh2159/breast_cancer/Panel/data/HispanicCases548
 AJcontrolfile <- "/home/local/ARCS/qh2159/breast_cancer/variants/data/AJs_557.txt"
 HIcontrolfile <- "/home/local/ARCS/qh2159/breast_cancer/variants/data/HIs_341.txt"
 Cohortfile <- "../resultf/BreastCancer_VariantList_11_12"
-## variant count statistics
-casestaf <- "../data/BR_new_12_16.tsv"
-AJcontstaf <- "../data/contAJ_20151209.hardfiltered.stats_hq.tsv"
-HIcontstaf <- ""
-vburdenfile <- "../resultf/variant_level_burden_anno_Fre.txt"  ### look src.R
 
 ## switch to the right files for burden test
 if(swi==1){
-    alleleFrefile <- "/home/local/ARCS/yshen/data/WENDY/BreastCancer/AJ_CONTROLS/combined_variant_call/NonBC_Frequencies.expanded.tsv" ##AJ: not in our cohort 
-    caselistf <- "../data/Rdata/AJcaselist_12_17"
-    contlistf <- "../data/Rdata/AJcontlist_12_17"
-    contstaf <- AJcontstaf
+	## variant count statistics
+	casestaf <- "../data/contAJ_20151209.hardfiltered.stats_hq.tsv"
+	contstaf <- "../data/contAJ_20151209.hardfiltered.stats_hq.tsv"
+
+	vburdenfile <- "../resultf/variant_level_burden_anno_Fre.txt"  ### look src.R
+	alleleFrefile <- "/home/local/ARCS/yshen/data/WENDY/BreastCancer/AJ_CONTROLS/combined_variant_call/NonBC_Frequencies.expanded.tsv" ##AJ: not in our cohort 
+    	caselistf <- "../data/Rdata/AJcaselist_12_17"
+    	contlistf <- "../data/Rdata/AJcontlist_12_17"
 }else if(swi==2){
-    alleleFrefile <- NULL
-    caselistf <- "../data/Rdata/HIcaselist_11_20"
-    contlistf <- "../data/Rdata/HIcontlist_11_20"  
-    contstaf <- HIcontstaf
+    
+	vburdenfile = ""	
+    	alleleFrefile <- NULL
+    	caselistf <- "../data/Rdata/HIcaselist_11_20"
+    	contlistf <- "../data/Rdata/HIcontlist_11_20"  
+    	contstaf <- ""
+    	casestaf <- ""
 }
 
 
@@ -117,7 +119,7 @@ contlist <- onelist
 rm(onelist)
 
 ## variant count statistics: double check for batches effect
-VariantSta(contstaf,contstaf,unique(caselist[,"Subject_ID"]),unique(contlist[,"Subject_ID"]),paste(outputpath,"variantSta/",sep=""))
+VariantSta(casestaf,contstaf,unique(caselist[,"Subject_ID"]),unique(contlist[,"Subject_ID"]),paste(outputpath,"variantSta/",sep=""))
 
 ##============================== keep singleton variants only
 if(sig){
