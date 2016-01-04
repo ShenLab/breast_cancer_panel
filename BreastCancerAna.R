@@ -209,7 +209,8 @@ if(FALSE){
 }else{
     colnames(variantlist)[1:11] <- c("Gene_sets","variant_type","Gene","Variant","#cases carrier","#controls carrier","#case non-carrier","#control non-carrier","OddsRatio","pvalue","CorrectedP")
 }
-variantlist <- cbind(variantlist, varTable[match(vars,varTable[,2]),c("#caseAJ716","#noncaseAJ716","#noshotcase","#noshotnoncase","#foldcase-non","#p_case_noncase")])
+variantlist <- cbind(variantlist, varTable[match(vars,varTable[,2]),60:dim(varTable)[2]])
+#variantlist <- cbind(variantlist, varTable[match(vars,varTable[,2]),c("#caseAJ716","#noncaseAJ716","#noshotcase","#noshotnoncase","#foldcase-non","#p_case_noncase")])
 variantlist <- variantlist[order(as.numeric(variantlist[,10])),]
 indelVars <- variantlist[variantlist[,"VariantClass"] %in% c("frameshiftdeletion","frameshiftinsertion","nonframeshiftdeletion","nonframeshiftinsertion"),c("Chromosome","Position","Subject_ID")]
 
