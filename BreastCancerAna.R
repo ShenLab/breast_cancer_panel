@@ -38,7 +38,7 @@ if(swi==1){
 	casestaf <- "../data/contAJ_20151209.hardfiltered.stats_hq.tsv"
 	contstaf <- "../data/contAJ_20151209.hardfiltered.stats_hq.tsv"
 
-	vburdenfile <- "../resultf/variant_level_burden_anno_Fre.txt"  ### look src.R
+	vburdenfile <- "../resultf/variant_level_burden_anno_Fre_Pseducont.txt"  ### look src.R
 	alleleFrefile <- "/home/local/ARCS/yshen/data/WENDY/BreastCancer/AJ_CONTROLS/combined_variant_call/NonBC_Frequencies.expanded.tsv" ##AJ: not in our cohort 
     	caselistf <- "../data/Rdata/AJcaselist_12_17"
     	contlistf <- "../data/Rdata/AJcontlist_12_17"
