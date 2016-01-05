@@ -764,4 +764,44 @@ abline(h=0.05,lwd=2)
 
 }
 
+### coding variant numbers in four batches of Hispnic 
+HispStaBatches <- function(){
 
+phenofile <- "../data/phenotype/WES BCFR phenotypic data.csv" 
+HIcasefile <- "/home/local/ARCS/qh2159/breast_cancer/Panel/data/HispanicCases548.txt"
+batches <- "../data/phenotype/Sample_batches.csv"
+HIindexfile <- "../data/HIindexcases138.txt"
+
+
+HIs <- unlist(read.table(HIcasefile))
+countT <- read.delim("../data/BR.origin.stats_12_28.tsv",header=FALSE)
+bats <- read.csv(batches)
+
+batlab <- unique(bats[,3])
+cots <- list()
+for(i in 1:4){
+	cots[[i]] <- as.numeric(countT[3,match(HIs[HIs %in% bats[bats[,3]==batlab[i],2]],countT[2,])])
+	print(length(cots[[i]]))
+}
+
+pdf(file="../resultf/HISPSampels.pdf",height=10,width=12)
+plot(density(cots[[2]]),xlab="Number of coding variants",main="Coding variants",cex=1.5,col=1,type="l")
+dev.off()
+
+
+countT <- read.delim("../data/BR.origin.stats_12_28.tsv",header=FALSE)
+dupsam <- countT[2,which(grepl("cgc",countT[2,]))]
+dupsam1 <- gsub("cgc","",dupsam)
+aa <- countT[3,match(dupsam,countT[2,])]
+bb <- countT[3,match(dupsam1,countT[2,])]
+aa <- as.numeric(aa)
+bb <- as.numeric(bb)
+
+pdf(file="../resultf/dupSampels.pdf",height=10,width=12)
+plot(density(aa),xlab="Number of coding variants",main="Coding variants in duplication samples",cex=1.5,col=1,type="l",ylim=c(0,0.00045))
+lines(density(bb),col=2,type="l")
+legend("topright",legend=c("Yale","Regeneron"),col=1:2,lwd=rep(1,2),lty=rep(1,2))
+dev.off()
+
+
+}

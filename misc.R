@@ -332,7 +332,7 @@ PQQ <- function(pval,ps=0.05,subcol=NULL,main="",labels=NULL,nlab=20){
         }else{ tmpsubs <- 1:length(y);}
         subs <- intersect(subs,tmpsubs)
         
-        if(length(subs) >= 1){
+        if(length(subs) > 1){
             nc <- wordlayout(x[subs],y[subs],labels[yix[subs]],cex=0.8)
             text(nc[,1],nc[,2],labels[yix[subs]],cex=1.2)
             #textplot(x[subs],y[subs],words=labels[yix[subs]],col=2,cex=0.8)
@@ -341,7 +341,13 @@ PQQ <- function(pval,ps=0.05,subcol=NULL,main="",labels=NULL,nlab=20){
                 insub <- intersect(insub,subs)
                 if( length(insub)>0 ) text(nc[match(insub,subs),1],nc[match(insub,subs),2],labels[yix[insub]],cex=1.2,col=2)
             }
-        }
+        }else if(length(subs)==1){
+		if(!is.null(subcol)){
+			text(x[subs],y[subs],labels[yix[subs]],cex=1.2,col=1+(subs %in% match(subcol,yix)))
+		}else{
+			text(x[subs],y[subs],labels[yix[subs]],cex=1.2,col=1)
+		}
+	}
     }
     
 }

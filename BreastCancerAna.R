@@ -55,7 +55,7 @@ if(swi==1){
 
 ##====================define the output files===================================================================
 pop=c("Jewish","Hispanic")
-outputpath <- paste("../resultf/burdentest_",sig,"_",Ecut,"_",gsub(".txt","",basename(hotspotfile)),"_",pop[swi],format(Sys.Date(),format="%B_%d_%Y"),"/",sep="")
+outputpath <- paste("../resultf/burdentest_",sig,"_",Ecut,"_",gsub(".txt","",basename(hotspotfile)),"_",pop[swi],"_",format(Sys.Date(),format="%B_%d_%Y"),"/",sep="")
 indelsfile <- paste(outputpath,"indels_",Ecut,".txt",sep="")
 genesetsVarfile <- paste(outputpath,"Panel_genes_variantlist.txt",sep="")
 restVarfile <- paste(outputpath,"Variantlist.txt",sep="")
@@ -209,7 +209,7 @@ if(FALSE){
 }else{
     colnames(variantlist)[1:11] <- c("Gene_sets","variant_type","Gene","Variant","#cases carrier","#controls carrier","#case non-carrier","#control non-carrier","OddsRatio","pvalue","CorrectedP")
 }
-variantlist <- cbind(variantlist, varTable[match(vars,varTable[,2]),60:dim(varTable)[2]])
+variantlist <- cbind(variantlist, varTable[match(vars,varTable[,2]),which(names(varTable)=="index_case"):dim(varTable)[2]])
 #variantlist <- cbind(variantlist, varTable[match(vars,varTable[,2]),c("#caseAJ716","#noncaseAJ716","#noshotcase","#noshotnoncase","#foldcase-non","#p_case_noncase")])
 variantlist <- variantlist[order(as.numeric(variantlist[,10])),]
 indelVars <- variantlist[variantlist[,"VariantClass"] %in% c("frameshiftdeletion","frameshiftinsertion","nonframeshiftdeletion","nonframeshiftinsertion"),c("Chromosome","Position","Subject_ID")]
