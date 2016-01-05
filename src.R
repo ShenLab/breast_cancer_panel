@@ -184,7 +184,7 @@ SubjectBatches <- function(){
     
 }
 
-singleVarianttest <- function(){
+singleVariantTest_Jewish <- function(){
     
     caselistf <- "../data/Rdata/AJcaselist_12_17"
     contlistf <- "../data/Rdata/AJcontlist_12_17"
@@ -229,6 +229,95 @@ singleVarianttest <- function(){
     id3set <- sapply(1:dim(burdenlist)[1],function(i){
 	c(paste(unique(indexlist[indexvars == burdenlist[i,2],"Subject_ID"]),sep="",collapse="_"),paste(unique(caselist[casevars == burdenlist[i,2],"Subject_ID"]),sep="",collapse="_"),paste(unique(nonslist[nonsvars == burdenlist[i,2],"Subject_ID"]),sep="",collapse="_"),paste(unique(contlist[contvars == burdenlist[i,2],"Subject_ID"]),sep="",collapse="_"))	
 	})
+    id3set <- t(id3set)
+    colnames(id3set) <- c("index_case","non-index_case","non_case_cohort","control")
+    burdenlist <- cbind(burdenlist,id3set)
+    qwt(burdenlist,file="../resultf/variant_level_burden_anno.txt",flag=2)
+    
+    ## add case, non-case frequency in our breast cancer cohort
+    n.case <- length(unique(indexlist[,"Subject_ID"])) + length(unique(caselist[,"Subject_ID"]))
+    n.noncase <- length(unique(nonslist[,"Subject_ID"]))
+    burdenlist <- read.delim("../resultf/variant_level_burden_anno.txt")
+    fre <- sapply(1:dim(burdenlist)[1],function(i) c( length(unlist(strsplit(burdenlist[i,"index_case"],"_"))) + length(unlist(strsplit(burdenlist[i,"non.index_case"],"_"))), length(unlist(strsplit(burdenlist[i,"non_case_cohort"],"_"))), n.case, n.noncase))
+    fre <- t(fre)
+    fre[,3] <- fre[,3] - fre[,1]
+    fre[,4] <- fre[,4] - fre[,2]
+    fre <- cbind(fre,(fre[,1]/fre[,3])/(fre[,2]/fre[,4]))
+    ps <- sapply(1:dim(fre)[1], function(i) fisher.test(matrix(fre[i,1:4],2,2))$p.value )
+    fre <- cbind(fre,ps)
+    colnames(fre) <- c("#caseAJ716","#noncaseAJ716","#noshotcase","#noshotnoncase","#foldcase-non","#p_case_noncase")
+    burdenlist <- cbind(burdenlist,fre)
+    qwt(burdenlist,file="../resultf/variant_level_burden_anno_Fre.txt",flag=2)
+    
+    ## add pseudo controls information
+    n.case=336
+    burdenlist <- read.delim("../resultf/variant_level_burden_anno_Fre.txt",check.names=FALSE)
+    Cohortfile <- "../resultf/BreastCancer_VariantList_11_12"
+    load(Cohortfile)
+    conts <- read.csv("/home/local/ARCS/qh2159/breast_cancer/Panel/data/phenotype/controls_Qiang_1_5_2016.csv")
+    pcontlist <- onelist[onelist[,"Subject_ID"] %in% conts[,3],]
+    
+    pconvars <- paste(pcontlist[,1],pcontlist[,2],pcontlist[,4],pcontlist[,5],sep="_")
+    pcset <- sapply(1:dim(burdenlist)[1],function(i){
+        paste(unique(pcontlist[pconvars == burdenlist[i,2],"Subject_ID"]),sep="",collapse="_")	
+    })
+    
+    n.pcont <- length(unique(pcontlist[,"Subject_ID"]))
+    fre <- sapply(1:dim(burdenlist)[1],function(i) length(unlist(strsplit(pcset[i],"_"))))
+    fre <- cbind(fre,(burdenlist[,"#caseAJ716"]/n.case)/(fre/n.pcont))
+    ps <- sapply(1:dim(fre)[1], function(i) fisher.test(matrix(c(burdenlist[i,"#caseAJ716"],fre[i,1],n.case-burdenlist[i,"#caseAJ716"],n.pcont-fre[i,1]),2,2))$p.value )
+    fre <- cbind(fre,ps)
+    fre <- cbind(pcset,fre)
+    colnames(fre) <- c("pseducontrols","#pseducontrol","#foldcase-pseducontrols","#p_case_pseducontrols")
+    burdenlist <- cbind(burdenlist,fre)
+    qwt(burdenlist,file="../resultf/variant_level_burden_anno_Fre_Pseducont.txt",flag=2)
+}
+
+singleVariantTest_Hispanic <- function(){
+    
+    caselistf <- "../data/Rdata/HIcaselist_1_5"
+    contlistf <- "../data/Rdata/HIcontlist_1_5"
+    indexf <- "../data/HIindexcases138.txt"
+    indexcases <- unlist(read.table(indexf))
+    mis <- "nonsynonymousSNV"
+    Ecut=0.01
+    pheno <- phenoinfo()
+    cases <- pheno[pheno[,"BreastCancer"]=="Yes",3]
+    nons <- pheno[pheno[,"BreastCancer"]=="No",3]
+    
+    load(caselistf)
+    caselist <- onelist
+    indexlist <- caselist[caselist[,"Subject_ID"] %in% indexcases, ]
+    nonslist <- caselist[caselist[,"Subject_ID"] %in% nons, ]
+    caselist <- caselist[caselist[,"Subject_ID"] %in% setdiff(cases,indexcases), ]
+    rm(onelist)
+    load(contlistf)
+    contlist <- onelist
+    rm(onelist)
+    
+    indexlist <- variant_filtering(indexlist,mis,Ecut=Ecut,segd=0.95,pp2=TRUE,hotf="",alleleFrefile=NULL,popcut=0.05)
+    indexlist <- indexlist[indexlist[,"filtered"], ]
+    contlist <- variant_filtering(contlist,mis,Ecut=Ecut,segd=0.95,pp2=TRUE,hotf="",alleleFrefile=NULL,popcut=0.05)
+    contlist <- contlist[contlist[,"filtered"], ]
+    
+    ## single variant burden test in index cases and controls
+    vburdenfile <- "../resultf/variant_level.burden.txt"
+    variantTable <- burden_test(indexlist,contlist,flag=3,sig=FALSE)
+    qwt(variantTable,file=vburdenfile,flag=2) 
+    
+    ## add annotation information 
+    indexvars <- paste(indexlist[,1],indexlist[,2],indexlist[,4],indexlist[,5],sep="_") 
+    burdenf <- read.delim(vburdenfile)
+    burdenlist <- cbind(burdenf,indexlist[match(burdenf[,2],indexvars),])
+    burdenlist <- burdenlist[,!(colnames(burdenlist) %in% "Subject_ID")]
+    
+    ## add index cases, non-index cases, non-index controls and control ID for each variants
+    casevars <- paste(caselist[,1],caselist[,2],caselist[,4],caselist[,5],sep="_") 
+    contvars <- paste(contlist[,1],contlist[,2],contlist[,4],contlist[,5],sep="_")
+    nonsvars <- paste(nonslist[,1],nonslist[,2],nonslist[,4],nonslist[,5],sep="_")
+    id3set <- sapply(1:dim(burdenlist)[1],function(i){
+        c(paste(unique(indexlist[indexvars == burdenlist[i,2],"Subject_ID"]),sep="",collapse="_"),paste(unique(caselist[casevars == burdenlist[i,2],"Subject_ID"]),sep="",collapse="_"),paste(unique(nonslist[nonsvars == burdenlist[i,2],"Subject_ID"]),sep="",collapse="_"),paste(unique(contlist[contvars == burdenlist[i,2],"Subject_ID"]),sep="",collapse="_"))	
+    })
     id3set <- t(id3set)
     colnames(id3set) <- c("index_case","non-index_case","non_case_cohort","control")
     burdenlist <- cbind(burdenlist,id3set)

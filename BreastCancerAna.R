@@ -23,33 +23,31 @@ GTExfile <- "/home/local/ARCS/qh2159/breast_cancer/geneexpression/GTEx/expg_rank
 phenofile <- "../data/phenotype/WES BCFR phenotypic data.csv" ## phenotype file to get index cases only
 dupIDs <- c("222357","222966") ## duplicated with Subject ID 222966 ## duplicated subject
 ## variant files and case, control samples ## check the log file to see the variant filtering details
-casevariantpath <- "/home/local/ARCS/qh2159/breast_cancer/variants/FreezeOneCommon/"
+AJcasevariantpath <- "/home/local/ARCS/qh2159/breast_cancer/variants/FreezeOneCommon/"
+HIcasevariantpath <- "/home/local/ARCS/yshen/data/WENDY/BreastCancer/Regeneron/Filtering_Oct2015/"
 AJcontvariantpath <- "/home/local/ARCS/qh2159/breast_cancer/variants/AJconVariantCalling/"
 HIcontvariantpath <- "/home/local/ARCS/qh2159/breast_cancer/variants/HIconVariantCalling/"
-AJcasefile <- "/home/local/ARCS/yshen/data/WENDY/BreastCancer/Regeneron/tablesandlists/All_AJ_samples.list"
-HIcasefile <- "/home/local/ARCS/qh2159/breast_cancer/Panel/data/HispanicCases548.txt"
+AJBRfile <- "/home/local/ARCS/yshen/data/WENDY/BreastCancer/Regeneron/tablesandlists/All_AJ_samples.list"
+HIBRfile <- "/home/local/ARCS/qh2159/breast_cancer/Panel/data/HispanicCases548.txt"
 AJcontrolfile <- "/home/local/ARCS/qh2159/breast_cancer/variants/data/AJs_557.txt"
 HIcontrolfile <- "/home/local/ARCS/qh2159/breast_cancer/variants/data/HIs_341.txt"
-Cohortfile <- "../resultf/BreastCancer_VariantList_11_12"
+Cohortfile <- "../data/Rdata/BreastCancer_VariantList_11_12"
 
 ## switch to the right files for burden test
 if(swi==1){
-	## variant count statistics
-	casestaf <- "../data/contAJ_20151209.hardfiltered.stats_hq.tsv"
-	contstaf <- "../data/contAJ_20151209.hardfiltered.stats_hq.tsv"
-
-	vburdenfile <- "../resultf/variant_level_burden_anno_Fre_Pseducont.txt"  ### look src.R
-	alleleFrefile <- "/home/local/ARCS/yshen/data/WENDY/BreastCancer/AJ_CONTROLS/combined_variant_call/NonBC_Frequencies.expanded.tsv" ##AJ: not in our cohort 
+        vburdenfile <- "../resultf/variant_level_burden_anno_Fre_Pseducont.txt"  ### single variant test files with all annotations; look src.R
+	    alleleFrefile <- "/home/local/ARCS/yshen/data/WENDY/BreastCancer/AJ_CONTROLS/combined_variant_call/NonBC_Frequencies.expanded.tsv" ##AJ: not in our cohort 
     	caselistf <- "../data/Rdata/AJcaselist_12_17"
     	contlistf <- "../data/Rdata/AJcontlist_12_17"
+	    casestaf <- "../data/contAJ_20151209.hardfiltered.stats_hq.tsv" ##using the variant from AJ case and control joint calling result
+	    contstaf <- "../data/contAJ_20151209.hardfiltered.stats_hq.tsv"
 }else if(swi==2){
-    
-	vburdenfile = ""	
+	    vburdenfile = ""	
     	alleleFrefile <- NULL
-    	caselistf <- "../data/Rdata/HIcaselist_11_20"
-    	contlistf <- "../data/Rdata/HIcontlist_11_20"  
-    	contstaf <- ""
-    	casestaf <- ""
+    	caselistf <- "../data/Rdata/HIcaselist_1_5"
+    	contlistf <- "../data/Rdata/HIcontlist_1_5"
+	    casestaf <- "../data/BR.origin.stats_12_28.tsv"
+    	contstaf <- "../data/Hispanic.stats_12_28.tsv"
 }
 
 
@@ -88,11 +86,11 @@ allgenes <- union(Gtop[,1],c(TSg,DRg,DNAreg,Panelg))
 
 
 ## =========================variant list filtering===========================================
-##getVariantlist(casevariantpath,AJcasefile,namestr=".AllVariants.tsv","../data/Rdata/AJcaselist_11_9")
-##getVariantlist(casevariantpath,HIcasefile,namestr=".AllVariants.tsv","../data/Rdata/HIcaselist_11_20")
-##getVariantlist(AJcontvariantpath,AJcontrolfile,namestr=".tsv","../data/Rdata/AJcontlist_11_9")
-##getVariantlist(HIcontvariantpath,HIcontrolfile,namestr=".tsv","../data/Rdata/HIcontlist_12_29")
-##getVariantlist(casevariantpath,AJcasefile,namestr=".tsv","../data/Rdata/AJcaselist_12_17")
+##getVariantlist(HIcasevariantpath,HIBRfile,namestr=".AllVariants.tsv","../data/Rdata/HIcaselist_1_5")
+##getVariantlist(HIcontvariantpath,HIcontrolfile,namestr=".tsv","../data/Rdata/HIcontlist_1_5")
+### AJ lists
+##getVariantlist(AJcasevariantpath,AJBRfile,namestr=".tsv","../data/Rdata/AJcaselistBR_12_17")
+##getVariantlist(AJcontvariantpath,AJBRfile,namestr=".tsv","../data/Rdata/AJcaselist_12_17")
 ##getVariantlist(AJcontvariantpath,AJcontrolfile,namestr=".tsv","../data/Rdata/AJcontlist_12_17")
 ### ====================================getVariantlist save as Rdata===========================
 print_log("variant list filtering ...")
