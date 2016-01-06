@@ -209,7 +209,7 @@ singleton_variants <- function(casevars,contvars){
     singletons
 }
 
-burden_test <- function(caselist,contlist,testset=NULL,testtype=NULL,flag,sig=FALSE){
+burden_test <- function(caselist,contlist,testset=NULL,testtype=NULL,flag,sig=FALSE,coe=1){
 ## variant lists: caselist and contlist
 ## testset: test gene sets or variants 
 ## testtype: (missense, LOF and indel)
@@ -231,12 +231,14 @@ burden_test <- function(caselist,contlist,testset=NULL,testtype=NULL,flag,sig=FA
         if(flag == 1){
             a <- dim(caselist)[1]
             b <- dim(contlist)[1]
+            b <- floor(b * coe)
             oneTable <- matrix(c(0,0,a,b,n.case,n.cont, (a/n.case)/(b/n.cont), ifelse( (a+b)>0, binom.test(a,a+b,n.case/(n.case+n.cont))$p.value,1)),nrow=1,ncol=8)
         }else if(flag == 2){
             genes <- union(caselist[,"Gene"],contlist[,"Gene"])
             oneTable <- sapply(genes,function(gene){
                 a <- sum(caselist[,"Gene"] %in% gene)
                 b <- sum(contlist[,"Gene"] %in% gene)
+                b <- floor(b * coe)
                 c(gene,length(union(casevars[caselist[,"Gene"] %in% gene],contvars[contlist[,"Gene"] %in% gene])),a,b,n.case,n.cont,(a/n.case)/(b/n.cont),binom.test(a,a+b,n.case/(n.case+n.cont))$p.value)
             })
             oneTable <- t(oneTable)
@@ -254,12 +256,14 @@ burden_test <- function(caselist,contlist,testset=NULL,testtype=NULL,flag,sig=FA
         if(flag == 1){
             a <- length(unique(caselist[,"Subject_ID"]))
             b <- length(unique(contlist[,"Subject_ID"]))
+            b <- ifelse(b * coe > n.cont, n.cont, floor(b * coe))
             oneTable <- matrix(c(0,0,a,b,n.case-a,n.cont-b, (a/(n.case-a))/(b/(n.cont-b)), fisher.test(matrix(c(a,b,n.case-a,n.cont-b),2,2))$p.value),nrow=1,ncol=8)
         }else if(flag == 2){
             genes <- union(caselist[,"Gene"],contlist[,"Gene"])
             oneTable <- sapply(genes,function(gene){
                 a <- length(unique(caselist[caselist[,"Gene"] %in% gene,"Subject_ID"]))
                 b <- length(unique(contlist[contlist[,"Gene"] %in% gene,"Subject_ID"]))
+                b <- ifelse(b * coe > n.cont, n.cont, floor(b * coe))
                 c(gene,length(union(casevars[caselist[,"Gene"] %in% gene],contvars[contlist[,"Gene"] %in% gene])),a,b,n.case-a,n.cont-b, (a/(n.case-a))/(b/(n.cont-b)), fisher.test(matrix(c(a,b,n.case-a,n.cont-b),2,2))$p.value)
             })
             oneTable <- t(oneTable)
@@ -350,6 +354,24 @@ PQQ <- function(pval,ps=0.05,subcol=NULL,main="",labels=NULL,nlab=20){
 	}
     }
     
+}
+
+
+## compute the corrected coefficient of HISP case and control
+coeHisp <- function(caselist,contlist){
+
+    ## based on the number of rare synonymou variant
+    n.case <- length(unique(caselist[,"Subject_ID"]))
+    n.cont <- length(unique(contlist[,"Subject_ID"]))
+    syn <- "synonymousSNV"
+    
+    syn.case <- sum(caselist[,"VariantClass"] %in% syn)
+    syn.cont <- sum(contlist[,"VariantClass"] %in% syn)
+
+    coe <- (syn.case/n.case)/(syn.cont/n.cont)
+    
+    coe
+
 }
 
 

@@ -42,7 +42,7 @@ if(swi==1){
 	    casestaf <- "../data/contAJ_20151209.hardfiltered.stats_hq.tsv" ##using the variant from AJ case and control joint calling result
 	    contstaf <- "../data/contAJ_20151209.hardfiltered.stats_hq.tsv"
 }else if(swi==2){
-	    vburdenfile = ""	
+	    vburdenfile = "../resultf/HISP_variant_level_burden_anno_Fre_Pseducont.txt"	
     	alleleFrefile <- NULL
     	caselistf <- "../data/Rdata/HIcaselist_1_5"
     	contlistf <- "../data/Rdata/HIcontlist_1_5"
@@ -145,11 +145,14 @@ genesetnames <- c("Tumor suppressors","Cancer drivers","DNA repairs","Panel gene
 vartypes <- list(stopins,splices,singleLOF,lof,mis,indel,NULL,syn,unknown)
 vartypenames <- c("stopgain_loss","splicing","singleLOF","indelLOF","D-MIS","Indels","ALL variants","Synonymous","Unknown")
 
+## eliminate batch effect for HISP based on rare synonymous
+if(swi==1){coe=1;}else if(swi==2){coe = coeHisp(caselist,contlist);}
+
 setburdens <- c()
 for(i in 1:length(genesets)){
     for(j in 1:length(vartypes)){
         for(k in 1:length(Ggs)){
-            tmp <- burden_test(caselist,contlist,testset=intersect(genesets[[i]],GgL[[k]]),testtype=vartypes[[j]],flag=1,sig)
+            tmp <- burden_test(caselist,contlist,testset=intersect(genesets[[i]],GgL[[k]]),testtype=vartypes[[j]],flag=1,sig,coe)
             tmp[1,1:2] <- c(genesetnames[i],vartypenames[j])
             tmp <- cbind(tmp,Ggs[k])
             setburdens <- rbind(setburdens,tmp)
@@ -159,7 +162,7 @@ for(i in 1:length(genesets)){
 ## single gene level burden test
 tablelist <- list()
 for(i in 1:length(vartypes)){
-    oneTable <- burden_test(caselist,contlist,testtype=vartypes[[i]],flag=2,sig=sig)
+    oneTable <- burden_test(caselist,contlist,testtype=vartypes[[i]],flag=2,sig=sig,coe)
     oneTable <- oneTable[order(-as.numeric(oneTable[,"Folds"]),as.numeric(oneTable[,"Pvalue"])), ]
     tablelist[[i]] <- oneTable
 }
