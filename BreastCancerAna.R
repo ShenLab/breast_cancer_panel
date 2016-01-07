@@ -162,7 +162,7 @@ for(i in 1:length(genesets)){
 ## single gene level burden test
 tablelist <- list()
 for(i in 1:length(vartypes)){
-    oneTable <- burden_test(caselist,contlist,testtype=vartypes[[i]],flag=2,sig=sig,coe)
+    oneTable <- burden_test(caselist,contlist,testset=NULL,testtype=vartypes[[i]],flag=2,sig=sig,coe=coe)
     oneTable <- oneTable[order(-as.numeric(oneTable[,"Folds"]),as.numeric(oneTable[,"Pvalue"])), ]
     tablelist[[i]] <- oneTable
 }
@@ -219,9 +219,9 @@ indelVars <- variantlist[variantlist[,"VariantClass"] %in% c("frameshiftdeletion
 ##======output indels for IGV and variant tables: step 2: give phenotype information on family and other cohort cases=============
 load(Cohortfile)
 pheno <- read.csv(phenofile)
-AJlist <- unlist(read.table(AJcasefile))
+AJlist <- unlist(read.table(AJBRfile))
 if(swi==1) pheno <- pheno[pheno[,3] %in% AJlist, ]##pheno <- pheno[pheno[,"AJFAM"]=="J", ] ## update by PCA results
-if(swi==2) pheno <- pheno[!(pheno[,3] %in% AJlist), ]
+if(swi==2) pheno <- pheno[pheno[,"HISPFAM"]=="H" & pheno[,"AJFAM"]!="J", ] ### there are some unknown samples are not included in any of them
 
 if(sig){ ## singleton delete several columns
     delcols <- c("Control","#cases carrier","#controls carrier","OddsRatio","pvalue","filtered","ExACfreq","VCFPASS","noneSegmentalDup","meta-SVM_PP2","hotspot","alleleFre")
