@@ -16,6 +16,41 @@ labelUnknown <- function(){
 
 }
 
+## samples and phenotype informations
+pheno_samples <- function(){
+    outlierfile <- "/home/local/ARCS/yshen/data/WENDY/BreastCancer/Regeneron/FreezeOneVariantCalling/Outliers_to_be_excluded.list"  
+    outliers <- read.delim(outlierfile,header=FALSE)[,2]
+    dups <- unlist(read.table("/home/local/ARCS/qh2159/breast_cancer/Panel/data/CGC_YALE_Rege_repeatedSamples.txt"))
+    
+    length(intersect(outliers,dups))
+    
+    phenofile <- "../data/phenotype/WES BCFR phenotypic data.csv"
+    variantpath <- "/home/local/ARCS/yshen/data/WENDY/BreastCancer/Regeneron/Filtering_Oct2015/"
+    files <- list.files(path=variantpath,pattern=".tsv$")
+    subjects <- gsub(".AllVariants.tsv","",files)
+    pheno <- read.csv(phenofile)
+    
+    length(subjects)
+    dim(pheno)[1]
+    
+    pheno <- pheno[pheno[,3] %in% subjects,]
+    dim(pheno)[1]
+    sum(outliers %in% pheno[,3])
+    
+    pop <- paste(pheno[,4],pheno[,5],sep="")
+    pop[pop=="JH"] <- "J"
+    table(pop)
+    
+    AJBRfile <- "/home/local/ARCS/yshen/data/WENDY/BreastCancer/Regeneron/tablesandlists/All_AJ_samples.list"
+    HIBRfile <- "/home/local/ARCS/qh2159/breast_cancer/Panel/data/HispanicCases548.txt"
+    
+    AJs <- unlist(read.table(AJBRfile))
+    table(pop[pheno[,3] %in% AJs])
+    
+    HIs <- unlist(read.table(HIBRfile))
+    length(setdiff(pheno[,3],c(AJs,HIs)))
+}
+
 ## pseudo-contorl phenotype
 pseudoControl <- function(){
     pheno <- phenoinfo()
