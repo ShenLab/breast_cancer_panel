@@ -6,13 +6,14 @@ source("misc.R")
 BreastCancerAna <- function(sig=TRUE,Ecut=0.001,hotf=1,swi=1){
 ### sig: test for singleton variant only or not
 ### Ecut: ExAC frequency cutoff
-### hotf: 1: hotspots predicted based on HMM (hongjian); 2: hotspots defined by cosmic site with recurrent >=3; 3: not filter missense by hotspot
+### hotf: 1: hotspots predicted based on HMM (hongjian); 2: hotspots defined by cosmic site with recurrent >=3; 3: not filter missense by hotspot; 4: not filter missense byhotspot but with the hotspot labels (by HMM hongjian)
 ### swi: 1: Jewish case and control; 2: Hispanic case and contorl
     
 ## =========================input files===========================================
 if(hotf==1){ hotspotfile <- "../data/hotspots/HMM_hotspots_11_12.txt"; ## HongjianPred hotspots file
 }else if(hotf==2){ hotspotfile <- "../data/hotspots/cosmic_hotspots_3.txt"; ## COSMIC hotspots file
-}else{hotspotfile="";}
+}else if(hotf==3){ hotspotfile="";
+}else if(hotf==4){ hotspotfile <- "../data/hotspots/HMM_hotspots_11_12.txt";}
 outlierfile <- "/home/local/ARCS/yshen/data/WENDY/BreastCancer/Regeneron/FreezeOneVariantCalling/Outliers_to_be_excluded.list"  ## outlier samples
 BRCA1_2pathogenicfile <- "../data/phenotype/BRCA1_2.txt" ## BRCA1/2 pathogenic samples file
 TSfile <- "../data/hotspots/Tumor_suppressors_11_11.txt" ## collected tumor suppressors
@@ -53,7 +54,7 @@ if(swi==1){
 
 ##====================define the output files===================================================================
 pop=c("Jewish","Hispanic")
-outputpath <- paste("../resultf/burdentest_",sig,"_",Ecut,"_",gsub(".txt","",basename(hotspotfile)),"_",pop[swi],"_",format(Sys.Date(),format="%B_%d_%Y"),"/",sep="")
+outputpath <- paste("../resultf/burdentest_",sig,"_singleton_",Ecut,"_ExACFre_",gsub(".txt","",basename(hotspotfile)),"_",hotf,"_",pop[swi],"_",format(Sys.Date(),format="%B_%d_%Y"),"/",sep="")
 indelsfile <- paste(outputpath,"indels_",Ecut,".txt",sep="")
 genesetsVarfile <- paste(outputpath,"Panel_genes_variantlist.txt",sep="")
 restVarfile <- paste(outputpath,"Variantlist.txt",sep="")
@@ -128,11 +129,12 @@ if(sig){
     caselist <- caselist[casevars %in% singletons,]
     contlist <- contlist[contvars %in% singletons,]
 }
-## variant filtering: filters <- c("filtered","ExACfreq","VCFPASS","noneSegmentalDup","meta-SVM_PP2","singleton","hotspot")
+## variant filtering: filters <- c("filtered","ExACfreq","VCFPASS","noneSegmentalDup","meta-SVM_PP2","hotspot","alleleFre")
 caselist <- variant_filtering(caselist,mis,Ecut=Ecut,segd=0.95,pp2=TRUE,hotf=hotspotfile,alleleFrefile,popcut=0.05)
-caselist <- caselist[caselist[,"filtered"], ]
+print(hotf)
+if(hotf==4){ caselist <- caselist[caselist[,"ExACfreq"] & caselist[,"VCFPASS"] & caselist[,"noneSegmentalDup"] & caselist[,"meta-SVM_PP2"] & caselist[,"alleleFre"], ]; }else{ caselist <- caselist[caselist[,"filtered"], ];}
 contlist <- variant_filtering(contlist,mis,Ecut=Ecut,segd=0.95,pp2=TRUE,hotf=hotspotfile,alleleFrefile,popcut=0.05)
-contlist <- contlist[contlist[,"filtered"], ]
+if(hotf==4){ contlist <- contlist[contlist[,"ExACfreq"] & contlist[,"VCFPASS"] & contlist[,"noneSegmentalDup"] & contlist[,"meta-SVM_PP2"] & contlist[,"alleleFre"], ]; }else{ contlist <- contlist[contlist[,"filtered"], ];}
 
 
 ## =========================burden test for gene, variant=========================================
@@ -147,6 +149,8 @@ vartypenames <- c("stopgain_loss","splicing","singleLOF","indelLOF","D-MIS","Ind
 
 ## eliminate batch effect for HISP based on rare synonymous
 if(swi==1){coe=1;}else if(swi==2){coe = coeHisp(caselist,contlist);}
+print("Corrected coe: ");
+print(coe);
 
 setburdens <- c()
 for(i in 1:length(genesets)){
@@ -220,7 +224,7 @@ indelVars <- variantlist[variantlist[,"VariantClass"] %in% c("frameshiftdeletion
 load(Cohortfile)
 pheno <- read.csv(phenofile) ## or use pheno <- phenoinfo() in src.R 
 if(swi==1){AJlist <- unlist(read.table(AJBRfile));pheno <- pheno[pheno[,3] %in% AJlist, ];}##pheno <- pheno[pheno[,"AJFAM"]=="J", ] ## update by PCA results
-if(swi==2){HIlist <- unlist(read.table(HIBRfile));pheno <- pheno[pheno[,3] %in% HIlist, ] ### there are some unknown samples are not included in any of them
+if(swi==2){HIlist <- unlist(read.table(HIBRfile));pheno <- pheno[pheno[,3] %in% HIlist, ];} ### there are some unknown samples are not included in any of them
 
 if(sig){ ## singleton delete several columns
     delcols <- c("Control","#cases carrier","#controls carrier","OddsRatio","pvalue","filtered","ExACfreq","VCFPASS","noneSegmentalDup","meta-SVM_PP2","alleleFre")
