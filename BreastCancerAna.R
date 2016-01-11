@@ -218,20 +218,19 @@ indelVars <- variantlist[variantlist[,"VariantClass"] %in% c("frameshiftdeletion
 
 ##======output indels for IGV and variant tables: step 2: give phenotype information on family and other cohort cases=============
 load(Cohortfile)
-pheno <- read.csv(phenofile)
-AJlist <- unlist(read.table(AJBRfile))
-if(swi==1) pheno <- pheno[pheno[,3] %in% AJlist, ]##pheno <- pheno[pheno[,"AJFAM"]=="J", ] ## update by PCA results
-if(swi==2) pheno <- pheno[pheno[,"HISPFAM"]=="H" & pheno[,"AJFAM"]!="J", ] ### there are some unknown samples are not included in any of them
+pheno <- read.csv(phenofile) ## or use pheno <- phenoinfo() in src.R 
+if(swi==1){AJlist <- unlist(read.table(AJBRfile));pheno <- pheno[pheno[,3] %in% AJlist, ];}##pheno <- pheno[pheno[,"AJFAM"]=="J", ] ## update by PCA results
+if(swi==2){HIlist <- unlist(read.table(HIBRfile));pheno <- pheno[pheno[,3] %in% HIlist, ] ### there are some unknown samples are not included in any of them
 
 if(sig){ ## singleton delete several columns
-    delcols <- c("Control","#cases carrier","#controls carrier","OddsRatio","pvalue","filtered","ExACfreq","VCFPASS","noneSegmentalDup","meta-SVM_PP2","hotspot","alleleFre")
+    delcols <- c("Control","#cases carrier","#controls carrier","OddsRatio","pvalue","filtered","ExACfreq","VCFPASS","noneSegmentalDup","meta-SVM_PP2","alleleFre")
     variantlist <- variantlist[,!(colnames(variantlist) %in% delcols)]   
 }else{  ## filtered by p value 0.05 and delete repeat rows, and oddratios > 1
     variantlist <- variantlist[as.numeric(variantlist[,"OddsRatio"]) >= 1,]
     variantlist <- variantlist[as.numeric(variantlist[,"pvalue"]) < 0.05,]
     univar <- unique(variantlist[,"Variant"])
     variantlist <- variantlist[match(univar,variantlist[,"Variant"]),]
-    delcols <- c("Subject_ID","filtered","ExACfreq","VCFPASS","noneSegmentalDup","meta-SVM_PP2","hotspot","alleleFre")
+    delcols <- c("Subject_ID","filtered","ExACfreq","VCFPASS","noneSegmentalDup","meta-SVM_PP2","alleleFre")
     variantlist <- variantlist[,!(colnames(variantlist) %in% delcols)]
 }
 varsCheck <- variantlist[,"Variant"]
