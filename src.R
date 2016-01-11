@@ -380,3 +380,29 @@ VariantSta(contstaf,contstaf,indexcase,conts,paste(outputpath,"variantSta_overla
 
 }
 
+### families without cases in Jewish and Hispanic
+FamNoCases <- function(){
+
+source("src.R")
+pheno <- phenoinfo()
+fams <- setdiff(pheno[pheno[,"BreastCancer"]=="No",1],pheno[pheno[,"BreastCancer"]=="Yes",1])
+pheno1 <- pheno[pheno[,1] %in% fams, ]
+write.csv(pheno1,file="../data/ALL_cohort_withoutcases_families.csv",row.names=FALSE,quote=FALSE)
+
+AJcasefile <- "/home/local/ARCS/yshen/data/WENDY/BreastCancer/Regeneron/tablesandlists/All_AJ_samples.list"
+AJs <- unlist(read.table(AJcasefile))
+AJpheno <- pheno[pheno[,3] %in% AJs,]
+pheno <- AJpheno
+fams <- setdiff(pheno[pheno[,"BreastCancer"]=="No",1],pheno[pheno[,"BreastCancer"]=="Yes",1])
+pheno <- phenoinfo()
+pheno2 <- pheno[pheno[,1] %in% fams, ]
+write.csv(pheno2,file="../data/Jewish716_withoutcases_families.csv",row.names=FALSE,quote=FALSE)
+
+pheno <- phenoinfo()
+pheno <- pheno[pheno[,"HISPFAM"]=="H" & pheno[,"AJFAM"]!="J", ]
+fams <- setdiff(pheno[pheno[,"BreastCancer"]=="No",1],pheno[pheno[,"BreastCancer"]=="Yes",1])
+pheno <- phenoinfo()
+pheno3 <- pheno[pheno[,1] %in% fams, ]
+write.csv(pheno3,file="../data/Hispanic548_withoutcases_families.csv",row.names=FALSE,quote=FALSE)
+ 
+}
