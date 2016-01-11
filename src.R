@@ -49,6 +49,13 @@ pheno_samples <- function(){
     
     HIs <- unlist(read.table(HIBRfile))
     length(setdiff(pheno[,3],c(AJs,HIs)))
+    
+    phenofile <- "../data/phenotype/WES_BCFR_phenotypic_data-19062015.txt"
+    pheno1 <- read.delim(phenofile)
+    pop <- paste(pheno1[,4],pheno1[,5],sep="")
+    pop[pop=="JH"] <- "J"
+    table(pop)
+    ## two pheno file table give the same anotation for pop
 }
 
 ## pseudo-contorl phenotype

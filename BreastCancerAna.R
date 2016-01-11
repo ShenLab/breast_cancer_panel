@@ -58,6 +58,7 @@ outputpath <- paste("../resultf/burdentest_",sig,"_singleton_",Ecut,"_ExACFre_",
 indelsfile <- paste(outputpath,"indels_",Ecut,".txt",sep="")
 genesetsVarfile <- paste(outputpath,"Panel_genes_variantlist.txt",sep="")
 restVarfile <- paste(outputpath,"Variantlist.txt",sep="")
+NumOfVarfile <- paste(outputpath,"NumOfVariant.txt",sep="")
 if(!file.exists(outputpath)){ dir.create(outputpath, showWarnings = TRUE, recursive = FALSE);}
 
 
@@ -102,8 +103,9 @@ rm(onelist)
 indexcases <- getindexcase(phenofile)
 caselist <- caselist[caselist[,"Subject_ID"] %in% indexcases, ]
 ## exclude outlier subjects
-outliers <- unlist(read.table(outlierfile))
-outliers <- sapply(1:length(outliers),function(i) {tmp=unlist(strsplit(outliers[i],"_"));setdiff(gsub("\\D","",tmp),c("",paste("00",1:9,sep="")));})
+#outliers <- unlist(read.table(outlierfile))
+#outliers <- sapply(1:length(outliers),function(i) {tmp=unlist(strsplit(outliers[i],"_"));setdiff(gsub("\\D","",tmp),c("",paste("00",1:9,sep="")));})
+outliers <- read.delim(outlierfile,header=FALSE)[,2]
 caselist <- caselist[!(caselist[,"Subject_ID"] %in% outliers), ]
 ## exclude the duplicated subjects
 if(all(dupIDs %in% caselist[,"Subject_ID"])) caselist <- caselist[caselist[,"Subject_ID"]!=dupIDs[1], ]
@@ -203,10 +205,13 @@ rowTitle[variantlist[,"VariantClass"] %in% mis,2] <- "d-mis"
 rowTitle[,3] <- variantlist[,"Gene"]
 rowTitle[,4:10] <- as.matrix(varTable[match(vars,varTable[,2]),c(2:8)])
 # corrected Pvalue by each variant type
-rowTitle[rowTitle[,2] == "indels_inframe",11] <-  as.numeric(rowTitle[rowTitle[,2] == "indels_inframe",10]) * length(unique(vars[variantlist[,"VariantClass"] %in% lof]))
-rowTitle[rowTitle[,2] == "LOF",11] <-  as.numeric(rowTitle[rowTitle[,2] == "LOF",10]) * length(unique(vars[variantlist[,"VariantClass"] %in% c(stopins,splices,singleLOF)]))
-rowTitle[rowTitle[,2] == "indels_nonframe",11] <-  as.numeric(rowTitle[rowTitle[,2] == "indels_nonframe",10]) * length(unique(vars[variantlist[,"VariantClass"] %in% indel]))
-rowTitle[rowTitle[,2] == "d-mis",11] <-  as.numeric(rowTitle[rowTitle[,2] == "d-mis",10]) * length(unique(vars[variantlist[,"VariantClass"] %in% mis]))
+NumVar <- c(length(unique(vars[variantlist[,"VariantClass"] %in% lof])), length(unique(vars[variantlist[,"VariantClass"] %in% c(stopins,splices,singleLOF)])), length(unique(vars[variantlist[,"VariantClass"] %in% indel])), length(unique(vars[variantlist[,"VariantClass"] %in% mis])))
+rowTitle[rowTitle[,2] == "indels_inframe",11] <-  as.numeric(rowTitle[rowTitle[,2] == "indels_inframe",10]) * NumVar[1]
+rowTitle[rowTitle[,2] == "LOF",11] <-  as.numeric(rowTitle[rowTitle[,2] == "LOF",10]) * NumVar[2]
+rowTitle[rowTitle[,2] == "indels_nonframe",11] <-  as.numeric(rowTitle[rowTitle[,2] == "indels_nonframe",10]) * NumVar[3]
+rowTitle[rowTitle[,2] == "d-mis",11] <-  as.numeric(rowTitle[rowTitle[,2] == "d-mis",10]) * NumVar[4]
+rowTitle[as.numeric(rowTitle[,11]) > 1,11] <- 1
+NumVar <- paste(c("indels_inframe","LOF","indels_nonframe","d-mis")," : ",NumVar,sep="")
 variantlist <- variantlist[,colnames(variantlist)!="Gene"]
 variantlist <- cbind(rowTitle,variantlist)
 if(FALSE){
@@ -267,6 +272,7 @@ variantlistCom <- cbind(varvariantlist,variantlist)
 qwt(variantlistCom[variantlistCom[,"Gene"] %in% genes,],file=genesetsVarfile,flag=2)
 qwt(variantlistCom[variantlistCom[,"Gene_sets"] %in% "non-Panel_genes",],file=restVarfile,flag=2)
 qwt(indelVars,file=indelsfile)
+qwt(NumVar,file=NumOfVarfile)
 ## step 3: show the qq plots for nonsingleton variant
 if(!sig){ qqplot_variantLevel(vburdenfile,paste(outputpath,"qqplots/",sep=""),genes,varT,varTnames,caselist);}
 
