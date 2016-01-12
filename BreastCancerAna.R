@@ -150,7 +150,10 @@ vartypes <- list(stopins,splices,singleLOF,lof,mis,indel,NULL,syn,unknown)
 vartypenames <- c("stopgain_loss","splicing","singleLOF","indelLOF","D-MIS","Indels","ALL variants","Synonymous","Unknown")
 
 ## eliminate batch effect for HISP based on rare synonymous
-if(swi==1){coe=1;}else if(swi==2){coe = coeHisp(caselist,contlist);}
+if(swi==1){coe=1;}else if(swi==2){
+	if(sig & Ecut==0.01){ coe=1.11662;}
+	if(sig & Ecut==0.001){ coe=1.124236;}
+	if(!sig) coe = coeHisp(caselist,contlist);}
 print("Corrected coe: ");
 print(coe);
 
