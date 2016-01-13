@@ -1,3 +1,29 @@
+phenoinfo <- function(){
+    phenofile <- "/home/local/ARCS/qh2159/breast_cancer/Panel/data/phenotype/WES BCFR phenotypic data.csv"
+    variantpath <- "/home/local/ARCS/yshen/data/WENDY/BreastCancer/Regeneron/Filtering_Oct2015/"
+    
+    files <- list.files(path=variantpath,pattern=".tsv$")
+    subjects <- gsub(".AllVariants.tsv","",files)
+    pheno <- read.csv(phenofile)
+    pheno[pheno[,3]=="222357, 222966",3] <- "222357" 
+    pheno <- pheno[pheno[,3] %in% subjects,]
+    
+    pheno
+}
+
+excluded_samples <- function(){
+    
+    outlierfile <- "/home/local/ARCS/yshen/data/WENDY/BreastCancer/Regeneron/FreezeOneVariantCalling/Outliers_to_be_excluded.list"  ## outlier samples
+    BRCA1_2pathogenicfile <- "/home/local/ARCS/qh2159/breast_cancer/Panel/data/phenotype/BRCA1_2.txt" ## BRCA1/2 pathogenic samples file
+    
+    outliers <- read.delim(outlierfile,header=FALSE)[,2]
+    tmp <- read.delim(BRCA1_2pathogenicfile)
+    pathogenic_sample <- tmp[tmp[,1] %in% c("likely pathogenic","pathogenic"),"Subject_ID"]
+    
+    exSamples <- union(outliers,pathogenic_sample)
+    exSamples
+}
+
 getVariantlist <- function(path,IDfile,namestr=".tsv",savefile){
 ## get variant lists for a set of samples
     print_log(paste("getVariantlist function is running ...", date(),sep=" "))
@@ -338,24 +364,23 @@ PQQ <- function(pval,ps=0.05,subcol=NULL,main="",labels=NULL,nlab=20){
         
         if(length(subs) > 1){
             nc <- wordlayout(x[subs],y[subs],labels[yix[subs]],cex=0.8)
-            text(nc[,1],nc[,2],labels[yix[subs]],cex=1.2)
+            text(nc[,1],nc[,2],labels[yix[subs]],cex=0.8)
             #textplot(x[subs],y[subs],words=labels[yix[subs]],col=2,cex=0.8)
             if(!is.null(subcol)){
                 insub <- match(subcol,yix)
                 insub <- intersect(insub,subs)
-                if( length(insub)>0 ) text(nc[match(insub,subs),1],nc[match(insub,subs),2],labels[yix[insub]],cex=1.2,col=2)
+                if( length(insub)>0 ) text(nc[match(insub,subs),1],nc[match(insub,subs),2],labels[yix[insub]],cex=0.8,col=2)
             }
         }else if(length(subs)==1){
 		if(!is.null(subcol)){
-			text(x[subs],y[subs],labels[yix[subs]],cex=1.2,col=1+(subs %in% match(subcol,yix)))
+			text(x[subs],y[subs],labels[yix[subs]],cex=0.8,col=1+(subs %in% match(subcol,yix)))
 		}else{
-			text(x[subs],y[subs],labels[yix[subs]],cex=1.2,col=1)
+			text(x[subs],y[subs],labels[yix[subs]],cex=0.8,col=1)
 		}
 	}
     }
     
 }
-
 
 ## compute the corrected coefficient of HISP case and control
 coeHisp <- function(caselist,contlist){

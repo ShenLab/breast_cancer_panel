@@ -29,7 +29,7 @@ HIcasevariantpath <- "/home/local/ARCS/yshen/data/WENDY/BreastCancer/Regeneron/F
 AJcontvariantpath <- "/home/local/ARCS/qh2159/breast_cancer/variants/AJconVariantCalling/"
 HIcontvariantpath <- "/home/local/ARCS/qh2159/breast_cancer/variants/HIconVariantCalling/"
 AJBRfile <- "/home/local/ARCS/yshen/data/WENDY/BreastCancer/Regeneron/tablesandlists/All_AJ_samples.list"
-HIBRfile <- "/home/local/ARCS/qh2159/breast_cancer/Panel/data/HispanicCases548.txt"
+HIBRfile <- "/home/local/ARCS/qh2159/breast_cancer/Panel/data/HispanicCases549.txt"
 AJcontrolfile <- "/home/local/ARCS/qh2159/breast_cancer/variants/data/AJs_557.txt"
 HIcontrolfile <- "/home/local/ARCS/qh2159/breast_cancer/variants/data/HIs_341.txt"
 Cohortfile <- "../data/Rdata/BreastCancer_VariantList_11_12"
@@ -102,17 +102,9 @@ rm(onelist)
 ## only index cases
 indexcases <- getindexcase(phenofile)
 caselist <- caselist[caselist[,"Subject_ID"] %in% indexcases, ]
-## exclude outlier subjects
-#outliers <- unlist(read.table(outlierfile))
-#outliers <- sapply(1:length(outliers),function(i) {tmp=unlist(strsplit(outliers[i],"_"));setdiff(gsub("\\D","",tmp),c("",paste("00",1:9,sep="")));})
-outliers <- read.delim(outlierfile,header=FALSE)[,2]
-caselist <- caselist[!(caselist[,"Subject_ID"] %in% outliers), ]
-## exclude the duplicated subjects
-if(all(dupIDs %in% caselist[,"Subject_ID"])) caselist <- caselist[caselist[,"Subject_ID"]!=dupIDs[1], ]
-## remove out the BRCA1/2 pathogenic cases
-tmp <- read.delim(BRCA1_2pathogenicfile)
-pathogenic_sample <- tmp[tmp[,1] %in% c("likely pathogenic","pathogenic"),"Subject_ID"]
-caselist <- caselist[!(caselist[,"Subject_ID"] %in% pathogenic_sample), ]
+## exclude subjects
+exSamples <- excluded_samples()
+caselist <- caselist[!(caselist[,"Subject_ID"] %in% exSamples), ]
 
 ## ====================================get control variant list============================================
 load(contlistf)
@@ -150,10 +142,7 @@ vartypes <- list(stopins,splices,singleLOF,lof,mis,indel,NULL,syn,unknown)
 vartypenames <- c("stopgain_loss","splicing","singleLOF","indelLOF","D-MIS","Indels","ALL variants","Synonymous","Unknown")
 
 ## eliminate batch effect for HISP based on rare synonymous
-if(swi==1){coe=1;}else if(swi==2){
-	if(sig & Ecut==0.01){ coe=1.11662;}
-	if(sig & Ecut==0.001){ coe=1.124236;}
-	if(!sig) coe = coeHisp(caselist,contlist);}
+if(swi==1){coe=1;}else if(swi==2){ coe = coeHisp(caselist,contlist);}
 print("Corrected coe: ");
 print(coe);
 
@@ -230,7 +219,7 @@ indelVars <- variantlist[variantlist[,"VariantClass"] %in% c("frameshiftdeletion
 
 ##======output indels for IGV and variant tables: step 2: give phenotype information on family and other cohort cases=============
 load(Cohortfile)
-pheno <- read.csv(phenofile) ## or use pheno <- phenoinfo() in src.R 
+pheno <- phenoinfo() 
 if(swi==1){AJlist <- unlist(read.table(AJBRfile));pheno <- pheno[pheno[,3] %in% AJlist, ];}##pheno <- pheno[pheno[,"AJFAM"]=="J", ] ## update by PCA results
 if(swi==2){HIlist <- unlist(read.table(HIBRfile));pheno <- pheno[pheno[,3] %in% HIlist, ];} ### there are some unknown samples are not included in any of them
 
