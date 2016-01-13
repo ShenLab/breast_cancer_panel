@@ -205,6 +205,19 @@ if(sig){
     Vlist <- Vlist[order(as.numeric(Vlist[,"Pvalue"])),]
 }
 
+### label Dominicans with EU-ASN
+if(swi==2){
+    domis <- read.table(SubDominif)
+    euafr <- domis[domis[,2]=="EU-AFR",1]
+    euafs <- paste(euafr,sep="",collapse="|")
+    EUASN <- sapply(1:dim(Vlist)[1],function(kk){
+        c(gsub(euafs,"", Vlist[kk,"index.HI"]), gsub(euafs,"", Vlist[kk,"pseudoCont.HI"]),gsub(euafs,"", Vlist[kk,"case.HI"]),gsub(euafs,"", Vlist[kk,"non_case.HI"]))
+        }
+    EUASN <- t(EUASN)
+    colnames(EUASN) <- c("index.EU.ASN","pseudoCont.EU.ASN","case.EU.ASN","non_case.EU.ASN")
+    Vlist <- cbind(Vlist,EUASN)
+}
+
 ##=======================write result======================
 qwt(Vlist[Vlist[,"Gene"] %in% genes,],file=genesetsVarfile,flag=2)
 qwt(Vlist[Vlist[,"Gene_sets"] %in% "non-Panel_genes",],file=restVarfile,flag=2)
