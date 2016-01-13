@@ -254,58 +254,32 @@ burden_test <- function(caselist,contlist,testset=NULL,testtype=NULL,flag,sig=FA
     contvars <- paste(contlist[,1],contlist[,2],contlist[,4],contlist[,5],sep="_")
     
     if(flag==1){
-        if(flag == 1){
-            a <- dim(caselist)[1]
-            b <- dim(contlist)[1]
-            b <- floor(b * coe)
-            oneTable <- matrix(c(0,0,a,b,n.case,n.cont, (a/n.case)/(b/n.cont), ifelse( (a+b)>0, binom.test(a,a+b,n.case/(n.case+n.cont))$p.value,1)),nrow=1,ncol=8)
-        }else if(flag == 2){
-            genes <- union(caselist[,"Gene"],contlist[,"Gene"])
-            oneTable <- sapply(genes,function(gene){
-                a <- sum(caselist[,"Gene"] %in% gene)
-                b <- sum(contlist[,"Gene"] %in% gene)
-                b <- floor(b * coe)
-                c(gene,length(union(casevars[caselist[,"Gene"] %in% gene],contvars[contlist[,"Gene"] %in% gene])),a,b,n.case,n.cont,(a/n.case)/(b/n.cont),binom.test(a,a+b,n.case/(n.case+n.cont))$p.value)
-            })
-            oneTable <- t(oneTable)
-        }else if(flag == 3){
-            vars <- unique(casevars)
-            oneTable <- sapply(vars,function(onevar){
-                a <- sum(casevars %in% onevar)
-                b <- sum(contvars %in% onevar)
-                tmpg <- ifelse(onevar %in% casevars, caselist[which(casevars==onevar)[1],"Gene"], contlist[which(contvars==onevar)[1],"Gene"]) 
-                c(tmpg,onevar,a,b,n.case,n.cont,(a/n.case)/(b/n.cont),binom.test(a,a+b,n.case/(n.case+n.cont))$p.value)
-            })
-            oneTable <- t(oneTable)
-        }
-    }else{
-        if(flag == 1){
-            a <- length(unique(caselist[,"Subject_ID"]))
-            b <- length(unique(contlist[,"Subject_ID"]))
-            b <- ifelse(b * coe > n.cont, n.cont, floor(b * coe))
-            oneTable <- matrix(c(0,0,a,b,n.case-a,n.cont-b, (a/(n.case-a))/(b/(n.cont-b)), fisher.test(matrix(c(a,b,n.case-a,n.cont-b),2,2))$p.value),nrow=1,ncol=8)
-        }else if(flag == 2){
-            genes <- union(caselist[,"Gene"],contlist[,"Gene"])
-            oneTable <- sapply(genes,function(gene){
-                a <- length(unique(caselist[caselist[,"Gene"] %in% gene,"Subject_ID"]))
-                b <- length(unique(contlist[contlist[,"Gene"] %in% gene,"Subject_ID"]))
-                b <- ifelse(b * coe > n.cont, n.cont, floor(b * coe))
-                c(gene,length(union(casevars[caselist[,"Gene"] %in% gene],contvars[contlist[,"Gene"] %in% gene])),a,b,n.case-a,n.cont-b, (a/(n.case-a))/(b/(n.cont-b)), fisher.test(matrix(c(a,b,n.case-a,n.cont-b),2,2))$p.value)
-            })
-            oneTable <- t(oneTable)
-        }else if(flag == 3){
-            vars <- unique(casevars)
-            oneTable <- sapply(vars,function(onevar){
-                a <- length(unique(caselist[casevars %in% onevar,"Subject_ID"]))
-                b <- length(unique(contlist[contvars %in% onevar,"Subject_ID"]))
-                tmpg <- ifelse(onevar %in% casevars, caselist[which(casevars==onevar)[1],"Gene"], contlist[which(contvars==onevar)[1],"Gene"]) 
-                c(tmpg,onevar,a,b,n.case-a,n.cont-b,(a/(n.case-a))/(b/(n.cont-b)), fisher.test(matrix(c(a,b,n.case-a,n.cont-b),2,2))$p.value)
-            })
-            oneTable <- t(oneTable)
-        }
+        a <- dim(caselist)[1]
+        b0 <- dim(contlist)[1]
+        b <- floor(b0 * coe)
+        oneTable <- matrix(c(0,0,a,b0,b,n.case,n.cont, (a/n.case)/(b/n.cont), ifelse( (a+b)>0, binom.test(a,a+b,n.case/(n.case+n.cont))$p.value,1)),nrow=1,ncol=8)
+    }else if(flag == 2){
+        genes <- union(caselist[,"Gene"],contlist[,"Gene"])
+        oneTable <- sapply(genes,function(gene){
+            a <- length(unique(caselist[caselist[,"Gene"] %in% gene,"Subject_ID"]))
+            b0 <- length(unique(contlist[contlist[,"Gene"] %in% gene,"Subject_ID"]))
+            b <- ifelse(b0 * coe > n.cont, n.cont, floor(b0 * coe))
+            c(gene,length(union(casevars[caselist[,"Gene"] %in% gene],contvars[contlist[,"Gene"] %in% gene])),a,b0,b,n.case-a,n.cont-b, (a/(n.case-a))/(b/(n.cont-b)), fisher.test(matrix(c(a,b,n.case-a,n.cont-b),2,2))$p.value)
+        })
+        oneTable <- t(oneTable)
+    }else if(flag == 3){
+        vars <- unique(casevars)
+        oneTable <- sapply(vars,function(onevar){
+            a <- length(unique(caselist[casevars %in% onevar,"Subject_ID"]))
+            b <- length(unique(contlist[contvars %in% onevar,"Subject_ID"]))
+            tmpg <- ifelse(onevar %in% casevars, caselist[which(casevars==onevar)[1],"Gene"], contlist[which(contvars==onevar)[1],"Gene"]) 
+            c(tmpg,onevar,a,b,n.case-a,n.cont-b,(a/(n.case-a))/(b/(n.cont-b)), fisher.test(matrix(c(a,b,n.case-a,n.cont-b),2,2))$p.value)
+        })
+        oneTable <- t(oneTable)
     }
-
-    cols <- c("Gene","Variant","#in_case","#in_cont","n.case","n.cont","Folds","Pvalue")
+    
+    if(flag==3){ cols <- c("Gene","Variant","#in_case","#in_cont","n.case","n.cont","Folds","Pvalue");
+    }else{ cols <- c("Gene","Variant","#in_case","#in_cont_0","#in_cont","n.case","n.cont","Folds","Pvalue"); }
     colnames(oneTable) <- cols
     
     ##======================print information to logFile======================================

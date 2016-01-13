@@ -1,15 +1,3 @@
-phenoinfo <- function(){
-    phenofile <- "../data/phenotype/WES BCFR phenotypic data.csv"
-    variantpath <- "/home/local/ARCS/yshen/data/WENDY/BreastCancer/Regeneron/Filtering_Oct2015/"
-    
-    files <- list.files(path=variantpath,pattern=".tsv$")
-    subjects <- gsub(".AllVariants.tsv","",files)
-    pheno <- read.csv(phenofile)
-    pheno <- pheno[pheno[,3] %in% subjects,]
-    
-    pheno
-}
-
 ## label unknown samples by admixture model
 labelUnknown <- function(){
 
@@ -113,7 +101,8 @@ getHispanicCases <- function(){
     source("misc.R")
     pheno <- phenoinfo()
     HIcases <- pheno[pheno[,"HISPFAM"]=="H" & pheno[,"AJFAM"]!="J",3]
-    qwt(HIcases,file="../data/HispanicCases548.txt")
+    ###dupIDs <- c("222357","222966") ## we keep 222357
+    qwt(HIcases,file="../data/HispanicCases549.txt")
 }
 
 FamilyDis <- function(pheno,familyf,casef){
@@ -229,41 +218,49 @@ SubjectBatches <- function(){
 singleVariantTest_Jewish_Hispanic <- function(){
     source("misc.R")
     source("src.R")
-    Cohortfile <- "../data/Rdata/BreastCancer_VariantList_11_12"
+    AJBRfile <- "/home/local/ARCS/qh2159/breast_cancer/Panel/data/phenotype/AJ715_samples.list"
+    HIBRfile <- "/home/local/ARCS/qh2159/breast_cancer/Panel/data/HispanicCases549.txt"
+    phenofile <- "../data/phenotype/WES BCFR phenotypic data.csv" ## phenotype file to get index cases only
     pseudoCont <- "/home/local/ARCS/qh2159/breast_cancer/Panel/data/phenotype/controls_Qiang_1_5_2016.csv"
+    popG <- getPopGroup(AJBRfile,HIBRfile,phenofile,pseudoCont)
+    Cohortfile <- "../data/Rdata/BreastCancer_VariantList_11_12"
     
     ### Jewish single variant test
-    caselistf <- "../data/Rdata/AJcaselist_12_17"
+    caselistf <- "../data/Rdata/AJcaselist715_12_17"
     contlistf <- "../data/Rdata/AJcontlist_12_17"
+    contlistf2 <- "../data/Rdata/HIcontlist_1_5"
+    AJslistf <- "../data/Rdata/AJcaselist715_12_17"
     indexf <- "../data/AJindexcases265.txt"
-    vburdenfile <- "../resultf/variant_level.burden.txt"
-    singleVariantTest(Cohortfile,pseudoCont,caselistf,contlistf,indexf,vburdenfile)
-    
+    vburdenfile <- "../resultf/AJ_variant_level.burden.txt"
+    NumOfSubjf <- "../resultf/NumofSubjects_AJ.txt"
+    group="AJ715"
+    singleVariantTest(caselistf,contlistf,indexf,Cohortfile,AJslistf,popG,contlistf2,vburdenfile,group,NumOfSubjf)
+   
     ### Hispanic single variant test
     caselistf <- "../data/Rdata/HIcaselist_1_5"
     contlistf <- "../data/Rdata/HIcontlist_1_5"
+    contlistf2 <- "../data/Rdata/AJcontlist_12_17"
+    AJslistf <- "../data/Rdata/AJcaselist715_12_17"
     indexf <- "../data/HIindexcases138.txt"
     vburdenfile <- "../resultf/HISP_variant_level.burden.txt"
-    n.case=164
-    group="HISP548"
-    singleVariantTest(Cohortfile,pseudoCont,caselistf,contlistf,indexf,vburdenfile,n.case,group)
+    NumOfSubjf <- "../resultf/NumofSubjects_HI.txt"
+    group="HI549"
+    singleVariantTest(caselistf,contlistf,indexf,Cohortfile,AJslistf,popG,contlistf2,vburdenfile,group,NumOfSubjf)
+    
 }
 
-singleVariantTest  <- function(Cohortfile,pseudoCont,caselistf,contlistf,indexf,vburdenfile,n.case=336,group="AJ716"){
-    
-    indexcases <- unlist(read.table(indexf))
+singleVariantTest  <- function(caselistf,contlistf,indexf,Cohortfile,AJslistf,popG,contlistf2,vburdenfile,group="AJ715",NumOfSubjf){
+    ###======= burden test 
     mis <- "nonsynonymousSNV"
     Ecut=0.01
-    pheno <- phenoinfo()
-    cases <- pheno[pheno[,"BreastCancer"]=="Yes",3]
-    nons <- pheno[pheno[,"BreastCancer"]=="No",3]
+    indexcases <- unlist(read.table(indexf))
+    exSamples <- excluded_samples()
     
     load(caselistf)
-    caselist <- onelist
-    indexlist <- caselist[caselist[,"Subject_ID"] %in% indexcases, ]
-    nonslist <- caselist[caselist[,"Subject_ID"] %in% nons, ]
-    caselist <- caselist[caselist[,"Subject_ID"] %in% setdiff(cases,indexcases), ]
+    onelist <- onelist[!(onelist[,"Subject_ID"] %in% exSamples), ]
+    indexlist <- onelist[onelist[,"Subject_ID"] %in% indexcases, ]
     rm(onelist)
+    
     load(contlistf)
     contlist <- onelist
     rm(onelist)
@@ -277,59 +274,111 @@ singleVariantTest  <- function(Cohortfile,pseudoCont,caselistf,contlistf,indexf,
     variantTable <- burden_test(indexlist,contlist,flag=3,sig=FALSE)
     qwt(variantTable,file=vburdenfile,flag=2) 
 
-    ## add annotation information 
+    ###===============add annotation information=============
     indexvars <- paste(indexlist[,1],indexlist[,2],indexlist[,4],indexlist[,5],sep="_") 
-    burdenf <- read.delim(vburdenfile)
-    burdenlist <- cbind(burdenf,indexlist[match(burdenf[,2],indexvars),])
-    burdenlist <- burdenlist[,!(colnames(burdenlist) %in% "Subject_ID")]
+    burdenf <- read.delim(vburdenfile,check.names=FALSE)
+    burdenlist <- cbind(burdenf,indexlist[match(burdenf[,"Variant"],indexvars),])
+    burdenlist <- burdenlist[,!(colnames(burdenlist) %in% c("Subject_ID"))]
     
-    ## add index cases, non-index cases, non-index controls and control ID for each variants
-    casevars <- paste(caselist[,1],caselist[,2],caselist[,4],caselist[,5],sep="_") 
-    contvars <- paste(contlist[,1],contlist[,2],contlist[,4],contlist[,5],sep="_")
-    nonsvars <- paste(nonslist[,1],nonslist[,2],nonslist[,4],nonslist[,5],sep="_")
-    id3set <- sapply(1:dim(burdenlist)[1],function(i){
-	c(paste(unique(indexlist[indexvars == burdenlist[i,2],"Subject_ID"]),sep="",collapse="_"),paste(unique(caselist[casevars == burdenlist[i,2],"Subject_ID"]),sep="",collapse="_"),paste(unique(nonslist[nonsvars == burdenlist[i,2],"Subject_ID"]),sep="",collapse="_"),paste(unique(contlist[contvars == burdenlist[i,2],"Subject_ID"]),sep="",collapse="_"))	
-	})
-    id3set <- t(id3set)
-    colnames(id3set) <- c("index_case","non-index_case","non_case_cohort","control")
-    burdenlist <- cbind(burdenlist,id3set)
-    qwt(burdenlist,file=gsub(".burden.txt","_burden_anno.txt",vburdenfile),flag=2)
+    ### variant lists annotation
+    load(AJslistf)
+    onelist <- onelist[!(onelist[,"Subject_ID"] %in% exSamples), ]
+    AJslist <- onelist
+    rm(onelist)
     
-    ## add case, non-case frequency in our breast cancer cohort
-    n.case <- length(unique(indexlist[,"Subject_ID"])) + length(unique(caselist[,"Subject_ID"]))
-    n.noncase <- length(unique(nonslist[,"Subject_ID"]))
-    burdenlist <- read.delim(gsub(".burden.txt","_burden_anno.txt",vburdenfile))
-    fre <- sapply(1:dim(burdenlist)[1],function(i) c( length(unlist(strsplit(burdenlist[i,"index_case"],"_"))) + length(unlist(strsplit(burdenlist[i,"non.index_case"],"_"))), length(unlist(strsplit(burdenlist[i,"non_case_cohort"],"_"))), n.case, n.noncase))
-    fre <- t(fre)
-    fre[,3] <- fre[,3] - fre[,1]
-    fre[,4] <- fre[,4] - fre[,2]
-    fre <- cbind(fre,(fre[,1]/fre[,3])/(fre[,2]/fre[,4]))
-    ps <- sapply(1:dim(fre)[1], function(i) fisher.test(matrix(fre[i,1:4],2,2))$p.value )
-    fre <- cbind(fre,ps)
-    colnames(fre) <- c(paste("#case",group,sep=""),paste("#noncase",group,sep=""),"#noshotcase","#noshotnoncase","#foldcase-non","#p_case_noncase")
-    burdenlist <- cbind(burdenlist,fre)
-    qwt(burdenlist,file=gsub(".burden.txt","_burden_anno_Fre.txt",vburdenfile),flag=2)
-    
-    ## add pseudo controls information
-    burdenlist <- read.delim(gsub(".burden.txt","_burden_anno_Fre.txt",vburdenfile),check.names=FALSE)
     load(Cohortfile)
-    conts <- read.csv(pseudoCont)
-    pcontlist <- onelist[onelist[,"Subject_ID"] %in% conts[,3],]
+    onelist <- onelist[!(onelist[,"Subject_ID"] %in% exSamples), ]
+    AJ.case <- length(intersect(onelist[,"Subject_ID"],popG[[1]]))
+    AJ.pcont <- length(intersect(onelist[,"Subject_ID"],popG[[2]])) ## this is pseudo-controls
+    HI.case <- length(intersect(onelist[,"Subject_ID"],popG[[5]]))
+    HI.pcont <- length(intersect(onelist[,"Subject_ID"],popG[[6]])) ## this is pseudo-controls
     
-    pconvars <- paste(pcontlist[,1],pcontlist[,2],pcontlist[,4],pcontlist[,5],sep="_")
-    pcset <- sapply(1:dim(burdenlist)[1],function(i){
-        paste(unique(pcontlist[pconvars == burdenlist[i,2],"Subject_ID"]),sep="",collapse="_")	
+    Anns <- c()
+    Fres <- c()
+    # popG: AJs: index cases, pseudo-controls, cases, non-cases; HIs: index cases, pseudo-controls, cases, non-cases;
+    for(i in 1:8){
+        if(i<=4){ onepop <- AJslist[AJslist[,"Subject_ID"] %in% popG[[i]], ];
+        }else{ onepop <- onelist[onelist[,"Subject_ID"] %in% popG[[i]], ];}
+        Freone <- onelistCount(onepop,burdenf[,"Variant"])
+        Anns <- cbind(Anns,Freone[,1])
+        Fres <- cbind(Fres,Freone[,2])
+    }
+    Frecont1 <- onelistCount(contlist,burdenf[,"Variant"])
+    load(contlistf2)
+    contlist2 <- onelist
+    rm(onelist)
+    Frecont2 <- onelistCount(contlist2,burdenf[,"Variant"])
+    if(group=="AJ715"){
+        Anns <- cbind(Anns,Frecont1[,1],Frecont2[,1])
+        Fres <- cbind(Fres,Frecont1[,2],Frecont2[,2])
+        AJ.cont <- length(unique(contlist[,"Subject_ID"]))
+        HI.cont <- length(unique(contlist2[,"Subject_ID"]))
+    }else if(group=="HI549"){
+        Anns <- cbind(Anns,Frecont2[,1],Frecont1[,1])
+        Fres <- cbind(Fres,Frecont2[,2],Frecont1[,2])
+        AJ.cont <- length(unique(contlist2[,"Subject_ID"]))
+        HI.cont <- length(unique(contlist[,"Subject_ID"]))
+    }
+    colnames(Fres) <- c("N.index.AJ","N.pseudoCont.AJ","N.case.AJ","N.non_case.AJ","N.index.HI","N.pseudoCont.HI","N.case.HI","N.non_case.HI","N.cont.AJ","N.cont.HI")
+    colnames(Anns) <- c("index.AJ","pseudoCont.AJ","case.AJ","non_case.AJ","index.HI","pseudoCont.HI","case.HI","non_case.HI","cont.AJ","cont.HI")
+    mode(Fres) <- "numeric"
+    ### get odds and p values 
+    tmp1 <- oneOddsPvalue(Fres[,c("N.index.AJ","N.pseudoCont.AJ")],AJ.case,AJ.pcont)
+    tmp2 <- oneOddsPvalue(Fres[,c("N.index.AJ","N.cont.AJ")],AJ.case,AJ.cont)
+    tmp3 <- oneOddsPvalue(Fres[,c("N.index.HI","N.pseudoCont.HI")],HI.case,HI.pcont)
+    tmp4 <- oneOddsPvalue(Fres[,c("N.index.HI","N.cont.HI")],HI.case,HI.cont)
+    OddPs <- cbind(tmp1,tmp2,tmp3,tmp4)
+    colnames(OddPs) <- c("Odds_AJ_pseudo","p_AJ_pseudo","Odds_AJ_cont","p_AJ_cont","Odds_HI_pseudo","p_HI_pseudo","Odds_HI_cont","p_HI_cont")
+        
+    burdenlist <- cbind(burdenlist,Fres,OddPs,Anns)
+    qwt(burdenlist,file=gsub(".burden.txt","_burden_Pseducont.txt",vburdenfile),flag=2)
+    NumOfSubj <- paste(c("Num of AJ index cases:","Num of AJ pseudo-controls:","Num of AJ controls:","Num of HI cases:","Num of HI pseudo-controls:","Num of HI controls:"), c(AJ.case, AJ.pcont, AJ.cont, HI.case, HI.pcont, HI.cont),sep=" ")
+    qwt(NumOfSubj, file=NumOfSubjf)
+    
+}
+
+getPopGroup <- function(AJBRfile,HIBRfile,phenofile,pseudoCont){
+    # popG: AJs: index cases, pseudo-controls, cases, non-cases; HIs: index cases, pseudo-controls, cases, non-cases;
+    popG <- list()
+    
+    AJs <- unlist(read.table(AJBRfile))
+    HIs <- unlist(read.table(HIBRfile))
+    indexcases <- getindexcase(phenofile)
+    pseudoconts <- read.csv(pseudoCont)[,3]
+    pheno <- read.csv(phenofile)
+    pheno[pheno[,3]=="222357, 222966",3] <- "222357" 
+    cases <- pheno[pheno[,"BreastCancer"]=="Yes",3]
+    conts <- pheno[pheno[,"BreastCancer"]=="No",3]
+    
+    popG[[1]] <- intersect(AJs,indexcases)
+    popG[[2]] <- intersect(AJs,pseudoconts)
+    popG[[3]] <- intersect(AJs,setdiff(cases,indexcases))
+    popG[[4]] <- intersect(AJs,setdiff(conts,pseudoconts))
+    popG[[5]] <- intersect(HIs,indexcases)
+    popG[[6]] <- intersect(HIs,pseudoconts)
+    popG[[7]] <- intersect(HIs,setdiff(cases,indexcases))
+    popG[[8]] <- intersect(HIs,setdiff(conts,pseudoconts))    
+    
+    
+    popG
+}
+
+onelistCount <- function(onelist,varlist){
+    onevars <- paste(onelist[,1],onelist[,2],onelist[,4],onelist[,5],sep="_") 
+    Freone <- sapply(1:length(varlist),function(i){
+        tmp <- unique(onelist[onevars == varlist[i],"Subject_ID"])
+        c(paste(tmp,sep="",collapse="_"),length(tmp))	
     })
-    
-    n.pcont <- length(unique(pcontlist[,"Subject_ID"]))
-    fre <- sapply(1:dim(burdenlist)[1],function(i) length(unlist(strsplit(pcset[i],"_"))))
-    fre <- cbind(fre,(burdenlist[,paste("#case",group,sep="")]/n.case)/(fre/n.pcont))
-    ps <- sapply(1:dim(fre)[1], function(i) fisher.test(matrix(c(burdenlist[i,paste("#case",group,sep="")],fre[i,1],n.case-burdenlist[i,paste("#case",group,sep="")],n.pcont-fre[i,1]),2,2))$p.value )
-    fre <- cbind(fre,ps)
-    fre <- cbind(pcset,fre)
-    colnames(fre) <- c("pseducontrols","#pseducontrol","#foldcase-pseducontrols","#p_case_pseducontrols")
-    burdenlist <- cbind(burdenlist,fre)
-    qwt(burdenlist,file=gsub(".burden.txt","_burden_anno_Fre_Pseducont.txt",vburdenfile),flag=2)
+    Freone <- t(Freone)
+    Freone
+}
+
+oneOddsPvalue <- function(fre,n.case,n.cont){
+    fre <- cbind(fre,n.case-fre[,1],n.cont-fre[,2])
+    odds <- (fre[,1]/fre[,3])/(fre[,2]/fre[,4])
+    ps <- sapply(1:dim(fre)[1], function(i) fisher.test(matrix(fre[i,1:4],2,2))$p.value )
+
+    cbind(odds,ps)
 }
 
 getCohortVariantlist <- function(){
