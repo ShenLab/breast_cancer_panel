@@ -182,7 +182,7 @@ PopulationDis <- function(){
     FamilyDis(AJpheno,"../data/phenotype/JewishFamily.pdf","../data/phenotype/Jewishcase_perFamily.pdf")
     
     HIs <- unlist(read.table(HIBRfile))
-    Hpheno <- pheno[HIs,]
+    Hpheno <- pheno[pheno[,3] %in% HIs,]
     FamilyDis(Hpheno,"../data/phenotype/HisFamily.pdf","../data/phenotype/Hiscase_perFamily.pdf")
 
 }
