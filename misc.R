@@ -1,7 +1,6 @@
-phenoinfo <- function(){
-    phenofile <- "/home/local/ARCS/qh2159/breast_cancer/Panel/data/phenotype/WES BCFR phenotypic data.csv"
-    variantpath <- "/home/local/ARCS/yshen/data/WENDY/BreastCancer/Regeneron/Filtering_Oct2015/"
-    
+variantpath <- "/home/local/ARCS/yshen/data/WENDY/BreastCancer/Regeneron/Filtering_Oct2015/"
+
+phenoinfo <- function(){ 
     files <- list.files(path=variantpath,pattern=".tsv$")
     subjects <- gsub(".AllVariants.tsv","",files)
     pheno <- read.csv(phenofile)
@@ -11,11 +10,7 @@ phenoinfo <- function(){
     pheno
 }
 
-excluded_samples <- function(){
-    
-    outlierfile <- "/home/local/ARCS/yshen/data/WENDY/BreastCancer/Regeneron/FreezeOneVariantCalling/Outliers_to_be_excluded.list"  ## outlier samples
-    BRCA1_2pathogenicfile <- "/home/local/ARCS/qh2159/breast_cancer/Panel/data/phenotype/BRCA1_2.txt" ## BRCA1/2 pathogenic samples file
-    
+excluded_samples <- function(){ 
     outliers <- read.delim(outlierfile,header=FALSE)[,2]
     tmp <- read.delim(BRCA1_2pathogenicfile)
     pathogenic_sample <- tmp[tmp[,1] %in% c("likely pathogenic","pathogenic"),"Subject_ID"]
@@ -142,7 +137,7 @@ density_plots <- function(oneVar,g,outputpath,VarT=c("LOF","MIS","indel","synony
     }
 }
 
-variant_filtering <- function(onelist,mis,Ecut=0.01,segd=0.95,pp2=TRUE,hotf="",alleleFrefile=NULL,popcut=0.05){
+variant_filtering <- function(onelist,mis,Ecut=0.01,segd=0.95,pp2=TRUE,hotf="",alleleFrefile="",popcut=0.05){
     ### onelist: variant list
     ### Ecut: ExAC frequency cut off
     ### segd: segment duplication score cut off in VCF
@@ -161,7 +156,7 @@ variant_filtering <- function(onelist,mis,Ecut=0.01,segd=0.95,pp2=TRUE,hotf="",a
     onelist[as.numeric(onelist[,"AlleleFrequency.ExAC"])< Ecut,"ExACfreq"] <- TRUE
     
     onelist[,"alleleFre"] <- TRUE
-    if(!is.null(alleleFrefile)){
+    if(alleleFrefile!=""){
         alleleFres <- read.delim(alleleFrefile)
         popvars <- paste(alleleFres[,"CHROM"],alleleFres[,"POS"],alleleFres[,"ALLELE"],sep="_")
         allvars <- paste(onelist[,"Chromosome"],onelist[,"Position"],onelist[,"ALT"],sep="_")
@@ -257,7 +252,8 @@ burden_test <- function(caselist,contlist,testset=NULL,testtype=NULL,flag,sig=FA
         a <- dim(caselist)[1]
         b0 <- dim(contlist)[1]
         b <- floor(b0 * coe)
-        oneTable <- matrix(c(0,0,a,b0,b,n.case,n.cont, (a/n.case)/(b/n.cont), ifelse( (a+b)>0, binom.test(a,a+b,n.case/(n.case+n.cont))$p.value,1)),nrow=1,ncol=8)
+	tmp <- c(0,0,a,b0,b,n.case,n.cont, (a/n.case)/(b/n.cont), ifelse( (a+b)>0, binom.test(a,a+b,n.case/(n.case+n.cont))$p.value,1))
+        oneTable <- matrix(tmp,nrow=1,ncol=length(tmp))
     }else if(flag == 2){
         genes <- union(caselist[,"Gene"],contlist[,"Gene"])
         oneTable <- sapply(genes,function(gene){

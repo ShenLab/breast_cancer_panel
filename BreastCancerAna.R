@@ -11,26 +11,18 @@ BreastCancerAna <- function(sig=TRUE,Ecut=0.001,hotf=1,swi=1){
 ### swi: 1: Jewish case and control; 2: Hispanic case and contorl
     
 ## =========================input files===========================================
-if(hotf==1){ hotspotfile <- "../data/hotspots/HMM_hotspots_11_12.txt"; ## HongjianPred hotspots file
-}else if(hotf==2){ hotspotfile <- "../data/hotspots/cosmic_hotspots_3.txt"; ## COSMIC hotspots file
+if(hotf==1){ hotspotfile <- hotHMM; ## HongjianPred hotspots file
+}else if(hotf==2){ hotspotfile <- hotCOSMIC; ## COSMIC hotspots file
 }else if(hotf==3){ hotspotfile="";
-}else if(hotf==4){ hotspotfile <- "../data/hotspots/HMM_hotspots_11_12.txt";}
+}else if(hotf==4){ hotspotfile <- hotHMM;}
 ## switch to the right files for burden test
-if(swi==1){
-        vburdenfile <- "../resultf/variant_level_burden_anno_Fre_Pseducont.txt"  ### single variant test files with all annotations; look src.R
-	    alleleFrefile <- "/home/local/ARCS/yshen/data/WENDY/BreastCancer/AJ_CONTROLS/combined_variant_call/NonBC_Frequencies.expanded.tsv" ##AJ: not in our cohort 
-    	caselistf <- "../data/Rdata/AJcaselist_12_17"
-    	contlistf <- "../data/Rdata/AJcontlist_12_17"
-	    casestaf <- "../data/contAJ_20151209.hardfiltered.stats_hq.tsv" ##using the variant from AJ case and control joint calling result
-	    contstaf <- "../data/contAJ_20151209.hardfiltered.stats_hq.tsv"
-}else if(swi==2){
-	    vburdenfile = "../resultf/HISP_variant_level_burden_anno_Fre_Pseducont.txt"	
-    	alleleFrefile <- NULL
-    	caselistf <- "../data/Rdata/HIcaselist_1_5"
-    	contlistf <- "../data/Rdata/HIcontlist_1_5"
-	    casestaf <- "../data/BR.origin.stats_12_28.tsv"
-    	contstaf <- "../data/Hispanic.stats_12_28.tsv"
-}
+vburdenfile <- vburdenfiles[swi]  ### single variant test files with all annotations; look src.R
+alleleFrefile <- alleleFrefiles[swi] 
+caselistf <- caselistfs[swi]
+contlistf <- contlistfs[swi]
+casestaf <- casestafs[swi]   ##using the variant from AJ case and control joint calling result
+contstaf <- contstafs[swi]
+
 
 ##====================define the output files===================================================================
 pop=c("Jewish","Hispanic")
@@ -70,7 +62,7 @@ allgenes <- union(Gtop[,1],c(TSg,DRg,DNAreg,Panelg))
 ##getVariantlist(HIcontvariantpath,HIcontrolfile,namestr=".tsv","../data/Rdata/HIcontlist_1_5")
 ### AJ lists
 ##getVariantlist(AJcasevariantpath,AJBRfile,namestr=".tsv","../data/Rdata/AJcaselistBR_12_17")
-##getVariantlist(AJcontvariantpath,AJBRfile,namestr=".tsv","../data/Rdata/AJcaselist_12_17")
+##getVariantlist(AJcontvariantpath,AJBRfile,namestr=".tsv","../data/Rdata/AJcaselist715_12_17")
 ##getVariantlist(AJcontvariantpath,AJcontrolfile,namestr=".tsv","../data/Rdata/AJcontlist_12_17")
 ### ====================================getVariantlist save as Rdata===========================
 print_log("variant list filtering ...")
@@ -113,8 +105,8 @@ Ggs <- c("top 25%","top 50%","top 75%","top 100%")
 GgL <- list(Gtop[1:floor(0.25*dim(Gtop)[1]),1], Gtop[1:floor(0.5*dim(Gtop)[1]),1], Gtop[1:floor(0.75*dim(Gtop)[1]),1],allgenes)
 genesets <- list(TSg,DRg,DNAreg,Panelg)
 genesetnames <- c("Tumor suppressors","Cancer drivers","DNA repairs","Panel genes")
-vartypes <- list(stopins,splices,singleLOF,lof,mis,indel,NULL,syn,unknown)
-vartypenames <- c("stopgain_loss","splicing","singleLOF","indelLOF","D-MIS","Indels","ALL variants","Synonymous","Unknown")
+vartypes <- list(singleLOF,lof,mis,indel,c(singleLOF,lof),c(mis,indel),NULL,syn,unknown)
+vartypenames <- c("singleLOF","indelLOF","singleMIS","indelMIS","LOF","MIS","ALL variants","Synonymous","Unknown")
 
 ## eliminate batch effect for HISP based on rare synonymous
 if(swi==1){coe=1;}else if(swi==2){ coe = coeHisp(caselist,contlist);}
@@ -202,6 +194,7 @@ if(sig){
     if(swi==2){ cols <- c("Gene_sets","variant_type","Gene","Variant","#in_case","#in_cont","Folds","Pvalue","CorrectedP",setdiff(HIcols,c("N.index.HI","N.cont.HI","Odds_HI_cont","p_HI_cont")),AJcols,setdiff(cols0,"Gene"));}
     Vlist <- Vlist[,cols]
     ### selected columns and re-orders
+    Vlist <- Vlist[as.numeric(Vlist[,"Folds"])>1, ] ### keep less variants
     Vlist <- Vlist[order(as.numeric(Vlist[,"Pvalue"])),]
 }
 
@@ -212,7 +205,7 @@ if(swi==2){
     euafs <- paste(euafr,sep="",collapse="|")
     EUASN <- sapply(1:dim(Vlist)[1],function(kk){
         c(gsub(euafs,"", Vlist[kk,"index.HI"]), gsub(euafs,"", Vlist[kk,"pseudoCont.HI"]),gsub(euafs,"", Vlist[kk,"case.HI"]),gsub(euafs,"", Vlist[kk,"non_case.HI"]))
-        }
+        })
     EUASN <- t(EUASN)
     colnames(EUASN) <- c("index.EU.ASN","pseudoCont.EU.ASN","case.EU.ASN","non_case.EU.ASN")
     Vlist <- cbind(Vlist,EUASN)
