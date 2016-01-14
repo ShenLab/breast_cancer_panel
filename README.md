@@ -3,6 +3,10 @@ The Panel gene lists and burden analysis for case-control data and families
 
 Version 0: burden test for single variant, single gene, gene sets. Add single variant test with popG: AJs: index cases, pseudo-controls, cases, non-cases; HIs: index cases, pseudo-controls, cases, non-cases; 
 
+pop Number: 271 58 65 313 142 41 23 343
+pop filtered Number: 265 58 63 312 138 41 23 340
+
+
 Notes:
 For case-control burden analysis, we remove 14 BRCA1/2 pathogenic or likely pathogenic subjects. In family-based SKAT analysis, we don't remove these subjects.
 For sample 220673 is re-labeled as Jewish. The original phenotype information is labeled as Hispanic. Which are used in the cohort annotations for both Hispanic and Jewish.In the upudated, we should re-labeled all cohort samples.
