@@ -1,4 +1,4 @@
-### === src.R ===========================
+### === src.R
 dupSamf <- "/home/local/ARCS/qh2159/breast_cancer/Panel/data/CGC_YALE_Rege_repeatedSamples.txt"
 pContf <- "/home/local/ARCS/qh2159/breast_cancer/Panel/data/phenotype/WES_CaseControl_PossibleControls_OtherCancer.csv" ### excldued related cancers not as controls
 pseudoCont <- "/home/local/ARCS/qh2159/breast_cancer/Panel/data/phenotype/controls_Qiang_1_5_2016.csv"
@@ -7,6 +7,7 @@ phenofile <- "/home/local/ARCS/qh2159/breast_cancer/Panel/data/phenotype/WES BCF
 variantpath <- "/home/local/ARCS/yshen/data/WENDY/BreastCancer/Regeneron/Filtering_Oct2015/"
 AJBRfile <- "/home/local/ARCS/qh2159/breast_cancer/Panel/data/phenotype/AJ715_samples.list"
 HIBRfile <- "/home/local/ARCS/qh2159/breast_cancer/Panel/data/HispanicCases549.txt"
+
 
 ## label unknown samples by admixture model
 labelUnknown <- function(){
@@ -468,15 +469,15 @@ VariantSta(contstaf,contstaf,indexcase,conts,paste(outputpath,"variantSta_overla
 ### families without cases in Jewish and Hispanic
 FamNoCases <- function(){
 
-source("src.R")
+source("sourcefiles.R")
+source("misc.R")
 pheno <- phenoinfo()
 fams <- setdiff(pheno[pheno[,"BreastCancer"]=="No",1],pheno[pheno[,"BreastCancer"]=="Yes",1])
 pheno1 <- pheno[pheno[,1] %in% fams, ]
 write.csv(pheno1,file="../data/ALL_cohort_withoutcases_families.csv",row.names=FALSE,quote=FALSE)
 
 AJs <- unlist(read.table(AJBRfile))
-AJpheno <- pheno[pheno[,3] %in% AJs,]
-pheno <- AJpheno
+pheno <- pheno[pheno[,3] %in% AJs,]
 fams <- setdiff(pheno[pheno[,"BreastCancer"]=="No",1],pheno[pheno[,"BreastCancer"]=="Yes",1])
 pheno <- phenoinfo()
 pheno2 <- pheno[pheno[,1] %in% fams, ]
@@ -489,4 +490,37 @@ pheno <- phenoinfo()
 pheno3 <- pheno[pheno[,1] %in% fams, ]
 write.csv(pheno3,file="../data/Hispanic549_withoutcases_families.csv",row.names=FALSE,quote=FALSE)
  
+}
+
+
+###= families with more than two cases
+FamL2Cases <- function(){
+    source("src.R")
+    source("misc.R")
+    source("sourcefiles.R")
+    pheno <- phenoinfo()
+    AJs <- unlist(read.table(AJBRfile))
+    AJpheno <- pheno[pheno[,3] %in% AJs,]
+    HIs <- unlist(read.table(HIBRfile))
+    Hpheno <- pheno[pheno[,3] %in% HIs,]
+    
+    pheno <- pheno[pheno[,"BreastCancer"]=="Yes",]
+    AJpheno <- AJpheno[AJpheno[,"BreastCancer"]=="Yes",]
+    Hpheno <- Hpheno[Hpheno[,"BreastCancer"]=="Yes",]
+    
+    a <- table(pheno[,1])
+    aj <- table(AJpheno[,1])
+    hi <- table(Hpheno[,1])
+    
+    fams76 <- names(a)[a>=2]
+    famshi <- names(hi)[hi>=2]
+    famsaj <- names(aj)[aj>=2]
+    
+    setdiff(fams76,c(famshi,famsaj))
+    
+    qwt(fams76,file="../data/phenotype/FamiliesL2Cases.txt")
+    qwt(famshi,file="../data/phenotype/FamiliesL2Cases_HI.txt")
+    qwt(famsaj,file="../data/phenotype/FamiliesL2Cases_AJ.txt")
+    #200165 unknown
+    #300369 relabeled as not AJ
 }
