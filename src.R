@@ -492,7 +492,6 @@ write.csv(pheno3,file="../data/Hispanic549_withoutcases_families.csv",row.names=
  
 }
 
-
 ###= families with more than two cases
 FamL2Cases <- function(){
     source("src.R")
@@ -524,3 +523,85 @@ FamL2Cases <- function(){
     #200165 unknown
     #300369 relabeled as not AJ
 }
+
+## double check single gene
+FamGenes <- function(){
+    source("src.R")
+    source("misc.R")
+    source("sourcefiles.R")
+    pheno <- phenoinfo()
+    Samples <- read.delim(Samplelistfile)
+    load(Cohortfile)
+    
+    genes <- matrix(0,4,3)
+    genes[1,] <- c("MSH3","5","79950727")
+    genes[2,] <- c("PARP4","13","25077802")
+    genes[3,] <- c("POT1","7","124482897")
+    genes[4,] <- c("SETD2","3","47162897")
+    
+    for(i in 1:4){
+        SingleGene(genes[i,],onelist,pheno,Samples)
+    }
+}
+
+SingleGene <- function(gene,onelist,pheno,Samples){
+    
+    subs <- onelist[,"Gene"]==gene[1] & onelist[,"Chromosome"]==gene[2] & onelist[,"Position"]==gene[3]
+    tmp <- onelist[subs,]
+    samid <- unique(tmp[,"Subject_ID"])
+    fams <- unique(pheno[pheno[,3] %in% samid, 1])
+    
+    PheCarriers <- pheno[match(samid,pheno[,3]),c("FAMILYID","INDIVID","Subject_ID","BreastCancer","LiveAge","Sex")]
+    PheCarriers <- cbind(PheCarriers,Samples[match(samid,Samples[,2]),3])
+    colnames(PheCarriers) <- c("FAMILYID","INDIVID","Subject_ID","BreastCancer","LiveAge","Sex","Ethnicity")
+    PheCarriers <- PheCarriers[order(PheCarriers[,"Ethnicity"],PheCarriers[,"BreastCancer"],PheCarriers[,"Sex"]),]
+    qwt(PheCarriers,file=paste("../single_check/",gene[1],"inCarriers.txt",sep=""),flag=2)
+    
+    #ages <- sapply(1:dim(pheno)[1], function(i) 114 -  as.numeric(unlist(strsplit(pheno[i,"BIRTHDT"],"/"))[3]) )
+    
+    oneg <- c()
+    for(i in 1:length(fams)){
+        tmp <- rep(0,14)
+        tmp[1] <- fams[i]
+        onePhe <- pheno[pheno[,1]==fams[i],]
+        samset <- list()
+        samset[[1]] <- intersect(onePhe[onePhe[,"BreastCancer"]=="Yes",3],samid)
+        samset[[2]] <- setdiff(onePhe[onePhe[,"BreastCancer"]=="Yes",3],samid)
+        samset[[3]] <- intersect(onePhe[onePhe[,"BreastCancer"]=="No",3],samid)
+        samset[[4]] <- setdiff(onePhe[onePhe[,"BreastCancer"]=="No",3],samid)
+        for(j in 1:4){
+            tmp[j+1] <- length(samset[[j]])   
+            tmp[j+5] <- paste(samset[[j]],sep="",collapse="_")
+            tmp[j+9] <- paste(onePhe[onePhe[,3] %in% samset[[j]],"LiveAge"],sep="",collapse="_")
+        }
+        
+        tmp[14] <- paste(unique(Samples[Samples[,2] %in% onePhe[,3],3]),sep="",collapse="_")
+        oneg <- rbind(oneg,tmp)
+    }
+    
+    tmp <- rep(0,14)
+    tmp[1] <- "All"
+    for(i in 2:5){
+        tmp[i] <- sum(as.numeric(oneg[,i]))
+    }
+    oneg <- rbind(oneg,tmp)
+    
+    tmp <- rep(0,14)
+    tmp[1] <- "AJs"
+    for(i in 2:5){
+        tmp[i] <- sum(as.numeric(oneg[oneg[,14]=="AJ",i]))
+    }
+    oneg <- rbind(oneg,tmp)
+    
+    tmp <- rep(0,14)
+    tmp[1] <- "Dominicans"
+    for(i in 2:5){
+        tmp[i] <- sum(as.numeric(oneg[oneg[,14]=="Dominican",i]))
+    }
+    oneg <- rbind(oneg,tmp)
+    colnames(oneg) <- c("FamilyID","#BR+Var+","#BR+Var-","#BR-Var+","#BR-Var-","BR+Var+","BR+Var+age","BR+Var-","BR+Var-age","BR-Var+","BR-Var+age","BR-Var-","BR-Var-age","Ethnicity")
+    oneg <- oneg[order(oneg[,"Ethnicity"]),]
+    qwt(oneg,file=paste("../single_check/",gene[1],"inFamily.txt",sep=""),flag=2)
+    
+}
+
