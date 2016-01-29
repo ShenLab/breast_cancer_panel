@@ -4,6 +4,7 @@ phenoinfo <- function(){
     files <- list.files(path=variantpath,pattern=".tsv$")
     subjects <- gsub(".AllVariants.tsv","",files)
     pheno <- read.csv(phenofile)
+    pheno[pheno[,3]=="220897, 220904",3] <- "220897"
     pheno[pheno[,3]=="222357, 222966",3] <- "222357" 
     pheno <- pheno[pheno[,3] %in% subjects,]
     
