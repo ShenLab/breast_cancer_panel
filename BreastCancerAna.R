@@ -49,6 +49,7 @@ varTnames <- c("lof_indel","d-mis","mis-indel","Synonymous","Stopgain_loss","spl
 
 TSg <- unlist(read.table(TSfile))
 DRg <- unlist(read.table(cancerdriverfile)) ## cancer drivers
+DRg <- setdiff(DRg,TSg) ### split the burden effects
 DNAreg <- unlist(read.table(DNArepairfile))
 Panelg <- unlist(read.table(Panelgfile))
 Panelg <- setdiff(Panelg,c(TSg,DRg,DNAreg))
@@ -58,7 +59,7 @@ allgenes <- union(Gtop[,1],c(TSg,DRg,DNAreg,Panelg))
 
 
 ## =========================variant list filtering===========================================
-##getVariantlist(HIcasevariantpath,HIBRfile,namestr=".AllVariants.tsv","../data/Rdata/HIcaselist_1_5")
+##getVariantlist(HIcasevariantpath,HIBRfile,namestr=".AllVariants.tsv","../data/Rdata/HIcaselist_1_29")
 ##getVariantlist(HIcontvariantpath,HIcontrolfile,namestr=".tsv","../data/Rdata/HIcontlist_1_5")
 ### AJ lists
 ##getVariantlist(AJcasevariantpath,AJBRfile,namestr=".tsv","../data/Rdata/AJcaselistBR_12_17")
@@ -171,11 +172,11 @@ Vlist <- cbind(Vlist,varTable[match(univar,varTable[,"Variant"]) , setdiff(colna
 # corrected Pvalue by each variant type
 Vlist[,"CorrectedP"] <- 1
 NumVar <- c(length(univar[Vlist[,"VariantClass"] %in% lof]), length(univar[Vlist[,"VariantClass"] %in% c(stopins,splices,singleLOF)]), length(univar[Vlist[,"VariantClass"] %in% indel]), length(univar[Vlist[,"VariantClass"] %in% mis]))
-Vlist[Vlist[,"variant_type"] == "indels_inframe","CorrectedP"] <-  as.numeric(Vlist[Vlist[,"variant_type"] == "indels_inframe","Pvalue"]) * NumVar[1]
-Vlist[Vlist[,"variant_type"] == "LOF","CorrectedP"] <-  as.numeric(Vlist[Vlist[,"variant_type"] == "LOF","Pvalue"]) * NumVar[2]
-Vlist[Vlist[,"variant_type"] == "indels_nonframe","CorrectedP"] <-  as.numeric(Vlist[Vlist[,"variant_type"] == "indels_nonframe","Pvalue"]) * NumVar[3]
-Vlist[Vlist[,"variant_type"] == "d-mis","CorrectedP"] <-  as.numeric(Vlist[Vlist[,"variant_type"] == "d-mis","Pvalue"]) * NumVar[4]
-Vlist[as.numeric(Vlist[,"CorrectedP"]) > 1,"CorrectedP"] <- 1
+Vlist[Vlist[,"variant_type"] == "indels_inframe","CorrectedP"] <-  p.adjust(as.numeric(Vlist[Vlist[,"variant_type"] == "indels_inframe","Pvalue"]),method = "BH")
+Vlist[Vlist[,"variant_type"] == "LOF","CorrectedP"] <-  p.adjust(as.numeric(Vlist[Vlist[,"variant_type"] == "LOF","Pvalue"]),method = "BH")
+Vlist[Vlist[,"variant_type"] == "indels_nonframe","CorrectedP"] <-  p.adjust(as.numeric(Vlist[Vlist[,"variant_type"] == "indels_nonframe","Pvalue"]),method = "BH")
+Vlist[Vlist[,"variant_type"] == "d-mis","CorrectedP"] <-  p.adjust(as.numeric(Vlist[Vlist[,"variant_type"] == "d-mis","Pvalue"]),method = "BH")
+#Vlist[as.numeric(Vlist[,"CorrectedP"]) > 1,"CorrectedP"] <- 1
 NumVar <- paste(c("indels_inframe","LOF","indels_nonframe","d-mis")," : ",NumVar,sep="")
 
 #### selected columns
