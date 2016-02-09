@@ -3,9 +3,9 @@ batch_one <- function(){
         source("misc.R")
 	setwd("/home/local/ARCS/qh2159/breast_cancer/variants/pedigree")
         ##### all families inherited models
-        L2CasesFams <- unlist(read.table("FamiliesL2Cases.txt"))
-        aa <- read.delim("Prioritized43families.txt")[,1]
-        Lars <- unique(read.delim("../LargeFamily_7/LargeFamilyPhenotype.txt")[,1])
+        L2CasesFams <- unlist(read.table("/home/local/ARCS/qh2159/breast_cancer/variants/families/FamiliesL2Cases.txt"))
+        aa <- read.delim("/home/local/ARCS/qh2159/breast_cancer/variants/families/Prioritized43families.txt")[,1]
+        Lars <- unique(read.delim("/home/local/ARCS/qh2159/breast_cancer/variants/families/LargeFamilyPhenotype.txt")[,1])
         Lars <- setdiff(Lars,"200563")
         svgfiles <- unique(paste(c(L2CasesFams,aa,Lars),".svg",sep=""))
         wfile="Inheritance.Pattern.Families.v2.txt"
@@ -13,52 +13,28 @@ batch_one <- function(){
         ncasef <- CaseinFam("Inheritance.Pattern.Families.v2.txt")
         
         #### get AD model frequency
-        #Lfiles <- list.files("../LargeFamily_7/variants",pattern=".AD.tsv$",full.names = TRUE)
-        Pfiles <- list.files("./variants",pattern=".AD.tsv$",full.names = TRUE)
-        ### delete the families without any reference sample
-        tmp <- read.delim("Inheritance.Pattern.Families.Subjects.v1.txt",header=FALSE)
-        tmp <- paste(tmp[tmp[,3]=="" & tmp[,2]=="AD",1],".AD.tsv",sep="")
-        ADfiles <- Pfiles[!(basename(Pfiles) %in% tmp)]
-        wstr <- "Freq.v2.txt"
-        Frequency_inherited(ADfiles,wstr,ncasef)
-        
-        ADfiles <- list.files("./variants",pattern=".AD.tsv$",full.names = TRUE)
-        wstr <- "Freq.v1.txt"
-        Frequency_inherited(ADfiles,wstr,ncasef)
+#         Pfiles <- list.files("./variants",pattern=".AD.tsv$",full.names = TRUE)
+#         ### delete the families without any reference sample
+#         tmp <- read.delim("Inheritance.Pattern.Families.Subjects.v1.txt",header=FALSE)
+#         tmp <- paste(tmp[tmp[,3]=="" & tmp[,2]=="AD",1],".AD.tsv",sep="")
+#         ADfiles <- Pfiles[!(basename(Pfiles) %in% tmp)]
+#         wstr <- "Freq.v2.txt"
+#         Frequency_inherited(ADfiles,wstr,ncasef)
+#         
+#         ADfiles <- list.files("./variants",pattern=".AD.tsv$",full.names = TRUE)
+#         wstr <- "Freq.v1.txt"
+#         Frequency_inherited(ADfiles,wstr,ncasef)
         
 }
 
 inheritedModels <- function(svgfiles,wfile){
-        ### step 1: copy svg files for families
-        svgbatch1 <- list.files("../../Analysis_Wendy/150504 Family Pedigree/",pattern=".svg$",full.names = TRUE)
-        svgbatch2 <- list.files("../Last43MissedFamilies/MissingFamilies/",pattern=".svg$",full.names = TRUE)
-        svgbatch3 <- list.files("../LargeFamily_7/pedigrees/",pattern=".svg$",full.names = TRUE)
-        famid1 <- basename(svgbatch1)
-        famid2 <- basename(svgbatch2)
-        famid3 <- basename(svgbatch3)
-        fs <- intersect(svgfiles,c(famid1,famid2,famid3))
-#         file.copy(svgbatch1[famid1 %in% fs],"./pedigree/")
-#         file.copy(svgbatch2[famid2 %in% fs],"./pedigree/")
-#         file.copy(svgbatch3[famid3 %in% fs],"./pedigree/")
         
-#         print(length(intersect(svgfiles,c(famid1,famid2,famid3))))
-#         print(length(intersect(svgfiles,famid3)))
-        
-        ### step 2: delete file DIV to make it open with inkscape
-         files <- paste("./pedigree/",fs,sep="") #list.files("./pedigree",pattern=".svg$",full.names = TRUE)
-#         for(i in 1:length(files)){
-#                 con <- file(files[i],"r")
-#                 tmp <- readLines(con,warn=FALSE)
-#                 tmp <- gsub("<DIV id=\"svgContainer\">","",tmp)
-#                 tmp <- gsub("</DIV>","",tmp)
-#                 #writeLines(tmp,con=file(files[i],"w"))
-#                 close(con)
-#                 qwt(tmp,files[i])
-#         }
-        
+        files <- list.files("/home/local/ARCS/qh2159/breast_cancer/variants/pedigree",pattern=".svg",full.names = TRUE,recursive = TRUE)
+        tmpaa <- intersect(basename(files),svgfiles)
+        files <- files[match(tmpaa,basename(files))]
         ### step 3: generate the AD and AR inherited model for each family
-        pheno <- phenoinfo()
-        pedis <- read.csv("../../ALL_pedigree.csv")
+        pheno <- phenoin()
+        pedis <- read.csv("/home/local/ARCS/qh2159/breast_cancer/variants/pedigree/ALL_pedigree.csv")
         
         fams <- gsub(".svg","",basename(files))
         n.fam <- length(fams)
@@ -189,8 +165,8 @@ Frequency_inherited <- function(ADfiles,wstr,ncasef){
         
 }
 
-phenoinfo <- function(){
-        pheno <- read.csv("../LargeFamily_7/WES BCFR phenotypic data.csv")
+phenoin <- function(){
+        pheno <- read.csv("/home/local/ARCS/qh2159/breast_cancer/Panel/data/phenotype/WES BCFR phenotypic data.csv")
         pheno[pheno[,3]=="220897, 220904",3] <- "220897"
         pheno[pheno[,3]=="222357, 222966",3] <- "222357" 
         subsb <- sapply(1:dim(pheno)[1],function(i) 114-as.numeric(unlist(strsplit(pheno[i,"BIRTHDT"],"/"))[3]) )
@@ -200,7 +176,7 @@ phenoinfo <- function(){
 }
 
 CaseinFam <- function(wfiles,m="AD"){
-        inh <- read.delim(gsub("v1.txt","Subjects.v1.txt",wfile),header=FALSE)   
+        inh <- read.delim(gsub("Families.","Families.Subjects.",wfile),header=FALSE)   
         inh <- inh[inh[,2]==m, ]
         ncasef <- matrix(0,dim(inh)[1],2)
         ncasef[,1] <- inh[,1]
