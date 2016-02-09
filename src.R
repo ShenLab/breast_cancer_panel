@@ -599,7 +599,7 @@ SingleGene <- function(gene,onelist,pheno,Samples){
         tmp[i] <- sum(as.numeric(oneg[oneg[,14]=="Dominican",i]))
     }
     oneg <- rbind(oneg,tmp)
-    colnames(oneg) <- c("FamilyID","#BR+Var+","#BR+Var-","#BR-Var+","#BR-Var-","BR+Var+","BR+Var+age","BR+Var-","BR+Var-age","BR-Var+","BR-Var+age","BR-Var-","BR-Var-age","Ethnicity")
+    colnames(oneg) <- c("FamilyID","#BR+Var+","#BR+Var-","#BR-Var+","#BR-Var-","BR+Var+","BR+Var-","BR-Var+","BR-Var-","BR+Var+age","BR+Var-age","BR-Var+age","BR-Var-age","Ethnicity")
     oneg <- oneg[order(oneg[,"Ethnicity"]),]
     qwt(oneg,file=paste("../single_check/",gene[1],"inFamily.txt",sep=""),flag=2)
     

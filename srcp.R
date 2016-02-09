@@ -618,6 +618,15 @@ onelollipopf <- function(onerCaseAJ,onestr){
         qwt(tmp1,file=paste("../single_check/MSH3/variant_",onestr,".txt",sep=""),flag = 2)
 }
 
+### known risk gene double check
+knownRisks <- function(){
+        genes <- c("BLM","PALB2","WRN","CHEK2","ATM")
 
-
-
+        AJv <- read.delim("../resultf/AJ_variant_level_burden_Pseducont.txt")
+        tmp <- AJv[AJv[,"Gene"] %in% genes & !(AJv[,"VariantClass"] %in% c("synonymousSNV","unknown")),]
+        qwt(tmp,file="../single_check/knownRisk_AJ.txt",flag=2)
+        
+        HIv <- read.delim("../resultf/HISP_variant_level_burden_Pseducont.txt")
+        tmp <- HIv[HIv[,"Gene"] %in% genes & !(HIv[,"VariantClass"] %in% c("synonymousSNV","unknown")),]
+        qwt(tmp,file="../single_check/knownRisk_HI.txt",flag=2)      
+}
