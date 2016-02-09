@@ -406,7 +406,7 @@ filtered_LargeFam <- function(){
 	mis <- "nonsynonymousSNV"
 	#path= "/home/local/ARCS/qh2159/breast_cancer/variants/families/PriorFamilies29" 
 	#path= "/home/local/ARCS/qh2159/breast_cancer/variants/families/L2Families35"
-	path="/home/local/ARCS/qh2159/breast_cancer/variants/families/Families78"
+	path="/home/local/ARCS/qh2159/breast_cancer/variants/families/Families78V2"
 	## second 5 families
 	#sams <- c("200500","300424","200124","200396","200154")
 	#sams <- "200352"
@@ -420,6 +420,9 @@ filtered_LargeFam <- function(){
 		if(dim(oner)[1]>0){
     		oner <- variant_filtering(oner,mis,Ecut=0.01,segd=0.95,pp2=TRUE,hotf="",alleleFrefile="",popcut=0.05)
 		oner <- oner[oner[,"ExACfreq"] & oner[,"VCFPASS"] & oner[,"noneSegmentalDup"],]
+		### further filtered by others
+		## meta-svm D or CADD >= 15 or polyphen as D
+		oner <- oner[oner[,"PP2prediction"]=="D" | oner[,"MetaSVM"]=="D" | oner[,"CADDscore"] >= 15, ]
     		qwt(oner,file=gsub(".tsv","filtered.tsv",samf[i]),flag=2)
 		}
 	}
