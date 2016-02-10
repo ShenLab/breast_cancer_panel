@@ -3,27 +3,29 @@ batch_one <- function(){
         source("misc.R")
 	setwd("/home/local/ARCS/qh2159/breast_cancer/variants/pedigree")
         ##### all families inherited models
-        L2CasesFams <- unlist(read.table("/home/local/ARCS/qh2159/breast_cancer/variants/families/FamiliesL2Cases.txt"))
-        aa <- read.delim("/home/local/ARCS/qh2159/breast_cancer/variants/families/Prioritized43families.txt")[,1]
-        Lars <- unique(read.delim("/home/local/ARCS/qh2159/breast_cancer/variants/families/LargeFamilyPhenotype.txt")[,1])
-        Lars <- setdiff(Lars,"200563")
-        svgfiles <- unique(paste(c(L2CasesFams,aa,Lars),".svg",sep=""))
-        wfile="Inheritance.Pattern.Families.v2.txt"
-        inheritedModels(svgfiles,wfile)
-        ncasef <- CaseinFam("Inheritance.Pattern.Families.v2.txt")
+#         L2CasesFams <- unlist(read.table("/home/local/ARCS/qh2159/breast_cancer/variants/families/FamiliesL2Cases.txt"))
+#         aa <- read.delim("/home/local/ARCS/qh2159/breast_cancer/variants/families/Prioritized43families.txt")[,1]
+#         Lars <- unique(read.delim("/home/local/ARCS/qh2159/breast_cancer/variants/families/LargeFamilyPhenotype.txt")[,1])
+#         Lars <- setdiff(Lars,"200563")
+#         svgfiles <- unique(paste(c(L2CasesFams,aa,Lars),".svg",sep=""))
+#         wfile="Inheritance.Pattern.Families.v2.txt"
+#         inheritedModels(svgfiles,wfile)
+         
         
         #### get AD model frequency
-#         Pfiles <- list.files("./variants",pattern=".AD.tsv$",full.names = TRUE)
-#         ### delete the families without any reference sample
-#         tmp <- read.delim("Inheritance.Pattern.Families.Subjects.v1.txt",header=FALSE)
-#         tmp <- paste(tmp[tmp[,3]=="" & tmp[,2]=="AD",1],".AD.tsv",sep="")
-#         ADfiles <- Pfiles[!(basename(Pfiles) %in% tmp)]
-#         wstr <- "Freq.v2.txt"
-#         Frequency_inherited(ADfiles,wstr,ncasef)
-#         
-#         ADfiles <- list.files("./variants",pattern=".AD.tsv$",full.names = TRUE)
-#         wstr <- "Freq.v1.txt"
-#         Frequency_inherited(ADfiles,wstr,ncasef)
+	ncasef <- CaseinFam("Inheritance.Pattern.Families.v2.txt")
+	
+	substr <- ".ADfiltered.tsv"
+        Pfiles <- list.files("/home/local/ARCS/qh2159/breast_cancer/variants/families/Families78V2",pattern=".ADfiltered.tsv$",full.names = TRUE)
+        ### delete the families without any reference sample
+        tmp <- read.delim("Inheritance.Pattern.Families.Subjects.v2.txt",header=FALSE)
+        tmp <- paste(tmp[tmp[,3]=="" & tmp[,2]=="AD",1],substr,sep="")
+        ADfiles <- Pfiles[!(basename(Pfiles) %in% tmp)]
+        wstr <- "FreqRef.v2.txt"
+        Frequency_inherited(ADfiles,wstr,ncasef,substr)
+        
+        wstr <- "FreqNonRef.v2.txt"
+        Frequency_inherited(Pfiles,wstr,ncasef,substr)
         
 }
 
@@ -108,7 +110,7 @@ inheritedModels <- function(svgfiles,wfile){
 
 }
 
-Frequency_inherited <- function(ADfiles,wstr,ncasef){
+Frequency_inherited <- function(ADfiles,wstr,ncasef,substr=".AD.tsv"){
         ### step 5: most frequency genes and variants in families
         aa <- ADfiles
         oneT <- c()
@@ -120,7 +122,7 @@ Frequency_inherited <- function(ADfiles,wstr,ncasef){
                         stmp <- sum(ssub)
                         nCarrier <- sapply(1:dim(TMP0)[1],function(kk) stmp-sum(grepl("0/0",TMP0[kk,ssub])) ) ## note: not 0/0 are considered
                         tmp <- tmp[,!grepl("X.",names(tmp))]
-                        FAMID <- gsub(".AD.tsv","",basename(aa[i]))
+                        FAMID <- gsub(substr,"",basename(aa[i]))
                         tmp <- cbind(FAMID,nCarrier,tmp)
                         oneT <- rbind(oneT,tmp)
                 }
@@ -175,7 +177,7 @@ phenoin <- function(){
         pheno
 }
 
-CaseinFam <- function(wfiles,m="AD"){
+CaseinFam <- function(wfile,m="AD"){
         inh <- read.delim(gsub("Families.","Families.Subjects.",wfile),header=FALSE)   
         inh <- inh[inh[,2]==m, ]
         ncasef <- matrix(0,dim(inh)[1],2)
