@@ -422,7 +422,9 @@ filtered_LargeFam <- function(){
 		oner <- oner[oner[,"ExACfreq"] & oner[,"VCFPASS"] & oner[,"noneSegmentalDup"],]
 		### further filtered by others
 		## meta-svm D or CADD >= 15 or polyphen as D
-		oner <- oner[oner[,"PP2prediction"]=="D" | oner[,"MetaSVM"]=="D" | oner[,"CADDscore"] >= 15, ]
+		subs <- rep(TRUE,dim(oner)[1])
+		subs[oner[,"VariantClass"] %in% mis] <- FALSE
+		oner <- oner[subs | (oner[,"PP2prediction"]=="D" | oner[,"MetaSVM"]=="D" | oner[,"CADDscore"] >= 15), ]
     		qwt(oner,file=gsub(".tsv","filtered.tsv",samf[i]),flag=2)
 		}
 	}
