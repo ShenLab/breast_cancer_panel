@@ -191,11 +191,11 @@ if(sig){
     Vlist <- Vlist[,cols] 
     Vlist <- Vlist[order(Vlist[,"Gene_sets"]),]
 }else{  
-    if(swi==1){ cols <- c("Gene_sets","variant_type","Gene","Variant","#in_case","#in_cont","Folds","Pvalue","CorrectedP",setdiff(AJcols,c("N.index.AJ","N.cont.AJ","Odds_AJ_cont","p_AJ_cont")),HIcols,setdiff(cols0,"Gene"));}
-    if(swi==2){ cols <- c("Gene_sets","variant_type","Gene","Variant","#in_case","#in_cont","Folds","Pvalue","CorrectedP",setdiff(HIcols,c("N.index.HI","N.cont.HI","Odds_HI_cont","p_HI_cont")),AJcols,setdiff(cols0,"Gene"));}
+    if(swi==1){ cols <- c("Gene_sets","variant_type","Gene","Variant","#in_case","#in_cont","Odds","Pvalue","CorrectedP",setdiff(AJcols,c("N.index.AJ","N.cont.AJ","Odds_AJ_cont","p_AJ_cont")),HIcols,setdiff(cols0,"Gene"));}
+    if(swi==2){ cols <- c("Gene_sets","variant_type","Gene","Variant","#in_case","#in_cont","Odds","Pvalue","CorrectedP",setdiff(HIcols,c("N.index.HI","N.cont.HI","Odds_HI_cont","p_HI_cont")),AJcols,setdiff(cols0,"Gene"));}
     Vlist <- Vlist[,cols]
     ### selected columns and re-orders
-    Vlist <- Vlist[as.numeric(Vlist[,"Folds"])>1, ] ### keep less variants
+    Vlist <- Vlist[as.numeric(Vlist[,"Odds"])>1, ] ### keep less variants
     Vlist <- Vlist[order(as.numeric(Vlist[,"Pvalue"])),]
 }
 
