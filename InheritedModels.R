@@ -133,7 +133,6 @@ Frequency_inherited <- function(ADfiles,wstr,ncasef,substr=".AD.tsv",PV=""){
         oneT[oneT[,"AlleleFrequency.ExAC"]==".","AlleleFrequency.ExAC"] <- 0
         oneT <- oneT[as.numeric(oneT[,"AlleleFrequency.ExAC"]) <= 0.01, ]
         vars <- paste(oneT[,"Chromosome"],oneT[,"Position"],sep="_")
-        
         if(any(PV!="")){
                 #source("/home/local/ARCS/qh2159/breast_cancer/Panel/breast_cancer_panel/sourcefiles.R")
                 #AJs <- unlist(read.table(AJBRfile))
@@ -145,6 +144,7 @@ Frequency_inherited <- function(ADfiles,wstr,ncasef,substr=".AD.tsv",PV=""){
         }
         
         ### order by variants
+        vars <- paste(oneT[,"Chromosome"],oneT[,"Position"],sep="_")
         varC <- sort(table(vars),decreasing = TRUE)
         varN <- names(varC)
         varOr <- c()
