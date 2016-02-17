@@ -267,7 +267,7 @@ filtered_LargeFam <- function(){
                         subs[oner[,"VariantClass"] %in% mis] <- FALSE
                         oner <- oner[subs | (oner[,"MetaSVM"]=="D" | (oner[,"PP2prediction"]=="D" & oner[,"CADDscore"] >= 15)), ]
                         ### filtered by population control
-                        famid <- gsub(".tsv","",basename(samf[i]))
+                        famid <- gsub("\\D","",basename(samf[i]))
                         if(famid %in% pheno[phe1=="J",1]) oner <- oner[!(paste(oner[,"Chromosome"],oner[,"Position"],sep="_") %in% PV[[1]]),  ]
                         if(famid %in% pheno[phe1=="H",1]) oner <- oner[!(paste(oner[,"Chromosome"],oner[,"Position"],sep="_") %in% PV[[2]]),  ]
                         qwt(oner,file=gsub(".tsv","filtered.tsv",samf[i]),flag=2)
