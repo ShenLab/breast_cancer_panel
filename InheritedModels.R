@@ -1,7 +1,7 @@
 batch_one <- function(){
         source("InheritedModels.R")
         source("misc.R")
-	setwd("/home/local/ARCS/qh2159/breast_cancer/variants/pedigree")
+	setwd("/home/local/ARCS/qh2159/breast_cancer/variants/families")
         ##### all families inherited models
 #         L2CasesFams <- unlist(read.table("/home/local/ARCS/qh2159/breast_cancer/variants/families/FamiliesL2Cases.txt"))
 #         aa <- read.delim("/home/local/ARCS/qh2159/breast_cancer/variants/families/Prioritized43families.txt")[,1]
@@ -14,18 +14,18 @@ batch_one <- function(){
         
         #### get AD model frequency
 	ncasef <- CaseinFam("Inheritance.Pattern.Families.v2.txt")
-	
+	PV <- control_freq(0.05)
 	substr <- ".ADfiltered.tsv"
         Pfiles <- list.files("/home/local/ARCS/qh2159/breast_cancer/variants/families/Families78V2",pattern=".ADfiltered.tsv$",full.names = TRUE)
         ### delete the families without any reference sample
         tmp <- read.delim("Inheritance.Pattern.Families.Subjects.v2.txt",header=FALSE)
         tmp <- paste(tmp[tmp[,3]=="" & tmp[,2]=="AD",1],substr,sep="")
         ADfiles <- Pfiles[!(basename(Pfiles) %in% tmp)]
-        wstr <- "FreqRef.v2.txt"
-        Frequency_inherited(ADfiles,wstr,ncasef,substr)
+        wstr <- "FreqRef.v3.txt"
+        Frequency_inherited(ADfiles,wstr,ncasef,substr,PV)
         
-        wstr <- "FreqNonRef.v2.txt"
-        Frequency_inherited(Pfiles,wstr,ncasef,substr)
+        wstr <- "FreqNonRef.v3.txt"
+        Frequency_inherited(Pfiles,wstr,ncasef,substr,PV)
         
 }
 
@@ -110,7 +110,7 @@ inheritedModels <- function(svgfiles,wfile){
 
 }
 
-Frequency_inherited <- function(ADfiles,wstr,ncasef,substr=".AD.tsv"){
+Frequency_inherited <- function(ADfiles,wstr,ncasef,substr=".AD.tsv",PV=""){
         ### step 5: most frequency genes and variants in families
         aa <- ADfiles
         oneT <- c()
@@ -120,30 +120,31 @@ Frequency_inherited <- function(ADfiles,wstr,ncasef,substr=".AD.tsv"){
                         TMP0 <- tmp[,grepl("X.",names(tmp))]
                         ssub <- grepl("GT",names(TMP0))
                         stmp <- sum(ssub)
-                        nCarrier <- sapply(1:dim(TMP0)[1],function(kk) stmp-sum(grepl("0/0",TMP0[kk,ssub])) ) ## note: not 0/0 are considered
+                        tmpn <- gsub("\\D","",names(TMP0)[ssub])
+                        nCarrier <- sapply(1:dim(TMP0)[1],function(kk) stmp-sum(grepl("0/0",TMP0[kk,ssub])) ) ## note: not 0/0 
+                        Carriers <- sapply(1:dim(TMP0)[1],function(kk) paste(tmpn[!grepl("0/0",TMP0[kk,ssub])],sep="",collapse="_")  )
                         tmp <- tmp[,!grepl("X.",names(tmp))]
                         FAMID <- gsub(substr,"",basename(aa[i]))
-                        tmp <- cbind(FAMID,nCarrier,tmp)
+                        tmp <- cbind(FAMID,nCarrier,Carriers,tmp)
                         oneT <- rbind(oneT,tmp)
                 }
         }
         oneT[is.na(oneT[,"AlleleFrequency.ExAC"]),"AlleleFrequency.ExAC"] <- 0
         oneT[oneT[,"AlleleFrequency.ExAC"]==".","AlleleFrequency.ExAC"] <- 0
         oneT <- oneT[as.numeric(oneT[,"AlleleFrequency.ExAC"]) <= 0.01, ]
+        vars <- paste(oneT[,"Chromosome"],oneT[,"Position"],sep="_")
         
-        ### order by genes
-#         geneC <- sort(table(oneT[,"Gene"]),decreasing = TRUE)
-#         geneN <- names(geneC)
-#         geneOr <- c()
-#         for(i in 1:length(geneC)){
-#                 Freq <- geneC[i]
-#                 oner <- cbind(Freq,oneT[oneT[,"Gene"]==geneN[i], ])
-#                 geneOr <- rbind(geneOr,oner)
-#         }
-#         qwt(geneOr,file="FrequencyGenes.txt",flag=2)
+        if(any(PV!="")){
+                #source("/home/local/ARCS/qh2159/breast_cancer/Panel/breast_cancer_panel/sourcefiles.R")
+                #AJs <- unlist(read.table(AJBRfile))
+                #HIs <- unlist(read.table(AJBRfile))
+                pheno <- phenoin()
+                phe1 <- paste(pheno[,4],pheno[,5],sep="")
+                phe1[phe1=="JH"] <- "J"
+                oneT <- oneT[(oneT[,"FAMID"] %in% pheno[phe1=="J",1] & !(vars %in% PV[[1]])) | (oneT[,"FAMID"] %in% pheno[phe1=="H",1] & !(vars %in% PV[[2]])) | (oneT[,"FAMID"] %in% pheno[phe1=="",1]),  ]
+        }
         
         ### order by variants
-        vars <- paste(oneT[,"Chromosome"],oneT[,"Position"],sep="_")
         varC <- sort(table(vars),decreasing = TRUE)
         varN <- names(varC)
         varOr <- c()
@@ -155,15 +156,26 @@ Frequency_inherited <- function(ADfiles,wstr,ncasef,substr=".AD.tsv"){
                 varOr <- rbind(varOr,oner)
         }
         qwt(varOr,file=paste("Variants",wstr,sep=""),flag=2)
+
+        ### order by genes
+        geneC <- sort(table(oneT[,"Gene"]),decreasing = TRUE)
+        geneN <- names(geneC)
+        geneOr <- c()
+        for(i in 1:length(geneC)){
+                onetmp <- oneT[oneT[,"Gene"]==geneN[i], ]
+                #Freq <- geneC[i]
+                nFam <- length(unique(onetmp[,"FAMID"]))
+                nVar <- length(unique(onetmp[,"Position"]))
+                tmpgs <- c()
+                for(kk in 1:dim(onetmp)[1]){
+                        tmpgs <- union(tmpgs,unlist(strsplit(onetmp[kk,"Carriers"],"_")))
+                }
+                nCase <- length(tmpgs)
+                oner <- cbind(nFam,nVar,nCase,oneT[oneT[,"Gene"]==geneN[i], ])
+                geneOr <- rbind(geneOr,oner)
+        }
         
-#         ## the number of variant in each gene
-#         aa <- read.delim("FrequencyGenes.txt")
-#         genes <- unique(aa[,"Gene"])
-#         Ng <- rep(0,length(genes))
-#         for(i in 1:length(genes)){
-#                 Ng[i] <- length(unique(aa[aa[,"Gene"]==genes[i],"Position"]))        
-#         }
-#         qwt(cbind(genes,Ng),file="Gene_N_variant.txt")
+        qwt(geneOr,file=paste("Genes",wstr,sep=""),flag=2)
         
 }
 
@@ -218,4 +230,47 @@ Variants_IGV_100 <- function(){
         oner <- alligvs[subs, ]
        
         qwt(oner,file="ADvariants_L2fams.txt")
+}
+
+control_freq <- function(Pcut=0.05){
+        source("/home/local/ARCS/qh2159/breast_cancer/Panel/breast_cancer_panel/sourcefiles.R")
+        n.cont <- c(557,341)
+        PV <- lapply(1:2, function(i){
+                load(contlistfs[i])
+                vars <- paste(onelist[,"Chromosome"],onelist[,"Position"],sep="_")
+                tmp <- table(vars)
+                names(tmp)[tmp >= n.cont[i]*Pcut]
+                })
+        PV
+}
+
+filtered_LargeFam <- function(){
+        
+        source("InheritedModels.R")
+        source("misc.R")
+        mis <- "nonsynonymousSNV"
+        PV <- control_freq(0.05)
+        pheno <- phenoin()
+        phe1 <- paste(pheno[,4],pheno[,5],sep="")
+        phe1[phe1=="JH"] <- "J"
+        path="/home/local/ARCS/qh2159/breast_cancer/variants/families/Families78V2"
+        
+        samf  <- list.files(path=path,pattern=".tsv$",full.names=TRUE)
+        for(i in 1:length(samf)){
+                oner <- read.delim(samf[i],check.names=FALSE)
+                if(dim(oner)[1]>0){
+                        oner <- variant_filtering(oner,mis,Ecut=0.01,segd=0.95,pp2=TRUE,hotf="",alleleFrefile="",popcut=0.05)
+                        oner <- oner[oner[,"ExACfreq"] & oner[,"VCFPASS"] & oner[,"noneSegmentalDup"],]
+                        ### further filtered by others
+                        ## meta-svm D or CADD >= 15 or polyphen as D
+                        subs <- rep(TRUE,dim(oner)[1])
+                        subs[oner[,"VariantClass"] %in% mis] <- FALSE
+                        oner <- oner[subs | (oner[,"MetaSVM"]=="D" | (oner[,"PP2prediction"]=="D" & oner[,"CADDscore"] >= 15)), ]
+                        ### filtered by population control
+                        famid <- gsub(".tsv","",basename(samf[i]))
+                        if(famid %in% pheno[phe1=="J",1]) oner <- oner[!(paste(oner[,"Chromosome"],oner[,"Position"],sep="_") %in% PV[[1]]),  ]
+                        if(famid %in% pheno[phe1=="H",1]) oner <- oner[!(paste(oner[,"Chromosome"],oner[,"Position"],sep="_") %in% PV[[2]]),  ]
+                        qwt(oner,file=gsub(".tsv","filtered.tsv",samf[i]),flag=2)
+                }
+        }
 }

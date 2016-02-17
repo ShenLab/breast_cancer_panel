@@ -401,35 +401,6 @@ PARP4 <- function(){
 	qwt(PARP4Phe,file="../single_check/Pheno_PARP4.txt",flag=2)	
 }
 
-filtered_LargeFam <- function(){
-	source("misc.R")
-	mis <- "nonsynonymousSNV"
-	#path= "/home/local/ARCS/qh2159/breast_cancer/variants/families/PriorFamilies29" 
-	#path= "/home/local/ARCS/qh2159/breast_cancer/variants/families/L2Families35"
-	path="/home/local/ARCS/qh2159/breast_cancer/variants/families/Families78V2"
-	## second 5 families
-	#sams <- c("200500","300424","200124","200396","200154")
-	#sams <- "200352"
-	#samf = c(paste(path,"/",sams,".AD.tsv",sep=""), paste(path,"/",sams,".AR.tsv",sep=""))
-	## first 9 families
-	#samf  <- list.files(path=path,pattern=".tsv$",full.names=TRUE)
-	## Prior 29 families
-	samf  <- list.files(path=path,pattern=".tsv$",full.names=TRUE)
-	for(i in 1:length(samf)){
-        	oner <- read.delim(samf[i],check.names=FALSE)
-		if(dim(oner)[1]>0){
-    		oner <- variant_filtering(oner,mis,Ecut=0.01,segd=0.95,pp2=TRUE,hotf="",alleleFrefile="",popcut=0.05)
-		oner <- oner[oner[,"ExACfreq"] & oner[,"VCFPASS"] & oner[,"noneSegmentalDup"],]
-		### further filtered by others
-		## meta-svm D or CADD >= 15 or polyphen as D
-		subs <- rep(TRUE,dim(oner)[1])
-		subs[oner[,"VariantClass"] %in% mis] <- FALSE
-		oner <- oner[subs | (oner[,"PP2prediction"]=="D" | oner[,"MetaSVM"]=="D" | oner[,"CADDscore"] >= 15), ]
-    		qwt(oner,file=gsub(".tsv","filtered.tsv",samf[i]),flag=2)
-		}
-	}
-}
-
 fold1_2Sam <- function(){
 
 gg <- c()
