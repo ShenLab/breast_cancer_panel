@@ -59,6 +59,8 @@ getindexcase <- function(phenofile,agem="max"){
     print_log("\n\n")
     print_log(paste("getindexcase function is running ...", date(),sep=" "))
     pheno <- read.csv(phenofile)
+    pheno[pheno[,3]=="220897, 220904",3] <- "220897"
+    pheno[pheno[,3]=="222357, 222966",3] <- "222357" 
     ## one case in one family
     famid <- unique(pheno[,1])
     subs <- rep(FALSE,dim(pheno)[1])

@@ -2,12 +2,7 @@
 dupSamf <- "/home/local/ARCS/qh2159/breast_cancer/Panel/data/CGC_YALE_Rege_repeatedSamples.txt"
 pContf <- "/home/local/ARCS/qh2159/breast_cancer/Panel/data/phenotype/WES_CaseControl_PossibleControls_OtherCancer.csv" ### excldued related cancers not as controls
 pseudoCont <- "/home/local/ARCS/qh2159/breast_cancer/Panel/data/phenotype/controls_Qiang_1_5_2016.csv"
-Cohortfile <- "/home/local/ARCS/qh2159/breast_cancer/Panel/data/Rdata/BreastCancer_VariantList_11_12"
-phenofile <- "/home/local/ARCS/qh2159/breast_cancer/Panel/data/phenotype/WES BCFR phenotypic data.csv"
 variantpath <- "/home/local/ARCS/yshen/data/WENDY/BreastCancer/Regeneron/Filtering_Oct2015/"
-AJBRfile <- "/home/local/ARCS/qh2159/breast_cancer/Panel/data/phenotype/AJ715_samples.list"
-HIBRfile <- "/home/local/ARCS/qh2159/breast_cancer/Panel/data/HispanicCases549.txt"
-
 
 ## label unknown samples by admixture model
 labelUnknown <- function(){
@@ -25,6 +20,8 @@ pheno_samples <- function(){
     files <- list.files(path=variantpath,pattern=".tsv$")
     subjects <- gsub(".AllVariants.tsv","",files)
     pheno <- read.csv(phenofile)
+    pheno[pheno[,3]=="220897, 220904",3] <- "220897"
+    pheno[pheno[,3]=="222357, 222966",3] <- "222357" 
     
     length(subjects)
     dim(pheno)[1]
@@ -236,14 +233,14 @@ singleVariantTest_Jewish_Hispanic <- function(){
     singleVariantTest(caselistf,contlistf,indexf,Cohortfile,AJslistf,popG,contlistf2,vburdenfile,group,NumOfSubjf)
    
     ### Hispanic single variant test
-    caselistf <- "../data/Rdata/HIcaselist_1_5"
+    caselistf <- "../data/Rdata/HIcaselist_1_29"
     contlistf <- "../data/Rdata/HIcontlist_1_5"
     contlistf2 <- "../data/Rdata/AJcontlist_12_17"
     AJslistf <- "../data/Rdata/AJcaselist715_12_17"
     indexf <- "../data/HIindexcases138.txt"
     vburdenfile <- "../resultf/HISP_variant_level.burden.txt"
     NumOfSubjf <- "../resultf/NumofSubjects_HI.txt"
-    group="HI549"
+    group="HI550"
     singleVariantTest(caselistf,contlistf,indexf,Cohortfile,AJslistf,popG,contlistf2,vburdenfile,group,NumOfSubjf)
     
 }
@@ -312,7 +309,7 @@ singleVariantTest  <- function(caselistf,contlistf,indexf,Cohortfile,AJslistf,po
         Fres <- cbind(Fres,Frecont1[,2],Frecont2[,2])
         AJ.cont <- length(unique(contlist[,"Subject_ID"]))
         HI.cont <- length(unique(contlist2[,"Subject_ID"]))
-    }else if(group=="HI549"){
+    }else if(group=="HI550"){
         Anns <- cbind(Anns,Frecont2[,1],Frecont1[,1])
         Fres <- cbind(Fres,Frecont2[,2],Frecont1[,2])
         AJ.cont <- length(unique(contlist2[,"Subject_ID"]))
@@ -345,7 +342,9 @@ getPopGroup <- function(AJBRfile,HIBRfile,phenofile,pseudoCont){
     indexcases <- getindexcase(phenofile)
     pseudoconts <- read.csv(pseudoCont)[,3]
     pheno <- read.csv(phenofile)
+    pheno[pheno[,3]=="220897, 220904",3] <- "220897"
     pheno[pheno[,3]=="222357, 222966",3] <- "222357" 
+
     cases <- pheno[pheno[,"BreastCancer"]=="Yes",3]
     conts <- pheno[pheno[,"BreastCancer"]=="No",3]
     
@@ -427,29 +426,22 @@ getLargeFamily <- function(){
 
 filtered_indexcases  <- function(){
 
-source("misc.R")
-
-load("../data/Rdata/AJcaselist_11_9")
-indexcases <- getindexcase(phenofile)
-subjs <- unique(onelist[,"Subject_ID"])
-aa <- intersect(subjs,indexcases)
-
-outliers <- unlist(read.table(outlierfile))
-outliers <- sapply(1:length(outliers),function(i) {tmp=unlist(strsplit(outliers[i],"_"));setdiff(gsub("\\D","",tmp),c("",paste("00",1:9,sep="")));})
-aa <- setdiff(aa,outliers)
-
-BRCA1_2pathogenicfile <- "../data/phenotype/BRCA1_2.txt" 
-tmp <- read.delim(BRCA1_2pathogenicfile)
-pathogenic_sample <- tmp[tmp[,1] %in% c("likely pathogenic","pathogenic"),"Subject_ID"]
-aa <- setdiff(aa,pathogenic_sample)
-qwt(aa,file="../data/AJindexcases265.txt")
-
-load("../data/Rdata/HIcaselist_11_20")
-subjs <- unique(onelist[,"Subject_ID"])
-aa <- intersect(subjs,indexcases)
-aa <- setdiff(aa,outliers)
-aa <- setdiff(aa,pathogenic_sample)
-qwt(aa,file="../data/HIindexcases138.txt")
+        source("misc.R")
+        source("sourcefiles.R")
+        exSamples <- excluded_samples()
+        
+        load("../data/Rdata/AJcaselist715_12_17")
+        indexcases <- getindexcase(phenofile)
+        subjs <- unique(onelist[,"Subject_ID"])
+        aa <- intersect(subjs,indexcases)
+        aa <- setdiff(aa,exSamples)
+        qwt(aa,file="../data/AJindexcases265.txt")
+        
+        load("../data/Rdata/HIcaselist_1_29")
+        subjs <- unique(onelist[,"Subject_ID"])
+        aa <- intersect(subjs,indexcases)
+        aa <- setdiff(aa,exSamples)
+        qwt(aa,file="../data/HIindexcases138.txt")
 
 }
 
