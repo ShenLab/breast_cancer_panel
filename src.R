@@ -217,32 +217,32 @@ SubjectBatches <- function(){
 }
 
 singleVariantTest_Jewish_Hispanic <- function(){
-    source("misc.R")
-    source("src.R")
-    popG <- getPopGroup(AJBRfile,HIBRfile,phenofile,pseudoCont)
-    
-    ### Jewish single variant test
-    caselistf <- "../data/Rdata/AJcaselist715_12_17"
-    contlistf <- "../data/Rdata/AJcontlist_12_17"
-    contlistf2 <- "../data/Rdata/HIcontlist_1_5"
-    AJslistf <- "../data/Rdata/AJcaselist715_12_17"
-    indexf <- "../data/AJindexcases265.txt"
-    vburdenfile <- "../resultf/AJ_variant_level.burden.txt"
-    NumOfSubjf <- "../resultf/NumofSubjects_AJ.txt"
-    group="AJ715"
-    singleVariantTest(caselistf,contlistf,indexf,Cohortfile,AJslistf,popG,contlistf2,vburdenfile,group,NumOfSubjf)
-   
-    ### Hispanic single variant test
-    caselistf <- "../data/Rdata/HIcaselist_1_29"
-    contlistf <- "../data/Rdata/HIcontlist_1_5"
-    contlistf2 <- "../data/Rdata/AJcontlist_12_17"
-    AJslistf <- "../data/Rdata/AJcaselist715_12_17"
-    indexf <- "../data/HIindexcases138.txt"
-    vburdenfile <- "../resultf/HISP_variant_level.burden.txt"
-    NumOfSubjf <- "../resultf/NumofSubjects_HI.txt"
-    group="HI550"
-    singleVariantTest(caselistf,contlistf,indexf,Cohortfile,AJslistf,popG,contlistf2,vburdenfile,group,NumOfSubjf)
-    
+        source("sourcefiles.R")
+        source("misc.R")
+        source("src.R")
+        popG <- getPopGroup(AJBRfile,HIBRfile,phenofile,pseudoCont)
+        
+        ### Jewish single variant test
+        caselistf <- "../data/Rdata/AJcaselist715_12_17"
+        contlistf <- "../data/Rdata/AJcontlist_12_17"
+        contlistf2 <- "../data/Rdata/HIcontlist_1_5"
+        AJslistf <- "../data/Rdata/AJcaselist715_12_17"
+        indexf <- "../data/AJindexcases265.txt"
+        vburdenfile <- "../resultf/AJ_variant_level.burden.txt"
+        NumOfSubjf <- "../resultf/NumofSubjects_AJ.txt"
+        group="AJ715"
+        singleVariantTest(caselistf,contlistf,indexf,Cohortfile,AJslistf,popG,contlistf2,vburdenfile,group,NumOfSubjf)
+        
+        ### Hispanic single variant test
+        caselistf <- "../data/Rdata/HIcaselist_1_29"
+        contlistf <- "../data/Rdata/HIcontlist_1_5"
+        contlistf2 <- "../data/Rdata/AJcontlist_12_17"
+        AJslistf <- "../data/Rdata/AJcaselist715_12_17"
+        indexf <- "../data/HIindexcases138.txt"
+        vburdenfile <- "../resultf/HISP_variant_level.burden.txt"
+        NumOfSubjf <- "../resultf/NumofSubjects_HI.txt"
+        group="HI550"
+        singleVariantTest(caselistf,contlistf,indexf,Cohortfile,AJslistf,popG,contlistf2,vburdenfile,group,NumOfSubjf)
 }
 
 singleVariantTest  <- function(caselistf,contlistf,indexf,Cohortfile,AJslistf,popG,contlistf2,vburdenfile,group="AJ715",NumOfSubjf){
@@ -261,9 +261,9 @@ singleVariantTest  <- function(caselistf,contlistf,indexf,Cohortfile,AJslistf,po
     contlist <- onelist
     rm(onelist)
     
-    indexlist <- variant_filtering(indexlist,mis,Ecut=Ecut,segd=0.95,pp2=TRUE,hotf="",alleleFrefile=NULL,popcut=0.05)
+    indexlist <- variant_filtering(indexlist,mis,Ecut=Ecut,segd=0.95,pp2=TRUE,hotf="",alleleFrefile="",popcut=0.05)
     indexlist <- indexlist[indexlist[,"filtered"], ]
-    contlist <- variant_filtering(contlist,mis,Ecut=Ecut,segd=0.95,pp2=TRUE,hotf="",alleleFrefile=NULL,popcut=0.05)
+    contlist <- variant_filtering(contlist,mis,Ecut=Ecut,segd=0.95,pp2=TRUE,hotf="",alleleFrefile="",popcut=0.05)
     contlist <- contlist[contlist[,"filtered"], ]
     
     ## single variant burden test in index cases and controls
@@ -416,7 +416,7 @@ getLargeFamily <- function(){
     outliers <- read.delim(outlierfile,header=FALSE)[,2]
     
     onelist <- onelist[!(onelist[,"Subject_ID"] %in% outliers), ]
-    onelist <- variant_filtering(onelist,mis,Ecut=0.01,segd=0.95,pp2=TRUE,hotf="",alleleFrefile=NULL,popcut=0.05)
+    onelist <- variant_filtering(onelist,mis,Ecut=0.01,segd=0.95,pp2=TRUE,hotf="",alleleFrefile="",popcut=0.05)
     onelist <- onelist[onelist[,"filtered"], ]
     
     qwt(Lpheno,file="../resultf/LargeFamilyPhenotype.txt",flag=2)
