@@ -21,12 +21,17 @@ batch_one <- function(){
         tmp <- read.delim("Inheritance.Pattern.Families.Subjects.v2.txt",header=FALSE)
         tmp <- paste(tmp[tmp[,3]=="" & tmp[,2]=="AD",1],substr,sep="")
         ADfiles <- Pfiles[!(basename(Pfiles) %in% tmp)]
-        wstr <- "FreqRef.v3.txt"
+        wstr <- "Families_Reference_42.v3.txt"
         Frequency_inherited(ADfiles,wstr,ncasef,substr,PV)
         
-        wstr <- "FreqNonRef.v3.txt"
+        wstr <- "All_Families_77.v3.txt"
         Frequency_inherited(Pfiles,wstr,ncasef,substr,PV)
         
+        ### The families without any reference sample
+        ADfiles <- Pfiles[(basename(Pfiles) %in% tmp)]
+        wstr <- "Families_without_Reference_35.v3.txt"
+        Frequency_inherited(ADfiles,wstr,ncasef,substr,PV)
+
 }
 
 inheritedModels <- function(svgfiles,wfile){
@@ -274,3 +279,102 @@ filtered_LargeFam <- function(){
                 }
         }
 }
+
+writePhenoFams <- function(flag=2){
+        source("InheritedModels.R")
+        # Family ID, H,J, individual ID, subject ID, father ID, mother ID, case or not
+        L2CasesFams <- unlist(read.table("/home/local/ARCS/qh2159/breast_cancer/variants/families/FamiliesL2Cases.txt"))
+        aa <- read.delim("/home/local/ARCS/qh2159/breast_cancer/variants/families/Prioritized43families.txt")[,1]
+        Lars <- unique(read.delim("/home/local/ARCS/qh2159/breast_cancer/variants/families/LargeFamilyPhenotype.txt")[,1])
+        fams <- unique(c(L2CasesFams,aa,Lars))
+        
+        pheno <- phenoin()
+        pop <- paste(pheno[,4],pheno[,5],sep="")
+        pop[pop=="JH" | pop=="HJ"] <- "J"
+        subs <- pheno[,1] %in% fams
+        pedis <- read.csv("/home/local/ARCS/qh2159/breast_cancer/variants/pedigree/ALL_pedigree.csv")
+        
+        phenoFams <- cbind(pheno[subs,1],pop[subs],pheno[subs,c("INDIVID","Subject_ID","BreastCancer","Sex","UNIage")])
+        phenoFams <- cbind(phenoFams,pedis[match(phenoFams[,3],pedis[,2]),3:4])
+        colnames(phenoFams) <- c("FamilyID","Ethnic","IndividualID","SubjectID","Status","Sex","UNIage","FatherID","MotherID")
+        phenoFams[,"FatherID"] <- pheno[match(phenoFams[,"FatherID"],pheno[,2]),3]
+        phenoFams[,"MotherID"] <- pheno[match(phenoFams[,"MotherID"],pheno[,2]),3]
+        
+        if(flag==2) qwt(phenoFams,file="/home/local/ARCS/qh2159/breast_cancer/variants/families/PhenotypeInfo.txt",flag=2)
+        phenoFams
+}
+
+writeGenoFams <- function(){
+        phenoFams <- writePhenoFams(1)
+        sams <- unique(phenoFams[,"SubjectID"])
+        load("/home/local/ARCS/qh2159/breast_cancer/variants/trios/caselist")
+        a1 <- GenoOneCaseL(caselist,sams,"AJ")
+        load("/home/local/ARCS/qh2159/breast_cancer/variants/trios/caselist2")
+        a2 <- GenoOneCaseL(caselist2,sams,"HI")
+}
+
+GenoOneCaseL <- function(caselist,sams,wstr){
+        
+        caselist <- caselist[caselist[,"Subject_ID"] %in% sams, ]
+        #Vtype <- c(".","frameshiftdeletion","frameshiftinsertion","none","nonframeshiftdeletion","nonframeshiftinsertion","nonsynonymousSNV","stopgain","stoploss")
+        Vtype <- c(".","none","nonsynonymousSNV","stopgain","stoploss")
+        caselist <- caselist[caselist[,"VariantClass"] %in% Vtype, ]
+        
+        caselist <- caselist[caselist[,"Subject_ID"] %in% sams, ]
+        vars <- paste(caselist[,1],caselist[,2],caselist[,4],caselist[,5],sep="_")
+        uniV <- unique(vars)
+        genes <- caselist[match(uniV,vars),"Gene"]
+        uniG <- unique(genes)
+        uniID <- unique(caselist[,"Subject_ID"])
+        
+        genotypeV <- matrix(0,length(uniV),length(uniID)+2)
+        genotypeV[,1] <- genes
+        genotypeV[,2] <- uniV
+        rownames(genotypeV) <- uniV
+        colnames(genotypeV) <- c("Gene","SNP",uniID)
+        for(i in 3:dim(genotypeV)[2]){
+                oner <- caselist[caselist[,"Subject_ID"] == uniID[i-2], ]
+                oneV <- paste(oner[,1],oner[,2],oner[,4],oner[,5],sep="_")
+                subs1 <- grepl("0/0",oner[,"GT"]) | grepl("./.",oner[,"GT"])
+                
+                genotypeV[oneV[subs1],i] <- 0
+                subs2 <- grepl("0/1",oner[,"GT"])
+                genotypeV[oneV[subs2],i] <- 1
+                genotypeV[oneV[!subs1 & !subs2],i] <- 2
+        }
+        if(wstr!="") qwt(genotypeV,file=paste("/home/local/ARCS/qh2159/breast_cancer/variants/families/Genotype",wstr,"Info.txt",sep=""),flag=2)
+        genotypeV
+}
+
+RunFSKAT_QQplot <- function(){
+        library(kinship)
+        library(CompQuadForm)
+        
+        source("/home/local/ARCS/qh2159/breast_cancer/variants/families/F_SKAT/F-SKAT/glmmPQL.s")
+        source("/home/local/ARCS/qh2159/breast_cancer/variants/families/F_SKAT/F-SKAT/FSKAT_HQ.R")
+        
+        # Subject IDs are character
+        y <- read.delim("/home/local/ARCS/qh2159/breast_cancer/variants/families/PhenotypeInfo.txt")
+        gene <- read.delim("/home/local/ARCS/qh2159/breast_cancer/variants/families/GenotypeAJInfo.txt",check.names = FALSE)
+        y <- y[y[,"SubjectID"] %in% colnames(gene), ]
+        subs <- match(y[,"SubjectID"],colnames(gene))
+        lab <- y[,"Status"]
+        lab[lab=="Yes"] <- 1
+        lab[lab=="No"] <- 0
+        covs <- y[,c("Sex","UNIage")]
+        covs[covs[,1]=="Male",1] <- 0
+        covs[covs[,1]=="Female",1] <- 1
+        gene <- gene[rowSums(gene[,3:222])>0, ]
+        pvalue1 <- FSKAT(phenotype=as.numeric(lab), genotypes=as.data.frame(gene[,c(1,2,subs)]), id=as.character(y[,"SubjectID"]), fa=as.character(y[,"FatherID"]), mo=as.character(y[,"MotherID"]), family="binomial", covariates=NULL, weights=NULL)
+        
+        pva1 <- as.numeric(pvalue1[,2])
+        pva1[pva1>=1] <- 1
+        source("misc.R")
+        pdf(file=paste("/home/local/ARCS/qh2159/breast_cancer/variants/families/F_SKAT/F-SKAT/","QQ.pdf",sep=""),width=12,height=10)
+        par(mai=c(2,1,1,1))
+        PQQ(pva1,main="",labels=pvalue1[,1],nlab=20)
+        dev.off()
+       
+        
+}
+
