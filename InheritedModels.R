@@ -10,28 +10,39 @@ batch_one <- function(){
 #         svgfiles <- unique(paste(c(L2CasesFams,aa,Lars),".svg",sep=""))
 #         wfile="Inheritance.Pattern.Families.v2.txt"
 #         inheritedModels(svgfiles,wfile)
-         
         
-        #### get AD model frequency
+	frecols <- c("N.index.AJ","N.pseudoCont.AJ","N.case.AJ","N.non_case.AJ","N.cont.AJ","N.index.HI","N.pseudoCont.HI","N.case.HI","N.non_case.HI","N.cont.HI")
+	samcols <- c("index.AJ","pseudoCont.AJ","case.AJ","non_case.AJ","cont.AJ","index.HI","pseudoCont.HI","case.HI","non_case.HI","cont.HI")
+	oddcols <- c("Odds_AJ_pseudo","p_AJ_pseudo","Odds_AJ_cont","p_AJ_cont","Odds_HI_pseudo","p_HI_pseudo","Odds_HI_cont","p_HI_cont")
+	cols <- c(frecols,oddcols,samcols)
+	HIvars <- read.delim("/home/local/ARCS/qh2159/breast_cancer/Panel/resultf/HISP_variant_level_burden_Pseducont.txt")
+	AJvars <- read.delim("/home/local/ARCS/qh2159/breast_cancer/Panel/resultf/AJ_variant_level_burden_Pseducont.txt")
+	
 	ncasef <- CaseinFam("Inheritance.Pattern.Families.v2.txt")
 	PV <- control_freq(0.05)
 	substr <- ".ADfiltered.tsv"
         Pfiles <- list.files("/home/local/ARCS/qh2159/breast_cancer/variants/families/Families78V2",pattern=".ADfiltered.tsv$",full.names = TRUE)
-        ### delete the families without any reference sample
         tmp <- read.delim("Inheritance.Pattern.Families.Subjects.v2.txt",header=FALSE)
-        tmp <- paste(tmp[tmp[,3]=="" & tmp[,2]=="AD",1],substr,sep="")
+        tmp <- paste(tmp[tmp[,3]=="" & tmp[,2]=="AD",1],substr,sep="") ### delete the families without any reference sample
         ADfiles <- Pfiles[!(basename(Pfiles) %in% tmp)]
+        ADfiles1 <- Pfiles[(basename(Pfiles) %in% tmp)]
+        
+        #### get AD model frequency
         wstr <- "Families_Reference_42.v3.txt"
         Frequency_inherited(ADfiles,wstr,ncasef,substr,PV)
-        
         wstr <- "All_Families_77.v3.txt"
         Frequency_inherited(Pfiles,wstr,ncasef,substr,PV)
-        
-        ### The families without any reference sample
-        ADfiles <- Pfiles[(basename(Pfiles) %in% tmp)]
         wstr <- "Families_without_Reference_35.v3.txt"
-        Frequency_inherited(ADfiles,wstr,ncasef,substr,PV)
-
+        Frequency_inherited(ADfiles1,wstr,ncasef,substr,PV)
+        
+        #### get AD model Statistics
+        wstr1 <- "Families_ReferenceSta_42.v3.txt"
+        Statistic_inherited(ADfiles,wstr1,ncasef,substr,PV,HIvars,AJvars,cols)
+        wstr1 <- "All_FamiliesSta_77.v3.txt"
+        Statistic_inherited(Pfiles,wstr1,ncasef,substr,PV,HIvars,AJvars,cols)
+        wstr1 <- "Families_without_ReferenceSta_35.v3.txt"
+        Statistic_inherited(ADfiles1,wstr1,ncasef,substr,PV,HIvars,AJvars,cols)
+        
 }
 
 inheritedModels <- function(svgfiles,wfile){
@@ -138,11 +149,12 @@ Frequency_inherited <- function(ADfiles,wstr,ncasef,substr=".AD.tsv",PV=""){
         oneT[oneT[,"AlleleFrequency.ExAC"]==".","AlleleFrequency.ExAC"] <- 0
         oneT <- oneT[as.numeric(oneT[,"AlleleFrequency.ExAC"]) <= 0.01, ]
         vars <- paste(oneT[,"Chromosome"],oneT[,"Position"],sep="_")
+        
+        pheno <- phenoin()
         if(any(PV!="")){
                 #source("/home/local/ARCS/qh2159/breast_cancer/Panel/breast_cancer_panel/sourcefiles.R")
                 #AJs <- unlist(read.table(AJBRfile))
                 #HIs <- unlist(read.table(AJBRfile))
-                pheno <- phenoin()
                 phe1 <- paste(pheno[,4],pheno[,5],sep="")
                 phe1[phe1=="JH"] <- "J"
                 oneT <- oneT[(oneT[,"FAMID"] %in% pheno[phe1=="J",1] & !(vars %in% PV[[1]])) | (oneT[,"FAMID"] %in% pheno[phe1=="H",1] & !(vars %in% PV[[2]])) | (oneT[,"FAMID"] %in% pheno[phe1=="",1]),  ]
@@ -175,12 +187,139 @@ Frequency_inherited <- function(ADfiles,wstr,ncasef,substr=".AD.tsv",PV=""){
                 for(kk in 1:dim(onetmp)[1]){
                         tmpgs <- union(tmpgs,unlist(strsplit(onetmp[kk,"Carriers"],"_")))
                 }
-                nCase <- length(tmpgs)
+                nCase <- length(intersect(tmpgs,pheno[pheno[,"BreastCancer"]=="Yes",3]))
                 oner <- cbind(nFam,nVar,nCase,oneT[oneT[,"Gene"]==geneN[i], ])
                 geneOr <- rbind(geneOr,oner)
         }
         
         qwt(geneOr,file=paste("Genes",wstr,sep=""),flag=2)
+        
+}
+
+Statistic_inherited <- function(ADfiles,wstr,ncasef,substr=".AD.tsv",PV="",HIvars,AJvars,cols){
+
+        ### step 5: most frequency genes and variants in families
+        aa <- ADfiles
+        oneT <- c()
+        for(i in 1:length(aa)){
+                tmp <- read.delim(aa[i])
+                if(dim(tmp)[1]>0){
+                        TMP0 <- tmp[,grepl("X.",names(tmp))]
+                        ssub <- grepl("GT",names(TMP0))
+                        stmp <- sum(ssub)
+                        tmpn <- gsub("\\D","",names(TMP0)[ssub])
+                        nCarrier <- sapply(1:dim(TMP0)[1],function(kk) stmp-sum(grepl("0/0",TMP0[kk,ssub])) ) ## note: not 0/0 
+                        Carriers <- sapply(1:dim(TMP0)[1],function(kk) paste(tmpn[!grepl("0/0",TMP0[kk,ssub])],sep="",collapse="_")  )
+                        tmp <- tmp[,!grepl("X.",names(tmp))]
+                        FAMID <- gsub(substr,"",basename(aa[i]))
+                        tmp <- cbind(FAMID,nCarrier,Carriers,tmp)
+                        oneT <- rbind(oneT,tmp)
+                }
+        }
+        oneT[is.na(oneT[,"AlleleFrequency.ExAC"]),"AlleleFrequency.ExAC"] <- 0
+        oneT[oneT[,"AlleleFrequency.ExAC"]==".","AlleleFrequency.ExAC"] <- 0
+        oneT <- oneT[as.numeric(oneT[,"AlleleFrequency.ExAC"]) <= 0.01, ]
+        vars <- paste(oneT[,"Chromosome"],oneT[,"Position"],sep="_")
+        if(any(PV!="")){
+                #source("/home/local/ARCS/qh2159/breast_cancer/Panel/breast_cancer_panel/sourcefiles.R")
+                #AJs <- unlist(read.table(AJBRfile))
+                #HIs <- unlist(read.table(AJBRfile))
+                pheno <- phenoin()
+                phe1 <- paste(pheno[,4],pheno[,5],sep="")
+                phe1[phe1=="JH"] <- "J"
+                oneT <- oneT[(oneT[,"FAMID"] %in% pheno[phe1=="J",1] & !(vars %in% PV[[1]])) | (oneT[,"FAMID"] %in% pheno[phe1=="H",1] & !(vars %in% PV[[2]])) | (oneT[,"FAMID"] %in% pheno[phe1=="",1]),  ]
+        }
+        
+        kcut <- 0.0625
+        library(kinship)
+        pedis <- read.csv("/home/local/ARCS/qh2159/breast_cancer/variants/pedigree/ALL_pedigree.csv")
+        K <- kinship(pedis[,2],pedis[,3],pedis[,4])
+        pheno <- phenoin()
+        pheno <- pheno[pheno[,2] %in% colnames(K), ]
+        subs <- match(pheno[,2],colnames(K))
+        Kp <- K[subs,subs]
+        colnames(Kp) <- pheno[,3]
+        rownames(Kp) <- pheno[,3]
+        Kp[lower.tri(Kp,diag=TRUE)] <- 0
+        #pop <- paste(pheno[,4],pheno[,5],sep="")
+        #pop[pop=="JH" | pop=="HJ"] <- "J"
+        #mutR <- read.csv("/home/local/ARCS/qh2159/breast_cancer/Panel/data/PCGCSCI.csv")
+        
+        ### order by variants
+        vars <- paste(oneT[,"Chromosome"],oneT[,"Position"],oneT[,"REF"],oneT[,"ALT"],sep="_")
+        varC <- sort(table(vars),decreasing = TRUE)
+        varN <- names(varC)
+        varOr <- c()
+        for(i in 1:length(varC)){
+                subs <- vars==varN[i]
+                nCase <- ncasef[match(oneT[subs,"FAMID"],ncasef[,1]),2]
+                nFam_Case_Carrier <- paste(varC[i],sum(nCase),sum(oneT[subs,"nCarrier"]),sep="_")
+                
+                tmp <- oneT[subs, ]
+                fams <- unique(tmp[,"FAMID"])
+                fsam <- pheno[pheno[,1] %in% fams,3]
+                cases <- pheno[pheno[,1] %in% fams & pheno[,"BreastCancer"]=="Yes",3]
+                non_cases <- pheno[pheno[,1] %in% fams & pheno[,"BreastCancer"]=="No" & pheno[,"UNIage"] > 50, 3]
+                carriers <- c()
+                for(ii in 1:dim(tmp)[1]) carriers <- union(carriers, unlist(strsplit(tmp[ii,"Carriers"],"_")) )
+                non_carriers <- setdiff(fsam,carriers)
+                
+                aS <- intersect(cases,carriers)
+                a <- ifelse(length(aS) - sum(Kp[aS,aS] > kcut) >= 0, length(aS) - sum(Kp[aS,aS] > kcut), 1)
+                bS <- intersect(non_cases,carriers)
+                b <- ifelse(length(bS) - sum(Kp[bS,bS] > kcut) >= 0, length(bS) - sum(Kp[bS,bS] > kcut), 1)
+                cS <- intersect(non_carriers,cases)
+                c <- ifelse(length(cS) - sum(Kp[cS,cS] > kcut) >= 0, length(cS) - sum(Kp[cS,cS] > kcut), 1)
+                dS <- intersect(non_carriers,non_cases)
+                d <- ifelse(length(dS) - sum(Kp[dS,dS] > kcut) >= 0, length(dS) - sum(Kp[dS,dS] > kcut), 1)
+                pvalue <- fisher.test(matrix(c(a,c,b,d),2,2))$p.value
+        
+                popN <- c(HIvars[HIvars[,"Variant"]==varN[i],cols], AJvars[AJvars[,"Variant"]==varN[i],cols])
+                popN <- matrix(popN,dim(tmp)[1],length(cols)*2,byrow=TRUE)
+                
+                oner <- cbind(pvalue,nFam_Case_Carrier,nCase,tmp,popN)
+                varOr <- rbind(varOr,oner)
+                
+        }
+        
+        varOr <- varOr[order(as.numeric(varOr[,"pvalue"])), ]
+        qwt(varOr,file=paste("Variants",wstr,sep=""),flag=2)
+        
+        ### order by genes
+        geneC <- sort(table(oneT[,"Gene"]),decreasing = TRUE)
+        geneN <- names(geneC)
+        geneOr <- c()
+        for(i in 1:length(geneC)){
+                onetmp <- oneT[oneT[,"Gene"]==geneN[i], ]
+                nFam <- length(unique(onetmp[,"FAMID"]))
+                nVar <- length(unique(onetmp[,"Position"]))
+                
+                onevar <- paste(onetmp[,"Chromosome"],onetmp[,"Position"],onetmp[,"REF"],onetmp[,"ALT"],sep="_")
+                carriers <- c()
+                popN <- c()
+                for(kk in 1:dim(onetmp)[1]){
+                        carriers <- union(carriers,unlist(strsplit(onetmp[kk,"Carriers"],"_")))
+                        popN <- rbind(popN,c(HIvars[HIvars[,"Variant"]==onevar[kk],cols], AJvars[AJvars[,"Variant"]==onevar[kk],cols]))
+                }
+                
+                fams <- unique(onetmp[,"FAMID"])
+                fsam <- pheno[pheno[,1] %in% fams,3]
+                cases <- pheno[pheno[,1] %in% fams & pheno[,"BreastCancer"]=="Yes",3]
+                non_cases <- pheno[pheno[,1] %in% fams & pheno[,"BreastCancer"]=="No" & pheno[,"UNIage"] > 50, 3]
+                n.case <- ifelse(length(cases) - sum(Kp[cases,cases] > kcut) >= 0, length(cases) - sum(Kp[cases,cases] > kcut), 1)
+                n.cont <- ifelse(length(non_cases) - sum(Kp[non_cases,non_cases] > kcut) >= 0, length(non_cases) - sum(Kp[non_cases,non_cases] > kcut), 1)
+                aS <- intersect(cases,carriers)
+                a <- length(aS) - sum(Kp[aS,aS] > kcut)
+                bS <- intersect(non_cases,carriers)
+                b <- length(bS) - sum(Kp[bS,bS] > kcut)
+                pvalue <- ifelse( (a+b)>0, binom.test(a,a+b,n.case/(n.case+n.cont))$p.value,1)
+
+                oner <- cbind(pvalue,nFam,nVar,length(aS),oneT[oneT[,"Gene"]==geneN[i], ],popN)
+                geneOr <- rbind(geneOr,oner)
+        }
+        geneOr <- geneOr[order(as.numeric(geneOr[,"pvalue"])), ]
+        qwt(geneOr,file=paste("Genes",wstr,sep=""),flag=2)
+        
         
 }
 
