@@ -309,9 +309,9 @@ Statistic_inherited <- function(ADfiles,wstr,ncasef,substr=".AD.tsv",PV="",HIvar
                 n.case <- ifelse(length(cases) - sum(Kp[cases,cases] > kcut) >= 0, length(cases) - sum(Kp[cases,cases] > kcut), 1)
                 n.cont <- ifelse(length(non_cases) - sum(Kp[non_cases,non_cases] > kcut) >= 0, length(non_cases) - sum(Kp[non_cases,non_cases] > kcut), 1)
                 aS <- intersect(cases,carriers)
-                a <- length(aS) - sum(Kp[aS,aS] > kcut)
+                a <- ifelse(length(aS) - sum(Kp[aS,aS] > kcut) >= 0, length(aS) - sum(Kp[aS,aS] > kcut), 1)
                 bS <- intersect(non_cases,carriers)
-                b <- length(bS) - sum(Kp[bS,bS] > kcut)
+                b <- ifelse(length(bS) - sum(Kp[bS,bS] > kcut) >= 0, length(bS) - sum(Kp[bS,bS] > kcut), 1)
                 pvalue <- ifelse( (a+b)>0, binom.test(a,a+b,n.case/(n.case+n.cont))$p.value,1)
 
                 oner <- cbind(pvalue,nFam,nVar,length(aS),onetmp,popN)
