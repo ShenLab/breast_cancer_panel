@@ -282,7 +282,7 @@ Statistic_inherited <- function(ADfiles,wstr,ncasef,substr=".AD.tsv",PV="",HIvar
                 
         }
         
-        varOr <- varOr[order(as.numeric(varOr[,"pvalue"])), ]
+        varOr <- as.matrix(varOr[order(as.numeric(varOr[,"pvalue"])), ])
         qwt(varOr,file=paste("Variants",wstr,sep=""),flag=2)
         
         ### order by genes
@@ -314,10 +314,10 @@ Statistic_inherited <- function(ADfiles,wstr,ncasef,substr=".AD.tsv",PV="",HIvar
                 b <- length(bS) - sum(Kp[bS,bS] > kcut)
                 pvalue <- ifelse( (a+b)>0, binom.test(a,a+b,n.case/(n.case+n.cont))$p.value,1)
 
-                oner <- cbind(pvalue,nFam,nVar,length(aS),oneT[oneT[,"Gene"]==geneN[i], ],popN)
+                oner <- cbind(pvalue,nFam,nVar,length(aS),onetmp,popN)
                 geneOr <- rbind(geneOr,oner)
         }
-        geneOr <- geneOr[order(as.numeric(geneOr[,"pvalue"])), ]
+        geneOr <- as.matrix(geneOr[order(as.numeric(geneOr[,"pvalue"])), ])
         qwt(geneOr,file=paste("Genes",wstr,sep=""),flag=2)
         
         
