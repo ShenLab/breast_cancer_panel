@@ -419,6 +419,37 @@ filtered_LargeFam <- function(){
         }
 }
 
+caselistFams <- function(){
+
+        caselist <- onlyFilterCaselist(Ecut=0.01,hotf=4,swi=1)
+        caselist2 <- onlyFilterCaselist(Ecut=0.01,hotf=4,swi=2)     
+        caselistA <- rbind(caselist,caselist2)       
+        caselistA 
+}
+
+onlyFilterCaselist <- function(Ecut=0.01,hotf=4,swi=1){
+        source("misc.R")
+        source("sourcefiles.R")
+        
+        if(hotf==1){ hotspotfile <- hotHMM; ## HongjianPred hotspots file
+        }else if(hotf==2){ hotspotfile <- hotCOSMIC; ## COSMIC hotspots file
+        }else if(hotf==3){ hotspotfile="";
+        }else if(hotf==4){ hotspotfile <- hotHMM;}
+        ## switch to the right files for burden test
+        alleleFrefile <- alleleFrefiles[swi] 
+        caselistf <- caselistfs[swi]
+        mis <- "nonsynonymousSNV"
+        load(caselistf)
+        caselist <- onelist
+        rm(onelist)
+        exSamples <- excluded_samples() ## exclude subjects
+        caselist <- caselist[!(caselist[,"Subject_ID"] %in% exSamples), ]
+        caselist <- variant_filtering(caselist,mis,Ecut=Ecut,segd=0.95,pp2=TRUE,hotf=hotspotfile,alleleFrefile,popcut=0.05)
+        if(hotf==4){ caselist <- caselist[caselist[,"ExACfreq"] & caselist[,"VCFPASS"] & caselist[,"noneSegmentalDup"] & caselist[,"meta-SVM_PP2"] & caselist[,"alleleFre"], ]; }else{ caselist <- caselist[caselist[,"filtered"], ];}
+        
+        caselist
+}
+
 writePhenoFams <- function(flag=2){
         source("InheritedModels.R")
         # Family ID, H,J, individual ID, subject ID, father ID, mother ID, case or not
@@ -445,8 +476,10 @@ writePhenoFams <- function(flag=2){
 
 writeGenoFams <- function(){
         phenoFams <- writePhenoFams(1)
+        ## excluding yonger than 50 and no cancer
+        phenoFams <- phenoFams[!(phenoFams[,"Status"]=="No" & phenoFams[,"UNIage"] <= 50),  ]
         sams <- unique(phenoFams[,"SubjectID"])
-        Vtype <- c(".","none","nonsynonymousSNV","stopgain","stoploss")
+        
         LOF <- c(".","none","stopgain","stoploss")
         DMIS <- "nonsynonymousSNV"
         indLOF <- c("frameshiftdeletion","frameshiftinsertion")
@@ -455,16 +488,20 @@ writeGenoFams <- function(){
         vTyp <- list(LOF,DMIS,indLOF,indMIS,syn)
         vstr <- c("LOF","MIS","indelLOF","indelMIS","SYN")
         
-        load("/home/local/ARCS/qh2159/breast_cancer/variants/trios/caselist")
-        for(i in 1:length(vTyp)){
-                tmp <- GenoOneCaseL(caselist,sams,paste("AJ",vstr[i],sep=""),vTyp[[i]])       
-        }
+#         load("/home/local/ARCS/qh2159/breast_cancer/variants/trios/caselist")
+#         for(i in 1:length(vTyp)){
+#                 tmp <- GenoOneCaseL(caselist,sams,paste("AJ",vstr[i],sep=""),vTyp[[i]])       
+#         }
+#         
+#         load("/home/local/ARCS/qh2159/breast_cancer/variants/trios/caselist2")
+#         for(i in 1:length(vTyp)){
+#                 tmp <- GenoOneCaseL(caselist2,sams,paste("HI",vstr[i],sep=""),vTyp[[i]])       
+#         }
         
-        load("/home/local/ARCS/qh2159/breast_cancer/variants/trios/caselist2")
+        caselistA <- caselistFams()
         for(i in 1:length(vTyp)){
-                tmp <- GenoOneCaseL(caselist2,sams,paste("HI",vstr[i],sep=""),vTyp[[i]])       
+                tmp <- GenoOneCaseL(caselistA,sams,paste("All",vstr[i],sep=""),vTyp[[i]])       
         }
-        
 }
 
 GenoOneCaseL <- function(caselist,sams,wstr,Vtype){
@@ -507,8 +544,9 @@ RunFSKAT_QQplot <- function(){
         # Subject IDs are character
         vstr <- c("LOF","MIS","indelLOF","indelMIS","SYN")
         for(i in 1:length(vstr)){
-                oneRunFSKAT(paste("AJ",vstr[i],sep=""))
-                oneRunFSKAT(paste("HI",vstr[i],sep=""))
+                #oneRunFSKAT(paste("AJ",vstr[i],sep=""))
+                #oneRunFSKAT(paste("HI",vstr[i],sep=""))
+                oneRunFSKAT(paste("All",vstr[i],sep=""))
         }
         
 }
@@ -547,4 +585,58 @@ oneRunFSKAT <- function(wstr){
         PQQ(pva1,main="",labels=pvalue1[,1],nlab=20)
         dev.off()
         qwt(pvalue1,file=paste("/home/local/ARCS/qh2159/breast_cancer/variants/families/F_SKAT/F-SKAT/",wstr,"covspVas.txt",sep=""))
+}
+
+Statistic_Sigene <- function(){
+
+        genes <- c("NEIL1","ADRA2B","ANK3","FMN2","POU4F2","PDIA2","C20orf141","DPY19L4")
+        tests <- c("indelLOF","indelMIS","indelMIS","indelMIS","indelMIS","indelMIS","LOF","LOF")
+        
+        frecols <- c("N.index.AJ","N.pseudoCont.AJ","N.case.AJ","N.non_case.AJ","N.cont.AJ","N.index.HI","N.pseudoCont.HI","N.case.HI","N.non_case.HI","N.cont.HI")
+        samcols <- c("index.AJ","pseudoCont.AJ","case.AJ","non_case.AJ","cont.AJ","index.HI","pseudoCont.HI","case.HI","non_case.HI","cont.HI")
+        oddcols <- c("Odds_AJ_pseudo","p_AJ_pseudo","Odds_AJ_cont","p_AJ_cont","Odds_HI_pseudo","p_HI_pseudo","Odds_HI_cont","p_HI_cont")
+        cols <- c(frecols,oddcols,samcols)
+        HIvars <- read.delim("/home/local/ARCS/qh2159/breast_cancer/Panel/resultf/HISP_variant_level_burden_Pseducont.txt")
+        AJvars <- read.delim("/home/local/ARCS/qh2159/breast_cancer/Panel/resultf/AJ_variant_level_burden_Pseducont.txt")
+        ncol <- length(cols)
+        
+        ## variant number in populations and ## IGV plot for each variant
+        phenoFams <- writePhenoFams(1)
+        phenoFams <- phenoFams[!(phenoFams[,"Status"]=="No" & phenoFams[,"UNIage"] <= 50),  ]
+        BRp <- phenoFams[phenoFams[,"Status"]=="Yes", "SubjectID"]
+        BRn <- phenoFams[phenoFams[,"Status"]=="No", "SubjectID"]
+        
+        PopSta <- c()
+        IGVS <- c()
+        for(i in 1:length(genes)){
+                geno <- read.delim(paste("/home/local/ARCS/qh2159/breast_cancer/variants/families/Genotype",paste("All",tests[i],sep=""),"Info.txt",sep=""),check.names = FALSE)     
+                n <- dim(geno)[2]
+                sams <- colnames(geno)[3:n]
+                oner <- geno[geno[,1]==genes[i], ]
+                oneSta <- c()
+                oneIGV <- c()
+                for(j in 1:dim(oner)[1]){
+                        carriers <- sams[oner[j,3:n] > 0]
+                        non_cars <- sams[oner[j,3:n] == 0]
+                        BRpVarp <- intersect(carriers,BRp)
+                        BRpVarn <- intersect(non_cars,BRp)
+                        BRnVarp <- intersect(carriers,BRn)
+                        BRnVarn <- intersect(non_cars,BRn)
+                        popN <- c(HIvars[HIvars[,"Variant"]==oner[j,2],cols], AJvars[AJvars[,"Variant"]==oner[j,2],cols])
+                        if(all(HIvars[,"Variant"]!=oner[j,2])) popN[1:ncol] <- ""
+                        if(all(AJvars[,"Variant"]!=oner[j,2])) popN[(ncol+1):(2*ncol)] <- ""
+                        
+                        tmp <- c(oner[j,1:2],length(BRpVarp),length(BRpVarn),length(BRnVarp),length(BRnVarn),paste(BRpVarp,sep="",collapse = "_"), paste(BRnVarp,sep="",collapse = "_"),popN)
+                        oneSta <- rbind(oneSta,tmp)
+                        
+                        tmp <- unlist(strsplit(oner[j,2],"_"))[1:2]
+                        oneIGV <- rbind(oneIGV,cbind(tmp[1],tmp[2],carriers))
+                }
+                
+                PopSta <- rbind(PopSta,oneSta)
+                IGVS <- rbind(IGVS,oneIGV)
+        }
+        colnames(PopSta) <- c("Gene","SNP","#BR+Var+","#BR+Var-","#BR-Var+","#BR-Var-","BR+Var+","BR-Var+",cols,cols)
+        qwt(PopSta,file="/home/local/ARCS/qh2159/breast_cancer/variants/families/F_SKAT/SignGenesPopSta.txt",flag=2)
+        qwt(IGVS,file="/home/local/ARCS/qh2159/breast_cancer/variants/families/F_SKAT/SignGenesIGV.txt")
 }
