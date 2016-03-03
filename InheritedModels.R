@@ -422,7 +422,9 @@ filtered_LargeFam <- function(){
 caselistFams <- function(){
 
         caselist <- onlyFilterCaselist(Ecut=0.01,hotf=4,swi=1)
-        caselist2 <- onlyFilterCaselist(Ecut=0.01,hotf=4,swi=2)     
+        caselist2 <- onlyFilterCaselist(Ecut=0.01,hotf=4,swi=2)   
+        save(caselist,file="/home/local/ARCS/qh2159/breast_cancer/variants/trios/caselist")
+        save(caselist2,file="/home/local/ARCS/qh2159/breast_cancer/variants/trios/caselist2")
         caselistA <- rbind(caselist,caselist2)       
         caselistA 
 }
@@ -448,6 +450,37 @@ onlyFilterCaselist <- function(Ecut=0.01,hotf=4,swi=1){
         if(hotf==4){ caselist <- caselist[caselist[,"ExACfreq"] & caselist[,"VCFPASS"] & caselist[,"noneSegmentalDup"] & caselist[,"meta-SVM_PP2"] & caselist[,"alleleFre"], ]; }else{ caselist <- caselist[caselist[,"filtered"], ];}
         
         caselist
+}
+
+contlistFams <- function(){
+        
+        contlist <- onlyFilterContlist(Ecut=0.01,hotf=4,swi=1)
+        contlist2 <- onlyFilterContlist(Ecut=0.01,hotf=4,swi=2)
+        save(contlist,file="/home/local/ARCS/qh2159/breast_cancer/variants/trios/contlist")
+        save(contlist2,file="/home/local/ARCS/qh2159/breast_cancer/variants/trios/contlist2")
+
+}
+
+onlyFilterContlist <- function(Ecut=0.01,hotf=4,swi=1){
+        source("misc.R")
+        source("sourcefiles.R")
+        
+        if(hotf==1){ hotspotfile <- hotHMM; ## HongjianPred hotspots file
+        }else if(hotf==2){ hotspotfile <- hotCOSMIC; ## COSMIC hotspots file
+        }else if(hotf==3){ hotspotfile="";
+        }else if(hotf==4){ hotspotfile <- hotHMM;}
+        ## switch to the right files for burden test
+        alleleFrefile <- alleleFrefiles[swi] 
+        contlistf <- contlistfs[swi]
+        mis <- "nonsynonymousSNV"
+        load(contlistf)
+        contlist <- onelist
+        rm(onelist)
+
+        contlist <- variant_filtering(contlist,mis,Ecut=Ecut,segd=0.95,pp2=TRUE,hotf=hotspotfile,alleleFrefile,popcut=0.05)
+        if(hotf==4){ contlist <- contlist[contlist[,"ExACfreq"] & contlist[,"VCFPASS"] & contlist[,"noneSegmentalDup"] & contlist[,"meta-SVM_PP2"] & contlist[,"alleleFre"], ]; }else{ contlist <- contlist[contlist[,"filtered"], ];}
+        
+        contlist
 }
 
 writePhenoFams <- function(flag=2){
