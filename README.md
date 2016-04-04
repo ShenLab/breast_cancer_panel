@@ -1,7 +1,9 @@
 # Breast cancer study
-Identification of Germline Breast Cancer Risk Genes based on case-control and family data.
+Identification of Germline Breast Cancer Risk Genes based on case-control and family data. All useful information, please read BreastCancerSummary.txt file.
 
 # File list:
+BreastCancerSummary.txt:	All the summary related with Breast Cancer Project.
+
 oldR/:	Before getting real control data, we tried to use FB-SKAT, SKAT to do single variant association test and also burden analysis based on index cases with pseudo-controls, and ranking gene based on RWR algorithm. 
 
 BreastCancerAna.R:	Main burden test code for case-control data, including variant filtering, single variant burden test, gene level burden test, and gene set level burden test. Parameter "swi" is used to analysis Jewish or Dominican, other parameters see details in the comment lines.
