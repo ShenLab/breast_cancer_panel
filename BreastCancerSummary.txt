@@ -98,11 +98,12 @@ down from DNA Nexus by Ashley.
 SSC:
 /home/local/ARCS/yshen/data/Simons/BAM/Wigler
 /home/local/ARCS/yshen/mnt/ngs_backup/Controls/SimonsExomes
-PCGC: updated in data channel shared file.
+PCGC: updated in Slack data channel shared file.
 
 To reduce the batch effect of NimbleGen VCRome kit for breast cancer, RGN(3), RGN(4) and NimbleGen SeqCap v2 for SSSC and PCGC, we get the intersect of target regions of these two capture kits. To get intersect of target intervals, we use bedtools, example scripts is in:
 /home/local/ARCS/qh2159/breast_cancer/depthOfcoverage/code/getInterBed.sh
 The capture kit target intervals bed files are listed in: #!!!!!!
+/home/local/ARCS/ads2202/resources/CaptureKitBeds/ #!!! deleted by other users
 
 Depth of coverage information:
 Directory: /home/local/ARCS/qh2159/breast_cancer/depthOfcoverage
@@ -113,6 +114,16 @@ By now, we only fixed bad read group for 265 index cases of 715 breast cancer je
 
 #=====================================
 Dominican controls related analysis:
+
+
+#=====================================
+Breast Cancer main data folder (Qiang): /home/local/ARCS/qh2159/breast_cancer
+The details for sub-folders in the main folder is listed in:
+/home/local/ARCS/qh2159/breast_cancer/Panel/breast_cancer_panel/Readme.R 
+Main codes for the burden test analysis are listed in:
+/home/local/ARCS/qh2159/breast_cancer/Panel/breast_cancer_panel 
+which also the codes in Github:
+https://github.com/gitQiang/breast_cancer_panel
 
 
 #=====================================
