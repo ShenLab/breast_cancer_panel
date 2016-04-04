@@ -1,0 +1,130 @@
+Readme File for breast cancer project
+#=====================================
+Breast Cancer Sequenced Sample Information:
+bam files: 1361 bams, bam file location is shared in Slack data channel (The new version). There are 1365 listed bams, M_210197.merged.mkdup.bam, M_231022.merged.mkdup.bam, M_231050.merged.mkdup.bam, M_240397.merged.mkdup.bam are the old bams not deleted by Ashley.
+
+The samples are sequenced by four different batches (BRC (8 old CGC samples?), CGC, Yale, Regeneron), the batches information is shown in:
+/home/local/ARCS/qh2159/breast_cancer/Panel/data/phenotype/Sample_batches.txt
+
+#=====================================
+Breast Cancer main data directory (Ashley): /home/local/ARCS/yshen/data/WENDY/BreastCancer
+folders:
+AJ_CONTROLS/	All related information for Jewish controls. Alaska Jewish (AJ).
+Dominican_PCA/	All related information for Dominican controls.
+MountSinaiData/	All related information for MountSinai WES data.
+Regeneron/	All related information for Breast Cancer families data.
+tablesandlists/	Old tables and lists by Ashley.
+
+In /home/local/ARCS/yshen/data/WENDY/BreastCancer/Regeneron/Filtering_Oct2015, you will find tables of the filtered variants based on the Freeze One data release. The VCF contains ALL of the samples that we have.
+
+There is a file that contains a list of samples to exclude from the analysis as they are outliers based on het/hom rate, sex mismatches etc.
+/home/local/ARCS/yshen/data/WENDY/BreastCancer/Regeneron/FreezeOneVariantCalling/Outliers_to_be_excluded.list
+There are 12 samples in all, 4 of which are samples that were sequenced at CGC or Yale (with IDs "Sample_M_XXXX" or "M_XXXX"). There is no need to exclude any sample due to gender discrepancy, these were all fixed in the resequencing.
+
+Also, note that there are 21 samples that were sequenced at both CGC/Yale and Regeneron. These are listed in Repeated_Samples.list. The CGC/Yale data can be identified by "cgc" appended to the sample ID in the vcf. The variant table for these samples into a subdirectory of the variant tables directory:
+/home/local/ARCS/yshen/data/WENDY/BreastCancer/Regeneron/Filtering_Oct2015/cgc_duplicates/
+
+#=====================================
+Phenotype annotations:
+The phenotype annotated table is listed in: /home/local/ARCS/qh2159/breast_cancer/Panel/data/phenotype/WES BCFR phenotypic data.csv, which also shared in DropBox BreastCancer folder as WES BCFR phenotypic data.xlsx. There are 1338 samples, it annotated as 741 Jewishes (J), 552 Hispanic (H), 1 Jewish and Hispanic, 44 unknown.
+Note that there are two samples with two different sample IDs. 
+The samples 222357 and 222966 are from the same individual:
+Family ID: 200415
+Individual ID: 2007915  
+The samples 220897 and 220904 are from the same individual:
+Family ID: 200352
+Individual ID: 2007050
+Note that Hispanics in this table are more likely to be Dominicans. In this readme file, we just treat them as the same ethnicity.
+
+#=====================================
+Pedigree Files:
+Directory: /home/local/ARCS/qh2159/breast_cancer/variants/pedigree
+Breast cancer WES data contains 154 singletons and 334 families.
+All the "available" pedigree information read from .svg files are listed in:
+/home/local/ARCS/qh2159/breast_cancer/variants/pedigree/ALL_pedigree.csv
+There are three batches got from Regeneron in several times:
+FamilyPedigree/	The first bulk .svg files.
+LargeFamily/	15 large families with >= 7 members are sequenced. There is still one pedigree information is missing
+MissingFamilies/	The rest of families pedigree, 43 families are missing. We got 32 families. Finally, there are 11 of them are missing until now.
+svg files are named as FamilyID.svg.
+Useful R code for reading .svg file to pedigree is in:
+/home/local/ARCS/qh2159/breast_cancer/Panel/breast_cancer_panel/pedigree.R
+This is an example to read all .svg files under one directory into one pedigree table.
+
+#=====================================
+PCA analysis for Jewsihes (Ashley): 
+Directory: /home/local/ARCS/yshen/data/WENDY/BreastCancer/Regeneron/PCA
+A complete list of all the breast cancer samples that appear to be AJ based on PCA is shown in:
+/home/local/ARCS/yshen/data/WENDY/BreastCancer/Regeneron/tablesandlists/All_AJ_samples.list (Ashley version 716 AJs)
+I relabeled 220673 (which came from a Hispanic family and the original label is Hispanic) into Hispanic, then I got 715 Jewishes in:
+/home/local/ARCS/qh2159/breast_cancer/Panel/data/phenotype/AJ715_samples.list
+After PCA analysis, we got 715 AJs, 550 Dominicans (2 of 552 original Dominicans are re-labeled into Jewishes). 550 Dominican samples are listed in:
+/home/local/ARCS/qh2159/breast_cancer/Panel/data/HispanicCases550.txt
+
+#=====================================
+Jewish Controls by combined different batches WES samples:
+Directory: /home/local/ARCS/yshen/data/WENDY/BreastCancer/AJ_CONTROLS/
+All the WES data used in PCA analysis to get Jewish controls are listed in DropBox folder:
+Dropbox (CGC)/BreastCancerExomeStudy/Genelist_Qiang/AJ_Samples_Table.xlsx
+And also:
+/home/local/ARCS/yshen/data/WENDY/BreastCancer/AJ_CONTROLS/FinalLists/AJ_Samples_Table.xlsx
+The details for each sub-batches are listed in:
+/home/local/ARCS/yshen/data/WENDY/BreastCancer/AJ_CONTROLS/FinalLists/cohort_lists
+Column E in AJ_Samples_Table.xlsx, labelled "Group", contains either 0 or 1. The samples labelled 1 form a cohort of unrelated samples. Ashley selected these to exclude samples that were 1st or 2nd degree related, e.g. in the case of trios Ashley have kept the parents (1) and excluded the probands (0). 0's are 1st or 2nd degree related to one or more of the samples marked 1, and may also be related to one another.
+
+The batches details for PCA analysis is listed as follows:
+Batches	BreastCancer	CHD	Obesity	PCGC	RGN(3)	RGN(4)	RoR	SSC
+Samples	716		 7	1	316	195	71	35	84		 
+Capture kits for different batches:
+Breast Cancer - Regeneron's NimbleGen VCRome kit
+PCGC - NimbleGen SeqCap v2
+CDH - Agilent V2 (CGC) or V4 (NYGC)
+Obesity - Agilent V4
+RGN(3) - Regeneron's NimbleGen VCRome kit
+RGN(4) - Regeneron's NimbleGen VCRome kit
+RoR - Agilent V4
+SSC - NimbleGen SeqCap v2
+To elimate the batch effects of different capture kits, we don't consider Agilent capture kits further.
+Finally, we got 557 Jewish control data with Sample IDs listed in:
+/home/local/ARCS/qh2159/breast_cancer/variants/data/AJs_557.txt
+The bams files for these samples are listed in (several bams may be moved into other folders by other users):
+RGN(3):
+/home/local/ARCS/yshen/mnt/BigData/WENDY/RGN_rare_disease/bams
+and
+/home/local/ARCS/yshen/data/WENDY/REGENERON/NewFreezeThreeBams
+RGN(4):
+/home/local/ARCS/yshen/data/WENDY/REGENERON/DNA_Nexus_scripts
+down from DNA Nexus by Ashley.
+SSC:
+/home/local/ARCS/yshen/data/Simons/BAM/Wigler
+/home/local/ARCS/yshen/mnt/ngs_backup/Controls/SimonsExomes
+PCGC: updated in data channel shared file.
+
+To reduce the batch effect of NimbleGen VCRome kit for breast cancer, RGN(3), RGN(4) and NimbleGen SeqCap v2 for SSSC and PCGC, we get the intersect of target regions of these two capture kits. To get intersect of target intervals, we use bedtools, example scripts is in:
+/home/local/ARCS/qh2159/breast_cancer/depthOfcoverage/code/getInterBed.sh
+The capture kit target intervals bed files are listed in: #!!!!!!
+
+Depth of coverage information:
+Directory: /home/local/ARCS/qh2159/breast_cancer/depthOfcoverage
+Scripts: /home/local/ARCS/qh2159/breast_cancer/depthOfcoverage/code
+Note that when calling depth of coverage (DOC) for breast cancer samples, there are some samples with "Error Read group" information. The following is the explaination from Ashley:
+"Just FYI, it is that for many of the files the readgroups ID in the bam file does not match the readgroup in the sequence data. The reason for this was the plate swap that occured at Regeneron. They figured out what had happened and basically switched the data in the files so that the correct sequences are in the right file. However, they did not change the read group IDs in the sequence data. So, in these files - the header information is correct and shows the correct Sample ID, however, the RG field needs to be fixed to match."
+By now, we only fixed bad read group for 265 index cases of 715 breast cancer jewishes. The useful scripts are in:/home/local/ARCS/qh2159/breast_cancer/depthOfcoverage/code/xFixRGErrors_Piped.sh
+
+#=====================================
+Dominican controls related analysis:
+
+
+#=====================================
+Variant calling:
+
+
+#=====================================
+Variant filtering:
+
+#=====================================
+Burden test for single 
+
+
+
+
