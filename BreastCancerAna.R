@@ -156,6 +156,7 @@ if(ana==2 | ana==4 | ana==5 | ana==7){
                 NumVar[i] <- length(univar[Vlist[,"VariantClass"] %in% vartypes[[i]]])
         }
         varTable <- read.delim(vburdenfile,check.names=FALSE)
+        colnames(varTable)[colnames(varTable)=="Folds"] <- "Odds" ### fix this by update single variant test in src.R 
         Vlist <- cbind(Vlist,varTable[match(univar,varTable[,"Variant"]) , setdiff(colnames(varTable),colnames(Vlist)) ])
         Vlist[,"CorrectedP"] <- 1 # corrected Pvalue by each variant type
         for(i in 1:4){

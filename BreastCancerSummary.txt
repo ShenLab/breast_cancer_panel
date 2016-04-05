@@ -127,15 +127,18 @@ https://github.com/gitQiang/breast_cancer_panel
 
 
 #=====================================
-Variant calling:
+Variant calling (Ashely):
 
 
 #=====================================
 Variant filtering:
+Rules for variant filters:
+
 
 #=====================================
 BRCA positive samples:
-
+We remove 14 BRCA1/2 pathogenic or likely pathogenic subjects. They are listed in:
+/home/local/ARCS/qh2159/breast_cancer/Panel/data/phenotype/BRCA1_2.txt
 
 Burden test for single 
 
