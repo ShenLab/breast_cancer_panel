@@ -197,8 +197,8 @@ if(ana==2 | ana==4 | ana==5 | ana==7){
         }
         
         ## write test result files
-        qwt(Vlist[Vlist[,"Gene"] %in% genes,],file=genesetsVarfile,flag=2)
-        qwt(Vlist[Vlist[,"Gene_sets"] %in% "non-known_genesets",],file=restVarfile,flag=2)
+        qwt(Vlist[Vlist[,"Gene_sets"]!= "non-known_genesets", ],file=genesetsVarfile,flag=2)
+        qwt(Vlist[Vlist[,"Gene_sets"]== "non-known_genesets", ],file=restVarfile,flag=2)
         qwt(NumVar,file=NumOfVarfile)
         
         ## QQ plot for not singleton variant tests
@@ -206,7 +206,7 @@ if(ana==2 | ana==4 | ana==5 | ana==7){
                 ### only for QQ plots
                 #varT <- list(lof,mis,indel,syn,stopins,splices,singleLOF)
                 #varTnames <- c("lof_indel","d-mis","mis-indel","Synonymous","Stopgain_loss","splicing","singleLOF")
-                qqplot_variantLevel(vburdenfile,paste(outputpath,"qqplots/",sep=""),genes,vartypes,vartypenames,caselist);
+                qqplot_variantLevel(vburdenfile,paste(outputpath,"qqplots/",sep=""),unique(unlist(genesets)),vartypes,vartypenames,caselist);
         }
         
 }
