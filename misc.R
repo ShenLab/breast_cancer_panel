@@ -34,7 +34,7 @@ test_genesets <- function(){
         g2 <- setdiff(intersect( PLi[PLi[,"pLI"] >= 0.9 | PLi[,"mis_z"] >= 3 ,"gene"], DRg), g1)
         g3 <- setdiff(DRg, PLi[PLi[,"pLI"] >= 0.9 | PLi[,"mis_z"] >= 3 ,"gene"])
         ## known pathways
-        mapkg <- unlist(read.tbale(MAPKfile))
+        mapkg <- unlist(read.table(MAPKfile))
         PI3K_AKtg <- unlist(read.table(PI3K_AKtfile))
         
         #genes <- unique(c(TSg,DRg,DNAreg,Panelg,g1,g2,g3,mapkg,PI3K_AKtg))

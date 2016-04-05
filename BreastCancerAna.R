@@ -9,7 +9,7 @@ BreastCancerAna <- function(sig=TRUE,Ecut=0.001,hotf=1,swi=1,ana=4){
 ### Ecut: ExAC frequency cutoff
 ### hotf: 1: hotspots predicted based on HMM (hongjian); 2: hotspots defined by cosmic site with recurrent >=3; 3: not filter missense by hotspot; 4: not filter missense byhotspot but with the hotspot labels (by HMM hongjian)
 ### swi: 1: Jewish case and control; 2: Hispanic case and contorl
-### ana: 1-single gene test only; 2-single variant test only; 3-gene set test only; 4-all related tests
+### ana: 1-single gene test only; 2-single variant test only; 3-gene set test only; 4-all related tests; 5-single gene and single variant; 6-single gene and gene sets; 7-single variant and gene sets;
     
 ## =========================input files===========================================
 if(hotf==1){ hotspotfile <- hotHMM; ## HongjianPred hotspots file
@@ -67,7 +67,7 @@ indexcases <- getindexcase(phenofile) ## only index cases
 caselist <- caselist[caselist[,"Subject_ID"] %in% indexcases, ]
 exSamples <- excluded_samples() ## exclude subjects
 caselist <- caselist[!(caselist[,"Subject_ID"] %in% exSamples), ]
-## =========================get control variant list
+## get control variant list
 load(contlistf)
 contlist <- onelist
 rm(onelist)
@@ -99,7 +99,7 @@ print("Corrected coe: ");
 print(coe);
 
 ##======gene set level burden test=============================================
-if(ana==3 | ana==4){
+if(ana==3 | ana==4 | ana==6 | ana==7){
         Gtop <- read.table(GTExfile)
         allgenes <- union(Gtop[,1],unlist(genesets))
         Ggs <- c("top 25%","top 50%","top 75%","top 100%")
@@ -123,7 +123,7 @@ if(ana==3 | ana==4){
 }
 
 ##=====single gene level burden test===========================================
-if(ana==1 | ana==4){
+if(ana==1 | ana==4 | ana==5 | ana==6){
         tablelist <- list()
         for(i in 1:length(vartypes)){
                 oneTable <- burden_test(caselist,contlist,testset=NULL,testtype=vartypes[[i]],flag=2,sig=sig,coe=coe)
@@ -135,7 +135,7 @@ if(ana==1 | ana==4){
 }
 
 ##======single variant level burden test=======================================
-if(ana==2 | ana==4){
+if(ana==2 | ana==4 | ana==5 | ana==7){
         varSelected <- c(stopins,splices,singleLOF,lof,mis,indel) ## slected variants
         cols0 <- colnames(caselist)
         Vlist <- caselist[caselist[,"VariantClass"] %in% varSelected, ]
