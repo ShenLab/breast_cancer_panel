@@ -45,12 +45,13 @@ test_genesets <- function(){
         pLIlist <- list()
         bins <- seq(0,1,0.25)
         binC <- quantile(as.numeric(PLis[,"pLI"]),bins)
+        binCpLI <- round(binC,3)
         for(i in 1:4){
                 pLIlist[[i]] <- intersect(PLis[PLis[,"pLI"] >=binC[i] & PLis[,"pLI"] <=binC[i+1], "gene"],DRg)
         }
         pLIlist[[5]] <- gpLI1
         pLIlist[[6]] <- gpLI2
-        pLInames <- c(binC[2:5],paste("_",cpLI,sep=""))
+        pLInames <- c(binCpLI[2:5],paste("_",cpLI,sep=""))
         
         cmis_z <- c(0,3)
         gmis_z1 <- intersect(PLi[PLi[,"mis_z"]<=cmis_z[1],"gene"], DRg)
@@ -59,12 +60,13 @@ test_genesets <- function(){
         mis_zlist <- list()
         bins <- seq(0,1,0.25)
         binC <- quantile(as.numeric(mis_zs[,"mis_z"]),bins)
+        binCmis_z <- round(binC,3)
         for(i in 1:4){
                 mis_zlist[[i]] <- intersect(mis_zs[mis_zs[,"mis_z"] >=binC[i] & mis_zs[,"mis_z"] <=binC[i+1], "gene"],DRg)
         }
         mis_zlist[[5]] <- gmis_z1
         mis_zlist[[6]] <- gmis_z2
-        mis_znames <- c(binC[2:5],paste("_",cmis_z,sep=""))
+        mis_znames <- c(binCmis_z[2:5],paste("_",cmis_z,sep=""))
                 
         for(i in 1:6){
                 genesets[[i+6]] <- pLIlist[[i]]
@@ -76,6 +78,26 @@ test_genesets <- function(){
         }
         
         list(genesets=genesets,genesetnames=genesetnames)
+}
+
+plot_genesets <- function(setburdens,outputpath,vartypenames,per="top 50%"){
+        n <- dim(setburdens)[2]
+        pdf(file=paste(outputpath,"Folds_genesets.pdf",sep=""),width=12,height=10)
+        par(mai=c(5,1,1,1))
+        cols <- c("black","red","blue","yellow4","brown","blueviolet","deeppink","darkgreen","darkcyan")
+        tmp <- as.numeric(setburdens[,"Folds"])
+        ymax <- max(tmp[!is.na(tmp) & tmp<Inf])
+        for(i in 1:length(vartypenames)){
+                tmp <- setburdens[setburdens[,"Variant"]== vartypenames[i] & setburdens[,n]==per,  ]
+                Folds <- tmp[,"Folds"]
+                if(i==1) plot(1:length(Folds),Folds,col=cols[i],main="",xlab="",ylab="Folds case-control",ylim=c(0,ymax),type="b",xaxt="n",cex.lab=1.5,cex.axis=1.25,lwd=1)
+                if(i>=1 & i <=9) lines(1:length(Folds),Folds,col=cols[i],type="b",lwd=1)
+                if(i>9) lines(1:length(Folds),Folds,col=i,type="b",lwd=1)
+        }
+        abline(h=2,lty=2,col=1,lwd=1)
+        text(1:length(Folds), par("usr")[3], labels = tmp[,1], srt = 80, adj = c(1.1,1.1), xpd = TRUE,cex=1.5)
+        legend("topleft",legend=vartypenames,col=cols,lty=rep(1,length(vartypenames)),cex=1.5)
+        dev.off()
 }
 
 getVariantlist <- function(path,IDfile,namestr=".tsv",savefile){
