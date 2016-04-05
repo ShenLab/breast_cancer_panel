@@ -28,19 +28,53 @@ test_genesets <- function(){
         DNAreg <- unlist(read.table(DNArepairfile))
         Panelg <- unlist(read.table(Panelgfile))
         Panelg <- setdiff(Panelg,c(TSg,DRg,DNAreg))
-        ## gene sets based on pLI or mis_z scores
-        PLi <- read.delim(pLIfile)
-        g1 <- intersect( PLi[PLi[,"pLI"] >= 0.9 & PLi[,"mis_z"] >= 3 ,"gene"], DRg)
-        g2 <- setdiff(intersect( PLi[PLi[,"pLI"] >= 0.9 | PLi[,"mis_z"] >= 3 ,"gene"], DRg), g1)
-        g3 <- setdiff(DRg, PLi[PLi[,"pLI"] >= 0.9 | PLi[,"mis_z"] >= 3 ,"gene"])
         ## known pathways
         mapkg <- unlist(read.table(MAPKfile))
         PI3K_AKtg <- unlist(read.table(PI3K_AKtfile))
-        
-        #genes <- unique(c(TSg,DRg,DNAreg,Panelg,g1,g2,g3,mapkg,PI3K_AKtg))
-        genesets <- list(TSg,DRg,DNAreg,Panelg,g1,g2,g3,mapkg,PI3K_AKtg)
-        genesetnames <- c("Tumor suppressors","Cancer drivers","DNA repairs","Panel genes","CancerDriver1","CancerDriver2","CancerDriver3","MAPK pathway","PI3K-AKt pathway")
 
+        genesets <- list(TSg,DRg,DNAreg,Panelg,mapkg,PI3K_AKtg)
+        genesetnames <- c("Tumor suppressors","Cancer drivers","DNA repairs","Literature genes","MAPK pathway","PI3K-AKt pathway")
+
+        ## Cancer driver sub-sets based on pLI or mis_z scores
+        PLi <- read.delim(pLIfile)
+        cpLI <- c(0.1,0.9)
+        gpLI1 <- intersect(PLi[PLi[,"pLI"]<=cpLI[1],"gene"], DRg)
+        gpLI2 <- intersect(PLi[PLi[,"pLI"]>=cpLI[2],"gene"], DRg)
+        
+        PLis <- PLi[PLi[,"pLI"]>cpLI[1] & PLi[,"pLI"]<cpLI[2], ]
+        pLIlist <- list()
+        bins <- seq(0,1,0.25)
+        binC <- quantile(as.numeric(PLis[,"pLI"]),bins)
+        for(i in 1:4){
+                pLIlist[[i]] <- intersect(PLis[PLis[,"pLI"] >=binC[i] & PLis[,"pLI"] <=binC[i+1], "gene"],DRg)
+        }
+        pLIlist[[5]] <- gpLI1
+        pLIlist[[6]] <- gpLI2
+        pLInames <- c(binC[2:5],paste("_",cpLI,sep=""))
+        
+        cmis_z <- c(0,3)
+        gmis_z1 <- intersect(PLi[PLi[,"mis_z"]<=cmis_z[1],"gene"], DRg)
+        gmis_z2 <- intersect(PLi[PLi[,"mis_z"]>=cmis_z[2],"gene"], DRg)
+        mis_zs <- PLi[PLi[,"mis_z"]>cmis_z[1] & PLi[,"mis_z"]<cmis_z[2], ]
+        mis_zlist <- list()
+        bins <- seq(0,1,0.25)
+        binC <- quantile(as.numeric(mis_zs[,"mis_z"]),bins)
+        for(i in 1:4){
+                mis_zlist[[i]] <- intersect(mis_zs[mis_zs[,"mis_z"] >=binC[i] & mis_zs[,"mis_z"] <=binC[i+1], "gene"],DRg)
+        }
+        mis_zlist[[5]] <- gmis_z1
+        mis_zlist[[6]] <- gmis_z2
+        mis_znames <- c(binC[2:5],paste("_",cmis_z,sep=""))
+                
+        for(i in 1:6){
+                genesets[[i+6]] <- pLIlist[[i]]
+                genesetnames[[i+6]] <- paste("CancerDriver_pLI",pLInames[i],sep="")
+        }
+        for(i in 1:6){
+                genesets[[i+12]] <- mis_zlist[[i]]
+                genesetnames[[i+12]] <- paste("CancerDriver_mis_z",mis_znames[i],sep="")             
+        }
+        
         list(genesets=genesets,genesetnames=genesetnames)
 }
 
@@ -323,13 +357,14 @@ qqplot_variantLevel <- function(burdentable,outputpath,Panelg,varT,varstr,caseli
     casevars <- paste(caselist[,1],caselist[,2],caselist[,4],caselist[,5],sep="_")
     pT <- read.delim(burdentable)
     for(i in 1:length(varT)){
-        subs <- which((pT[,"Variant"] %in% casevars[caselist[,"VariantClass"] %in% varT[[i]]]) & (pT[,"Folds"] >= 1))
-        pval <- pT[subs,"Pvalue"]
-        subcol <- which(pT[subs,"Gene"]%in% Panelg)
-        pdf(file=paste(outputpath,varstr[i],".pdf",sep=""),width=12,height=10)
-        par(mai=c(2,1,1,1))
-        PQQ(pval,subcol=subcol,main=paste("QQ plots of ", varstr[i],sep=""),labels=pT[subs,"Gene"])
-        dev.off()
+            if(is.null(varT[[i]])) subs <- which((pT[,"Variant"] %in% casevars) & (pT[,"Folds"] >= 1))
+            if(!is.null(varT[[i]])) subs <- which((pT[,"Variant"] %in% casevars[caselist[,"VariantClass"] %in% varT[[i]]]) & (pT[,"Folds"] >= 1))
+            pval <- pT[subs,"Pvalue"]
+            subcol <- which(pT[subs,"Gene"]%in% Panelg)
+            pdf(file=paste(outputpath,varstr[i],".pdf",sep=""),width=12,height=10)
+            par(mai=c(2,1,1,1))
+            PQQ(pval,subcol=subcol,main=paste("QQ plots of ", varstr[i],sep=""),labels=pT[subs,"Gene"])
+            dev.off()
     }
     
     ## 
