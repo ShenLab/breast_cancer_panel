@@ -11,6 +11,9 @@ cancerdriverfile <- "/home/local/ARCS/qh2159/breast_cancer/Panel/data/hotspots/C
 DNArepairfile <- "/home/local/ARCS/qh2159/breast_cancer/Panel/data/hotspots/DNA_repair_11_6.txt" ## DNA repair genes
 Panelgfile <-  "/home/local/ARCS/qh2159/breast_cancer/genelist/Genelist2.txt" ## Panel genes
 GTExfile <- "/home/local/ARCS/qh2159/breast_cancer/geneexpression/GTEx/expg_ranked.txt" ## GTEx expressed ranked gene
+pLIfile <- "/home/local/ARCS/qh2159/breast_cancer/Panel/data/fordist_cleaned_exac_r03_march16_z_pli_rec_null_data.txt"
+MAPKfile <- "/home/local/ARCS/qh2159/breast_cancer/Panel/data/MAPK_pathways.txt"
+PI3K_AKtfile <- "/home/local/ARCS/qh2159/breast_cancer/Panel/data/PI3K-Akt_pathways.txt"
 ## hotspot files
 hotHMM <- "/home/local/ARCS/qh2159/breast_cancer/Panel/data/hotspots/HMM_hotspots_11_12.txt"
 hotCOSMIC <- "/home/local/ARCS/qh2159/breast_cancer/Panel/data/hotspots/cosmic_hotspots_3.txt"

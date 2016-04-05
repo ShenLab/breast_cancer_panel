@@ -20,6 +20,30 @@ excluded_samples <- function(){
     exSamples
 }
 
+test_genesets <- function(){
+        ## known gene sets
+        TSg <- unlist(read.table(TSfile))
+        DRg <- unlist(read.table(cancerdriverfile)) ## cancer drivers
+        DRg <- setdiff(DRg,TSg) 
+        DNAreg <- unlist(read.table(DNArepairfile))
+        Panelg <- unlist(read.table(Panelgfile))
+        Panelg <- setdiff(Panelg,c(TSg,DRg,DNAreg))
+        ## gene sets based on pLI or mis_z scores
+        PLi <- read.delim(pLIfile)
+        g1 <- intersect( PLi[PLi[,"pLI"] >= 0.9 & PLi[,"mis_z"] >= 3 ,"gene"], DRg)
+        g2 <- setdiff(intersect( PLi[PLi[,"pLI"] >= 0.9 | PLi[,"mis_z"] >= 3 ,"gene"], DRg), g1)
+        g3 <- setdiff(DRg, PLi[PLi[,"pLI"] >= 0.9 | PLi[,"mis_z"] >= 3 ,"gene"])
+        ## known pathways
+        mapkg <- unlist(read.tbale(MAPKfile))
+        PI3K_AKtg <- unlist(read.table(PI3K_AKtfile))
+        
+        #genes <- unique(c(TSg,DRg,DNAreg,Panelg,g1,g2,g3,mapkg,PI3K_AKtg))
+        genesets <- list(TSg,DRg,DNAreg,Panelg,g1,g2,g3,mapkg,PI3K_AKtg)
+        genesetnames <- c("Tumor suppressors","Cancer drivers","DNA repairs","Panel genes","CancerDriver1","CancerDriver2","CancerDriver3","MAPK pathway","PI3K-AKt pathway")
+
+        list(genesets=genesets,genesetnames=genesetnames)
+}
+
 getVariantlist <- function(path,IDfile,namestr=".tsv",savefile){
 ## get variant lists for a set of samples
     print_log(paste("getVariantlist function is running ...", date(),sep=" "))
