@@ -116,13 +116,14 @@ plot_genesets <- function(setburdens,outputpath,vartypenames,per="top 50%"){
                 tmp <- setburdens[setburdens[,"Variant"]== vartypenames[i] & setburdens[,n]==per,  ]
                 Folds <- tmp[,"Folds"]
                 if(i==1) plot(1:length(Folds),Folds,col=cols[i],main="",xlab="",ylab="Folds case-control",ylim=c(0,ymax),type="b",xaxt="n",cex.lab=1.5,cex.axis=1.25,lwd=1)
-                if(i>=1 & i <=9) lines(1:length(Folds),Folds,col=cols[i],type="b",lwd=1)
+                if(i>=1 & i<=9) lines(1:length(Folds),Folds,col=cols[i],type="b",lwd=1)
                 if(i>9) lines(1:length(Folds),Folds,col=i,type="b",lwd=1)
         }
         abline(h=2,lty=2,col=1,lwd=1)
         text(1:length(Folds), par("usr")[3], labels = tmp[,1], srt = 80, adj = c(1.1,1.1), xpd = TRUE,cex=1.5)
-        legend("topleft",legend=vartypenames,col=cols,lty=rep(1,length(vartypenames)),cex=1.5)
-        dev.off()
+        if(i<=9) legend("topleft",legend=vartypenames,col=cols,lty=rep(1,length(vartypenames)),cex=1.3)
+        if(i>9) legend("topleft",legend=vartypenames,col=c(cols,10:i),lty=rep(1,length(vartypenames)),cex=1.3)
+	dev.off()
 }
 
 getVariantlist <- function(path,IDfile,namestr=".tsv",savefile){
