@@ -605,4 +605,50 @@ knownRisks <- function(){
         HIv <- read.delim("../resultf/HISP_variant_level_burden_Pseducont.txt")
         tmp <- HIv[HIv[,"Gene"] %in% genes & !(HIv[,"VariantClass"] %in% c("synonymousSNV","unknown")),]
         qwt(tmp,file="../single_check/knownRisk_HI.txt",flag=2)      
+
+}
+
+HISplicing <- function(){
+	sites <- unlist(read.table("../single_check/HI_Splicing.txt"))
+
+	source("sourcefiles.R")
+	load(caselistfs[1])
+	caselist=onelist
+	rm(onelist)
+
+	load(caselistfs[2])
+	caselist2 <- onelist
+	rm(onelist)
+	
+	igvs <- c()
+	for(i in 1:length(sites)){
+		tmp <- unlist(strsplit(sites[i],"_"))
+		onecases <- caselist[ caselist[,1]==tmp[1] & caselist[,2]==tmp[2]    ,"Subject_ID"]
+		twocases <- caselist2[caselist2[,1]==tmp[1] & caselist2[,2]==tmp[2]  ,"Subject_ID"]
+		oner <- cbind(tmp[1],tmp[2],c(onecases,twocases))
+		igvs <- rbind(igvs,oner)
+	}
+	qwt(igvs,file="../single_check/HI_SC_igvs.txt")
+
+
+
+}
+
+### ReacTome metabolism pathways
+ReacPathways <- function(){
+        library(GSA)
+        filename <- "/home/local/ARCS/qh2159/breast_cancer/Panel/data/ReactomePathways.gmt"
+        aa <- GSA.read.gmt(filename)
+        subs <- which(grepl("metabolism",aa$geneset.names))
+        
+        genes <- c()
+        pathways <- c()
+        for(i in 1:length(subs)){
+                genes <- c(genes, aa$genesets[[subs[i]]])
+                pathways <- c(pathways,aa$geneset.names[[subs[i]]])
+        }
+        genes <- setdiff(genes,"Reactome Pathway")
+        genes <- unique(genes)
+        qwt(genes, file="../data/ReactomeMetabolism_pathways.txt")
+        qwt(pathways, file="../data/ReactomeMetabolism_pathwaysNames.txt")
 }
