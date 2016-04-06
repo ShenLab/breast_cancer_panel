@@ -28,61 +28,86 @@ test_genesets <- function(){
         DNAreg <- unlist(read.table(DNArepairfile))
         Panelg <- unlist(read.table(Panelgfile))
         Panelg <- setdiff(Panelg,c(TSg,DRg,DNAreg))
-        ## known pathways
-        mapkg <- unlist(read.table(MAPKfile))
-        PI3K_AKtg <- unlist(read.table(PI3K_AKtfile))
-
-        genesets <- list(TSg,DRg,DNAreg,Panelg,mapkg,PI3K_AKtg)
-        genesetnames <- c("Tumor suppressors","Cancer drivers","DNA repairs","Literature genes","MAPK pathway","PI3K-AKt pathway")
-
+        
+        genesets <- list(TSg,DRg,DNAreg,Panelg)
+        genesetnames <- c("Tumor suppressors","Cancer drivers","DNA repairs","Literature genes")
+        ## interested pathways
+        for(i in 1:length(pathwayfiles)){
+                genesets[[i+4]] <- unlist(read.table(pathwayfiles[i]))
+                genesetnames[i+4] <- pathwaynames[i]
+        }
+        
         ## Cancer driver sub-sets based on pLI or mis_z scores
         PLi <- read.delim(pLIfile)
-        cpLI <- c(0.1,0.9)
-        gpLI1 <- intersect(PLi[PLi[,"pLI"]<=cpLI[1],"gene"], DRg)
-        gpLI2 <- intersect(PLi[PLi[,"pLI"]>=cpLI[2],"gene"], DRg)
+        subn=4
         
-        PLis <- PLi[PLi[,"pLI"]>cpLI[1] & PLi[,"pLI"]<cpLI[2], ]
-        pLIlist <- list()
-        bins <- seq(0,1,0.25)
-        binC <- quantile(as.numeric(PLis[,"pLI"]),bins)
-        binCpLI <- round(binC,3)
-        for(i in 1:4){
-                pLIlist[[i]] <- intersect(PLis[PLis[,"pLI"] >=binC[i] & PLis[,"pLI"] <=binC[i+1], "gene"],DRg)
+        ## pLI score
+        tmp <- subgeneset_pLI_mis_z(PLi,DRg,cuts=c(0.1,0.9),score="pLI",subn)
+        pLIlist <- tmp$glist
+        pLInames <- tmp$gnames
+        n <- length(genesets)   
+        for(i in 1:(subn+2)){
+                genesets[[i+n]] <- pLIlist[[i]]
+                genesetnames[[i+n]] <- paste("CancerDriver_pLI",pLInames[i],sep="")
         }
-        pLIlist[[5]] <- gpLI1
-        pLIlist[[6]] <- gpLI2
-        pLInames <- c(binCpLI[2:5],paste("_",cpLI,sep=""))
         
-        cmis_z <- c(0,3)
-        gmis_z1 <- intersect(PLi[PLi[,"mis_z"]<=cmis_z[1],"gene"], DRg)
-        gmis_z2 <- intersect(PLi[PLi[,"mis_z"]>=cmis_z[2],"gene"], DRg)
-        mis_zs <- PLi[PLi[,"mis_z"]>cmis_z[1] & PLi[,"mis_z"]<cmis_z[2], ]
-        mis_zlist <- list()
-        bins <- seq(0,1,0.25)
-        binC <- quantile(as.numeric(mis_zs[,"mis_z"]),bins)
-        binCmis_z <- round(binC,3)
-        for(i in 1:4){
-                mis_zlist[[i]] <- intersect(mis_zs[mis_zs[,"mis_z"] >=binC[i] & mis_zs[,"mis_z"] <=binC[i+1], "gene"],DRg)
+        tmp <- subgeneset_pLI_mis_z(PLi,DRg,cuts=c(0,3),score="mis_z",subn)
+        mis_zlist <- tmp$glist
+        mis_znames <- tmp$gnames
+        n <- length(genesets)
+        for(i in 1:(subn+2)){
+                genesets[[i+n]] <- mis_zlist[[i]]
+                genesetnames[[i+n]] <- paste("CancerDriver_mis_z",mis_znames[i],sep="")             
         }
-        mis_zlist[[5]] <- gmis_z1
-        mis_zlist[[6]] <- gmis_z2
-        mis_znames <- c(binCmis_z[2:5],paste("_",cmis_z,sep=""))
-                
-        for(i in 1:6){
-                genesets[[i+6]] <- pLIlist[[i]]
-                genesetnames[[i+6]] <- paste("CancerDriver_pLI",pLInames[i],sep="")
+        
+        ## Metabolism sub-sets based on pLI or mis_z scores
+        metabogs <- genesets[[which(genesetnames=="Metabolism")]]
+        ## pLI score
+        tmp <- subgeneset_pLI_mis_z(PLi,metabogs,cuts=c(0.1,0.9),score="pLI",subn)
+        pLIlist <- tmp$glist
+        pLInames <- tmp$gnames
+        n <- length(genesets)   
+        for(i in 1:(subn+2)){
+                genesets[[i+n]] <- pLIlist[[i]]
+                genesetnames[[i+n]] <- paste("Metabolism_pLI",pLInames[i],sep="")
         }
-        for(i in 1:6){
-                genesets[[i+12]] <- mis_zlist[[i]]
-                genesetnames[[i+12]] <- paste("CancerDriver_mis_z",mis_znames[i],sep="")             
+        
+        tmp <- subgeneset_pLI_mis_z(PLi,metabogs,cuts=c(0,3),score="mis_z",subn)
+        mis_zlist <- tmp$glist
+        mis_znames <- tmp$gnames
+        n <- length(genesets)
+        for(i in 1:(subn+2)){
+                genesets[[i+n]] <- mis_zlist[[i]]
+                genesetnames[[i+n]] <- paste("Metabolism_mis_z",mis_znames[i],sep="")             
         }
         
         list(genesets=genesets,genesetnames=genesetnames)
 }
 
+subgeneset_pLI_mis_z <- function(PLi,genes,cuts=c(0.1,0.9),score="pLI",n=4){
+
+        g1 <- intersect(PLi[PLi[,score]<=cuts[1],"gene"], genes)
+        g2 <- intersect(PLi[PLi[,score]>=cuts[2],"gene"], genes)
+        
+        PLis <- PLi[PLi[,score]>cuts[1] & PLi[,score]<cuts[2], ]
+        glist <- list()
+        bins <- seq(0,1,1/n)
+        binC <- quantile(as.numeric(PLis[,score]),bins)
+        rbinC <- round(binC,3)
+        for(i in 1:n){
+                glist[[i]] <- intersect(PLis[PLis[,score]>=binC[i] & PLis[,score]<=binC[i+1], "gene"],genes)
+        }
+        glist[[n+1]] <- g1
+        glist[[n+2]] <- g2
+        gnames <- c(rbinC[2:(n+1)],paste("_",cuts,sep=""))
+        
+        list(glist=glist,gnames=gnames)
+
+}
+
 plot_genesets <- function(setburdens,outputpath,vartypenames,per="top 50%"){
         n <- dim(setburdens)[2]
-        pdf(file=paste(outputpath,"Folds_genesets.pdf",sep=""),width=12,height=10)
+        pdf(file=paste(outputpath,"Folds_genesets.pdf",sep=""),width=15,height=10)
         par(mai=c(5,1,1,1))
         cols <- c("black","red","blue","yellow4","brown","blueviolet","deeppink","darkgreen","darkcyan")
         tmp <- as.numeric(setburdens[,"Folds"])

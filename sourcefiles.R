@@ -6,14 +6,22 @@ phenofile <- "/home/local/ARCS/qh2159/breast_cancer/Panel/data/phenotype/WES BCF
 dupIDs <- c("222357","222966") ## duplicated with Subject ID 222966 ## duplicated subject
 
 ### === BreastCancerAna.R ==============
+## gene sets
 TSfile <- "/home/local/ARCS/qh2159/breast_cancer/Panel/data/hotspots/Tumor_suppressors_11_11.txt" ## collected tumor suppressors
 cancerdriverfile <- "/home/local/ARCS/qh2159/breast_cancer/Panel/data/hotspots/Cancer_driver_11_6.txt" ## cancer drivers
 DNArepairfile <- "/home/local/ARCS/qh2159/breast_cancer/Panel/data/hotspots/DNA_repair_11_6.txt" ## DNA repair genes
 Panelgfile <-  "/home/local/ARCS/qh2159/breast_cancer/genelist/Genelist2.txt" ## Panel genes
 GTExfile <- "/home/local/ARCS/qh2159/breast_cancer/geneexpression/GTEx/expg_ranked.txt" ## GTEx expressed ranked gene
 pLIfile <- "/home/local/ARCS/qh2159/breast_cancer/Panel/data/fordist_cleaned_exac_r03_march16_z_pli_rec_null_data.txt"
-MAPKfile <- "/home/local/ARCS/qh2159/breast_cancer/Panel/data/MAPK_pathways.txt"
-PI3K_AKtfile <- "/home/local/ARCS/qh2159/breast_cancer/Panel/data/PI3K-Akt_pathways.txt"
+## interested pathways
+MAPKfile <- "/home/local/ARCS/qh2159/breast_cancer/Panel/data/pathways/MAPK_pathways.txt"
+PI3K_AKtfile <- "/home/local/ARCS/qh2159/breast_cancer/Panel/data/pathways/PI3K-Akt_pathways.txt"
+Metabolismfile <- "/home/local/ARCS/qh2159/breast_cancer/Panel/data/pathways/ReactomeMetabolism_pathways.txt"
+mapkgWendyfile <- "/home/local/ARCS/qh2159/breast_cancer/Panel/data/pathways/MAPKgenes_WENDY.txt"
+pi3k_aktgWendyfile <- "/home/local/ARCS/qh2159/breast_cancer/Panel/data/pathways/PI3K_AKTgenes_WENDY.txt"
+metabolismgWendyfile <- "/home/local/ARCS/qh2159/breast_cancer/Panel/data/pathways/Metabolicgenes_WENDY.txt"
+pathwayfiles <- c(MAPKfile,PI3K_AKtfile,Metabolismfile,mapkgWendyfile,pi3k_aktgWendyfile,metabolismgWendyfile)
+pathwaynames <- c("MAPK","PI3K_AKt","Metabolism","mapkgWendy","pi3k_aktgWendy","metabolismgWendy")
 ## hotspot files
 hotHMM <- "/home/local/ARCS/qh2159/breast_cancer/Panel/data/hotspots/HMM_hotspots_11_12.txt"
 hotCOSMIC <- "/home/local/ARCS/qh2159/breast_cancer/Panel/data/hotspots/cosmic_hotspots_3.txt"
@@ -27,7 +35,7 @@ HIBRfile <- "/home/local/ARCS/qh2159/breast_cancer/Panel/data/HispanicCases550.t
 AJcontrolfile <- "/home/local/ARCS/qh2159/breast_cancer/variants/data/AJs_557.txt"
 HIcontrolfile <- "/home/local/ARCS/qh2159/breast_cancer/variants/data/HIs_341.txt"
 Cohortfile <- "/home/local/ARCS/qh2159/breast_cancer/Panel/data/Rdata/BreastCancer_VariantList_11_12"
-SubDominif <- "/home/local/ARCS/qh2159/breast_cancer/Panel/data/phenotype/Dominicans549_mix_label.txt"
+SubDominif <- "/home/local/ARCS/qh2159/breast_cancer/Panel/data/phenotype/Dominicans549_mix_label.txt" ## labeled Dominicans with sub-groups
 Samplelistfile <- "/home/local/ARCS/qh2159/breast_cancer/Panel/data/phenotype/BreastCancer_Samplelist.txt"
 ## variant lists and statistical files
 vburdenfiles <- c("/home/local/ARCS/qh2159/breast_cancer/Panel/resultf/AJ_variant_level_burden_Pseducont.txt","/home/local/ARCS/qh2159/breast_cancer/Panel/resultf/HISP_variant_level_burden_Pseducont.txt")
