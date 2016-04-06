@@ -62,7 +62,7 @@ After PCA analysis, we got 715 AJs, 550 Dominicans (2 of 552 original Dominicans
 /home/local/ARCS/qh2159/breast_cancer/Panel/data/HispanicCases550.txt
 
 #=====================================
-Jewish Controls by combined different batches WES samples:
+Jewish Controls by combined different WES batch samples:
 Directory: /home/local/ARCS/yshen/data/WENDY/BreastCancer/AJ_CONTROLS/
 All the WES data used in PCA analysis to get Jewish controls are listed in DropBox folder:
 Dropbox (CGC)/BreastCancerExomeStudy/Genelist_Qiang/AJ_Samples_Table.xlsx
@@ -114,6 +114,54 @@ By now, we only fixed bad read group for 265 index cases of 715 breast cancer je
 
 #=====================================
 Dominican controls related analysis:
+Directory: /home/local/ARCS/yshen/data/WENDY/BreastCancer/Dominican_PCA
+There are 584 samples to do PCA analysis. The decision result is listed in:
+/home/local/ARCS/yshen/data/WENDY/BreastCancer/Dominican_PCA/PCA/PCA_decisions.tsv
+Note that based on PCA result, there are 341 Dominicans for these control data, but they are incompletely independent. By now, we are trying to find maximum number of unrelated samples and other methods to modeling the sample structure. 
+
+#=====================================
+VCF files:
+bam files --> vcf files: Ashley's exome pipeline: https://github.com/AshKernow/Exome-vc-pipeline-V3
+Breast Cancer Cohort: /home/local/ARCS/yshen/data/WENDY/BreastCancer/Regeneron/FreezeOneVariantCalling/CUMC_RGN_BC_FreezeOne.hardfiltered.adjnm.vcf.gz
+Dominicans 550 in Breast Cancer Cohort: /home/local/ARCS/yshen/data/WENDY/BreastCancer/Regeneron/FreezeOneVariantCalling/CUMC_RGN_BC_FreezeOne.Dominicans.recode.vcf.gz
+Jewish 716 cases and Controls joint calling VCF: /home/local/ARCS/yshen/data/WENDY/BreastCancer/AJ_CONTROLS/combined_variant_call/AJ_20151102.hardfiltered.vcf.gz
+Jewish 716 cases and controls joint calling in common target intervals: /home/local/ARCS/qh2159/breast_cancer/variants/AJdepth/AJ_20151202.onlyCommonbed.vcf.gz
+Common target interval bed file: /home/local/ARCS/qh2159/breast_cancer/depthOfcoverage/data/RGN_PCGC_new.bed
+Dominicans 584 potential controls: /home/local/ARCS/yshen/data/WENDY/BreastCancer/Dominican_PCA/ExomeVariants_indels/DominicanSNPsIndels.vcf.gz
+
+#=====================================
+Variant filtering for each sample based on VCFs:
+Ashely's script:  
+/home/local/ARCS/qh2159/breast_cancer/variants/code/ExmFilt.CustomGenotype_with_Table.py (Original file in Ashley's folder had been deleted.)
+The main filters are listed as follows (it outputs in each log file):
+Genotype Filters:
+         Homozygous Reference Samples: None
+         Heterozygous Samples: None
+         Homozygous Alternate Samples: None
+         Not-Reference Samples: SSC08506
+         Not-Alternate Samples: None
+         Unfiltered Samples: None
+
+Individual Sample Filters:
+         Minimum Depth of Coverage: 3
+         Minimum Genotyping Quality(GQ): 30
+         Minimum Heterozygous allele count: 3
+         Minimum Homozygous allele fraction: 0.7
+Variant Filters:
+         MQ0/DP maximum: 0.05
+         1000 genomes alternate allele frequency maximum: 0.01
+         GO ESP alternate allele frequency maximum: 0.01
+         ExAC alternate allele frequency maximum: 0.01
+         Within VCF allele frequency maximum: 0.05
+         Predicted Pathogenecity Filters: at least SIFT=D or PP2=D/P or CADD >= 15; all InDels and Nonsense
+Example to use this script is:
+/home/local/ARCS/qh2159/breast_cancer/variants/code/HIcontrol_filter.sh (Read the .py file to see the file name rule)
+
+Variant filtering for each family based on dominant or recessive models:
+Ashely's script:
+
+
+
 
 
 #=====================================
@@ -142,6 +190,18 @@ We remove 14 BRCA1/2 pathogenic or likely pathogenic subjects. They are listed i
 
 Burden test for single 
 
+#====================================
+Supplement information:
+Reference genome in Ashley script:
+The reference genome we are using is GRCh37 from the NCBI, plus the decoy sequences (derived from HuRef, Human Bac and Fosmid clones and NA12878).
+See here for info on the decoy sequences:
+https://www.biostars.org/p/73100/
 
+#====================================
+GitHub sources:
+Qiang:	https://github.com/gitQiang/breast_cancer_panel
+Qiang local scripts:	/home/local/ARCS/qh2159/breast_cancer/Panel/breast_cancer_panel
+Ashley:	https://github.com/AshKernow/Exome-vc-pipeline-V3
+Ashley local scripts:	/home/local/ARCS/ads2202/scripts (Several Filtering_scripts are lost!)
 
 
