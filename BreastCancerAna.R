@@ -121,7 +121,9 @@ if(ana==3 | ana==4 | ana==6 | ana==7){
         if(!file.exists(outputpath1)){ dir.create(outputpath1, showWarnings = TRUE, recursive = FALSE);}
         setburdenfile <- paste(outputpath1,"gene_variant_set.burden.txt",sep="") ### gene set burden test file
         qwt(setburdens,setburdenfile,flag=2)
-        plot_genesets(setburdens,outputpath1,vartypenames,per="top 50%")
+        per="top 50%"
+        plot_genesets(setburdens,outputpath1,vartypenames,per)
+        output_genesets(setburdens,outputpath1,vartypenames,per,vburdenfile,vartypes,Fcut=1.5,genesets,genesetnames,GgL[[which(Ggs==per)]])
 }
 
 ##=====single gene level burden test===========================================

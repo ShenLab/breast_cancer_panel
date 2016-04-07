@@ -126,6 +126,28 @@ plot_genesets <- function(setburdens,outputpath,vartypenames,per="top 50%"){
 	dev.off()
 }
 
+output_genesets <- function(setburdens,outputpath,vartypenames,per="top 50%",vburdenfile,vartypes,Fcut=1.5,genesets,genesetnames,expg){
+        varTable <- read.delim(vburdenfile,check.names=FALSE)
+        colnames(varTable)[colnames(varTable)=="Folds"] <- "Odds" ### fix this
+        
+        Foldvars <- c()
+        n <- dim(setburdens)[2]
+        for(i in 1:length(vartypenames)){
+                tmp <- setburdens[setburdens[,"Variant"]==vartypenames[i] & setburdens[,n]==per & setburdens[,"Folds"] >= Fcut,  ]
+                colnames(tmp)[1:2] <- c("GeneSet","VariantType")
+                if(dim(tmp)[1] > 0){
+                        for(j in 1:dim(tmp)[1]){
+                                oneg <- intersect(genesets[[which(genesetnames==tmp[j,1])]],expg)
+                                oner <- varTable[varTable[,"Gene"] %in% oneg & varTable[,"VariantClass"] %in% vartypes[[i]], ]
+                                oner <- cbind(tmp[j,"GeneSet"],tmp[j,"VariantType"],tmp[j,n],oner)
+                                Foldvars <- rbind(Foldvars,oner)
+                        }
+                }
+        }
+       
+        qwt(Foldvars,file=paste(outputpath,"Variants_genesets_Folds_",Fcut,".txt",sep=""),flag=2)
+}
+
 getVariantlist <- function(path,IDfile,namestr=".tsv",savefile){
 ## get variant lists for a set of samples
     print_log(paste("getVariantlist function is running ...", date(),sep=" "))
