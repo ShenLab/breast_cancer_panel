@@ -325,7 +325,7 @@ Literature genes related papers and data tables are listed in:
 R code is: /home/local/ARCS/qh2159/breast_cancer/genelist/pre.R
 Literature details are listed in:
 R code is: /home/local/ARCS/qh2159/breast_cancer/genelist/Readme.xlsx
-There are 29 known inherited breast cancer genes given by Yufeng, see in the top of pre.R
+There are 29 known inherited breast cancer genes given by Yufeng, see in line 77 of pre.R with variable "germ1".
 
 4-Missense hotspots
 Directory: /home/local/ARCS/qh2159/breast_cancer/Panel/data/hotspots

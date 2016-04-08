@@ -108,10 +108,13 @@ if(ana==3 | ana==4 | ana==6 | ana==7){
         for(i in 1:length(genesets)){
                 for(j in 1:length(vartypes)){
                         for(k in 1:length(Ggs)){
-                                tmp <- burden_test(caselist,contlist,testset=intersect(genesets[[i]],GgL[[k]]),testtype=vartypes[[j]],flag=1,sig,coe)
-                                tmp[1,1:2] <- c(genesetnames[i],vartypenames[j])
-                                tmp <- cbind(tmp,Ggs[k])
-                                setburdens <- rbind(setburdens,tmp)
+                                tmpg <- intersect(genesets[[i]],GgL[[k]])
+				if(length(tmpg)>0){
+					tmp <- burden_test(caselist,contlist,testset=tmpg,testtype=vartypes[[j]],flag=1,sig,coe)
+                                	tmp[1,1:2] <- c(genesetnames[i],vartypenames[j])
+                                	tmp <- cbind(tmp,Ggs[k])
+                                	setburdens <- rbind(setburdens,tmp)
+				}
                         }
                 }
         }

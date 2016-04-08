@@ -48,7 +48,7 @@ test_genesets <- function(){
         n <- length(genesets)   
         for(i in 1:(subn+2)){
                 genesets[[i+n]] <- pLIlist[[i]]
-                genesetnames[[i+n]] <- paste("CancerDriver_pLI",pLInames[i],sep="")
+                genesetnames[i+n] <- paste("CancerDriver_pLI",pLInames[i],sep="")
         }
         
         tmp <- subgeneset_pLI_mis_z(PLi,DRg,cuts=c(0,3),score="mis_z",subn)
@@ -57,7 +57,7 @@ test_genesets <- function(){
         n <- length(genesets)
         for(i in 1:(subn+2)){
                 genesets[[i+n]] <- mis_zlist[[i]]
-                genesetnames[[i+n]] <- paste("CancerDriver_mis_z",mis_znames[i],sep="")             
+                genesetnames[i+n] <- paste("CancerDriver_mis_z",mis_znames[i],sep="")             
         }
         
         ## Metabolism sub-sets based on pLI or mis_z scores
@@ -69,7 +69,7 @@ test_genesets <- function(){
         n <- length(genesets)   
         for(i in 1:(subn+2)){
                 genesets[[i+n]] <- pLIlist[[i]]
-                genesetnames[[i+n]] <- paste("Metabolism_pLI",pLInames[i],sep="")
+                genesetnames[i+n] <- paste("Metabolism_pLI",pLInames[i],sep="")
         }
         
         tmp <- subgeneset_pLI_mis_z(PLi,metabogs,cuts=c(0,3),score="mis_z",subn)
@@ -78,7 +78,14 @@ test_genesets <- function(){
         n <- length(genesets)
         for(i in 1:(subn+2)){
                 genesets[[i+n]] <- mis_zlist[[i]]
-                genesetnames[[i+n]] <- paste("Metabolism_mis_z",mis_znames[i],sep="")             
+                genesetnames[i+n] <- paste("Metabolism_mis_z",mis_znames[i],sep="")             
+        }
+        
+        metapathS <- read.delim(metabolism57file,header=FALSE)
+        n <- length(genesets)
+        for(i in 1:dim(metapathS)[1]){
+                genesets[[i+n]] <- setdiff(unlist(strsplit(metapathS[i,2]," ")),c("Reactome","Pathway"))
+                genesetnames[i+n] <- metapathS[i,1]
         }
         
         list(genesets=genesets,genesetnames=genesetnames)
@@ -128,7 +135,6 @@ plot_genesets <- function(setburdens,outputpath,vartypenames,per="top 50%"){
 
 output_genesets <- function(setburdens,outputpath,vartypenames,per="top 50%",vburdenfile,vartypes,Fcut=1.5,genesets,genesetnames,expg){
         varTable <- read.delim(vburdenfile,check.names=FALSE)
-        colnames(varTable)[colnames(varTable)=="Folds"] <- "Odds" ### fix this
         setburdens[is.na(as.numeric(setburdens[,"Folds"])),"Folds"] <- 0
         
         Foldvars <- c()
@@ -140,8 +146,9 @@ output_genesets <- function(setburdens,outputpath,vartypenames,per="top 50%",vbu
                 if(dim(tmp)[1] > 0){
                         for(j in 1:dim(tmp)[1]){
                                 oneg <- intersect(genesets[[which(genesetnames==tmp[j,1])]],expg)
-                                oner <- varTable[varTable[,"Gene"] %in% oneg & varTable[,"VariantClass"] %in% vartypes[[i]], ]
-                                oner <- cbind(tmp[j,"GeneSet"],tmp[j,"VariantType"],tmp[j,n],oner)
+                                if(!is.null(vartypes[[i]]))	oner <- varTable[varTable[,"Gene"] %in% oneg & varTable[,"VariantClass"] %in% vartypes[[i]], ]
+                                if(is.null(vartypes[[i]]))	oner <- varTable[varTable[,"Gene"] %in% oneg, ]
+				oner <- cbind(tmp[j,"GeneSet"],tmp[j,"VariantType"],tmp[j,n],oner)
                                 colnames(oner)[1:3] <- c("GeneSet","VariantType","Top_expressed")
                                 rownames(oner) <- NULL
                                 Foldvars <- rbind(Foldvars,oner)
