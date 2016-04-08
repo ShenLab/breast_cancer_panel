@@ -34,6 +34,7 @@ Individual ID: 2007915
 The samples 220897 and 220904 are from the same individual:
 Family ID: 200352
 Individual ID: 2007050
+Note we have both bam files for 222357 and 222966; and we only have bam file for 220897 not 220904;
 Note that Hispanics in this table are more likely to be Dominicans. In this readme file, we just treat them as the same ethnicity.
 
 #=====================================
@@ -216,51 +217,32 @@ Excluding samples: 12 outliers and 14 BRCA1/2 positive samples, code-misc.R::exc
 550 Dominicans --> 138 Index cases; 24 Non-index cases; 340 unaffected; 41 pseudo-controls;
 
 Index cases: if one family contains >= 2 breast cancer cases, we use the older one case for each family as the index case;  misc.R::getindexcase; you can also use the yonger one by the parameter: agem="min".
-Non-index cases:
-unaffected:
-Pseudo-controls: without breast cancer and other related types of cancers and liveage or age by 2014 larger than 70 and female and not outliers
-
-
+Non-index cases: breast cancer affected but not in the index case lists
+unaffected: breast cancer unaffected members
+Pseudo-controls: female; without breast cancer; without other related types of cancers; liveage or age by 2014 larger than 70; not outliers; src.R::pseudoControl; notes: if "Liveage" information is not avaiable, we use the real age based on the birrh date. Other related types of cancers are manually given by Wendy Chang. The file table is  /home/local/ARCS/qh2159/breast_cancer/Panel/data/phenotype/WES_CaseControl_PossibleControls_OtherCancer.csv; related column is "Control.Status".
 
 #=====================================
-Burden test: misc.R::burden_test function
+Burden test based on cases-controls:
 A case-control study is a type of observational study in which two existing groups differing in outcome are identified and compared on the basis of some supposed causal attribute. The basic idea for burden test based on case-control data is aimed to find that those mutations occurred in cases at a higher rate than expected (observed in controls). For burden test, we can split into three different levels. Level 1: gene set. Level 2: single gene. Level 3: single variant. For each single variant burden test, we compare the number of carriers in cases and the number of carriers in controls, which is measured as folds and fisher test p-values. For each single gene, we treat all variants in one gene as an entirety, and compare the number of carriers of one gene in cases and the number of carriers of one gene in controls, and also measured by folds and p-values. For gene set level, we only combined all genes in one set as one single gene and do the same thing. Note for all burden tests, we firstly split all variants into different types, such as, loss-of-function, damaging missense, indels, synonymous and splicing sites.
 
 For gene set test, we used biominal test.
 For single gene and single variant tests, we used fisher test.
 
-
-R function details for burden test:
+Main R scripts:
 all related data files: sourcefiles.R
 all related independent functions: misc.R
 main code for all burden test related analysis: BreastCancerAna.R
 all useful independent functions: src.R
 
-
-
-1-Update Jewishes and Dominicans.
-For burden test analysis, we should exclude several samples, that is, 12 outliers and 14 BRCA1/2 positive samples, code::misc.R::excluded_samples
-    Total   IndexCases  Control
-Jewish 715 265 557
-Dominican 550 138 341
-
-Single variant test into src.R::singleVariantTest_Jewish_Hispanic
-AJs: index cases, pseudo-controls, cases, non-cases; HIs: index cases, pseudo-controls, cases, non-cases;
-IndexCases  Pseudo-Controls Controls    Non-indexCases  Non-Cases
-AJs 271 58 557 65 313
-Filter 265 58 557 63 312
-HIs 142 41 341 23 343
-Filter 138 41 341 23 340
-
-parameters:
+R function details for burden test:
+BreastCancerAna.R parameters:
 sig: TRUE-burden test only for singleton variants in cases and controls. FALSE-burden test for all filtered variants. default: FALSE 
 Ecut: ExAC frequency cutoff; default: 0.01
-hotf: 1-hotspots predicted based on HMM (hongjian); 2-hotspots defined by cosmic site with recurrent >=3; 
-3-not filter missense by hotspots; 4-label hotspots and not filtered; default: 4
+hotf: 1-hotspots predicted based on HMM (hongjian); 2-hotspots defined by cosmic site with recurrent >=3; 3-not filter missense by hotspots; 4-label hotspots and not filtered; default: 4
 swi: 1-Jewish case and control; 2-Hispanic case and contorl; default: 1
 ana: 1-single gene test only; 2-single variant test only; 3-gene set test only; 4-all related tests; 5-single gene and variant tests; 6-single gene and gene set tests; 7-single variant and gene set tests; default: 4
 
-subfunctions::
+subfunctions used in BreastCancerAna.R and applied in misc.R::
 phenoinfo:: phenotype information for sequenced samples
 test_genesets:: all interested gene sets to test.
 getVariantlist:: get all variants for cases or controls, we ran this separate before running the burden test and save the related files into Rdata.  
@@ -273,50 +255,39 @@ coeHisp:: get the corrected coefficient based on the number of rare synonymous b
 burden_test:: burden test for single variant, single gene, and gene set
 qqplot_variantLevel:: qq plot for different variant types
 
-
-functions in src.R::
+subfunctions in src.R::
 pheno_samples:: basic samples and phenotype informations
 pseudoControl:: get pseudo-controls
-getHispanicCases::  get Dominicans in breast cancer cohort
+getHispanicCases:: get Dominicans in breast cancer cohort
 FamilyDis and PopulationDis:: families information for Jewish, Dominican and all.  plot number of cases vs numbers of families
 SubjectBatches:: sample batches information
-singleVariantTest_Jewish_Hispanic and singleVariantTest and getPopGroup:: one time single variant tests
 getCohortVariantlist :: get variant list for all breast cancer cohort and save to one Rdata: BreastCancer_VariantList_11_12
 getLargeFamily:: 15 large families selected
 filtered_indexcases:: index cases excluding outliers and BRCA1/2 positive samples
 FamNoCases:: families without breast cancer cases in Jewish and Hispanic
 FamL2Cases:: families with more than two breast cancer cases
+FamGenes:: double check single gene; output all detail informations: FamilyID: each family; #: the number of; BR+: breast cancer cases; BR-: non-breast cancer cases; Var+: variant carriers; Var-: non-variant carriers; age: age information; Ethnicity: Ethnicity;
 
-FamGenes:: double check single gene; output all details for one gene with information:
-"FamilyID","#BR+Var+","#BR+Var-","#BR-Var+","#BR-Var-","BR+Var+","BR+Var-","BR-Var+","BR-Var-","BR+Var+age","BR+Var-age","BR-Var+age","BR-Var-age","Ethnicity"
-#: the number
-BR+: breast cancer cases
-BR-: non-breast cancer cases
-Var+: variant carriers
-Var-: non-variant carriers
-age: age information
-Ethnicity: Ethnicity
-
-Notes: how to distinguish one variant with others, we use the chr, position, ref and alt informations
+#!!!! Important Single Variant Test Functions:
+singleVariantTest_Jewish_Hispanic and singleVariantTest and getPopGroup:: single variant tests; to save running time, we tests all the related single variants before running the main code. This would take about two hours.
+Notes: how to distinguish one variant with others, we use the chr, position, ref and alt informations.
 
 #====================================
-Large family study:
-Family analysis tools used:
-papers and tools codes
-no significant results found by now.
-FB-SKAT
-SKAT and SKAT-O
-famSKAT
-rvTDT
-
-
+Family based association tests:
+F-SKAT: http://www.soph.uab.edu/ssg/software/f-skat
+F-SKAT origin code: /home/local/ARCS/qh2159/breast_cancer/variants/families/F_SKAT/F-SKAT/
+FSKAT_HQ.R is the version used by Qiang Huang fixed several bugs.
+R function: https://github.com/gitQiang/breast_cancer_panel/blob/master/InheritedModels.R::RunFSKAT_QQplot
+rvTDT: Utilizing population controls in rare-variant case-parent association tests; Am J Hum Genet. 2014
+rvTDT origin code: R package "rvTDT"
+R function to use: https://github.com/gitQiang/breast_cancer_panel/blob/master/rvTDTtest.R
+Until now, we didn't find a useful tool which has enough power to find significant genes.
 
 #====================================
 GTEx gene expression data: http://www.gtexportal.org/home/
 Directory: /home/local/ARCS/qh2159/breast_cancer/geneexpression/GTEx
 Ranked expressed genes: /home/local/ARCS/qh2159/breast_cancer/geneexpression/GTEx/expg_ranked.txt
 R script: /home/local/ARCS/qh2159/breast_cancer/geneexpression/GTEx/pre.R
-
 
 #====================================
 New batch samples:
@@ -336,37 +307,57 @@ BreastCancerExomeStudy/Genelist_Qiang/Qiang_1_28_2016.pdf (Not all the related n
 BRCA positive samples: We remove 14 BRCA1/2 pathogenic or likely pathogenic subjects. They are listed in:
 /home/local/ARCS/qh2159/breast_cancer/Panel/data/phenotype/BRCA1_2.txt
 
-3-Main used gene lists
-Tumors suppressors (313): 
-	-Tumor suppressors filtered with COSMIC LOF >= 15%: 164
-	-Tumor suppressors: 242 (genes with TUSON q value < 0.1; Davoli cell paper)
-	-Cancer drivers (1239): COSMIC cancer census genes, cbioportal genes with MutSig q value < 0.1.
-	-DNA repair genes (269): KEGG pathways
-	-Panel genes (459): there are 459 panel genes, 348 of them are in at least one of the first three gene sets
+3-Main used gene lists 
+-Tumor suppressors filtered with COSMIC LOF >= 15%: 164
+-Tumor suppressors: 242 (genes with TUSON q value < 0.1; Davoli cell paper)
+-Cancer drivers (1239): COSMIC cancer census genes, cbioportal genes with MutSig q value < 0.1.
+-DNA repair genes (269): KEGG pathways.
+-Literature genes (459): there are 459 panel genes, 348 of them are in at least one of the above gene sets.
+
 Gene list files are shown in /home/local/ARCS/qh2159/breast_cancer/Panel/breast_cancer_panel/sourcefiles.R
+Literature genes related papers and data tables are listed in:
+/home/local/ARCS/qh2159/breast_cancer/genelist
+R code is: /home/local/ARCS/qh2159/breast_cancer/genelist/pre.R
+Literature details are listed in:
+R code is: /home/local/ARCS/qh2159/breast_cancer/genelist/Readme.xlsx
+There are 29 known inherited breast cancer genes given by Yufeng, see in the top of pre.R
 
-missense hotspots
-panel genes: (459) add the literature details and R code. /home/local/ARCS/qh2159/breast_cancer/genelist
+4-Missense hotspots
+Directory: /home/local/ARCS/qh2159/breast_cancer/Panel/data/hotspots
+-Hotspots given by Hongjian based on HMM: HMM_hotspots_11_12.txt; getting by Rhotspotf2txtf.R
+-Hotspots based on cosmic database: cosmic_hotspots_3.txt; getting by Rhotspotf2txtf.R and https://github.com/gitQiang/breast_cancer_panel/blob/master/oldR/indexcase_burden.R::hotspots_cosmic
 
-
-4-IGV plots
-need the X -windows, 
+5-IGV plots
+Note: need XQuartz, which can not run one PowerEdge and HPC directly. 
 scripts: https://github.com/gitQiang/IGVscript/blob/master/IGVscript.sh
-INDELS="/Volumes/TwoT/Desktop/breastcancer/IGV/IGV_2.3.57/variants_IGVsone.txt" ## indels files
-variant files format:
+Parameters:
+$1: variant list filename; String
+variant list file format:
 each line: chr	position	bamfile; tab separate
-BAM="" ## bam file locations
-DIR="" ## figure output folder
-command reference:
+$2: bams location filename; String
+$3: figure output folder; String
+Command reference:
 https://www.broadinstitute.org/software/igv/PortCommands
 
+6-DropBox folder
+Directory: BreastCancerExomeStudy/Genelist_Qiang
+AJ_Samples_Table.xlsx: all samples used to do PCA analysis for Jewish controls
+Families_without_case: families without any case in breast cancer cohort
+Gene_burden: Main burden test results, updated with date
+LargeFamily_7: 15 large families
+Last43MissedFamilies: the last *.svg files we got from Regeneron
+MSH3: MSH3 related data
+PriorFamilies: 43 prior families
+Pseudo_controls: pseudo controls related information
+Qiang_1_28_2016.pdf: Summary slides
+RepeatSamples21: 21 duplicated samples
+Sinai: check with Mount Sinai data set
+famSKAT: famSKAT results
+genelists: gene lists (old versions)
+phenotype: phenotype plots
+trios: trios in breast cancer cohort
 
-#====================================
-References:
-famSKAT:
-
-#====================================
-GitHub sources:
+7-GitHub sources:
 Qiang:	https://github.com/gitQiang/breast_cancer_panel
 Qiang local scripts:	/home/local/ARCS/qh2159/breast_cancer/Panel/breast_cancer_panel
 Ashley:	https://github.com/AshKernow/Exome-vc-pipeline-V3
