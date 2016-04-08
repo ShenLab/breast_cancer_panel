@@ -15,8 +15,6 @@ MountSinaiData/	All related information for MountSinai WES data.
 Regeneron/	All related information for Breast Cancer families data.
 tablesandlists/	Old tables and lists by Ashley.
 
-In /home/local/ARCS/yshen/data/WENDY/BreastCancer/Regeneron/Filtering_Oct2015, you will find tables of the filtered variants based on the Freeze One data release. The VCF contains ALL of the samples that we have.
-
 There is a file that contains a list of samples to exclude from the analysis as they are outliers based on het/hom rate, sex mismatches etc.
 /home/local/ARCS/yshen/data/WENDY/BreastCancer/Regeneron/FreezeOneVariantCalling/Outliers_to_be_excluded.list
 There are 12 samples in all, 4 of which are samples that were sequenced at CGC or Yale (with IDs "Sample_M_XXXX" or "M_XXXX"). There is no need to exclude any sample due to gender discrepancy, these were all fixed in the resequencing.
@@ -59,7 +57,7 @@ A complete list of all the breast cancer samples that appear to be AJ based on P
 /home/local/ARCS/yshen/data/WENDY/BreastCancer/Regeneron/tablesandlists/All_AJ_samples.list (Ashley version 716 AJs)
 I relabeled 220673 (which came from a Hispanic family and the original label is Hispanic) into Hispanic, then I got 715 Jewishes in:
 /home/local/ARCS/qh2159/breast_cancer/Panel/data/phenotype/AJ715_samples.list
-After PCA analysis, we got 715 AJs, 550 Dominicans (2 of 552 original Dominicans are re-labeled into Jewishes). 550 Dominican samples are listed in:
+After PCA analysis, we got 715 AJs, 550 Dominicans (2 of 552 original Dominicans are re-labeled by PCA analysis). 550 Dominican samples are listed in:
 /home/local/ARCS/qh2159/breast_cancer/Panel/data/HispanicCases550.txt
 
 #=====================================
@@ -113,13 +111,16 @@ Scripts: /home/local/ARCS/qh2159/breast_cancer/depthOfcoverage/code
 Note that when calling depth of coverage (DOC) for breast cancer samples, there are some samples with "Error Read group" information. The following is the explaination from Ashley:
 "Just FYI, it is that for many of the files the readgroups ID in the bam file does not match the readgroup in the sequence data. The reason for this was the plate swap that occured at Regeneron. They figured out what had happened and basically switched the data in the files so that the correct sequences are in the right file. However, they did not change the read group IDs in the sequence data. So, in these files - the header information is correct and shows the correct Sample ID, however, the RG field needs to be fixed to match."
 By now, we only fixed bad read group for 265 index cases of 715 breast cancer jewishes. The useful scripts are in:/home/local/ARCS/qh2159/breast_cancer/depthOfcoverage/code/xFixRGErrors_Piped.sh
+Scripts for calling DOC are:
+/home/local/ARCS/qh2159/breast_cancer/depthOfcoverage/code/run_depthOfCoverage.sh
+One example is /home/local/ARCS/qh2159/breast_cancer/depthOfcoverage/code/master_DoC_RGN4.sh
 
 #=====================================
 Dominican controls related analysis:
 Directory: /home/local/ARCS/yshen/data/WENDY/BreastCancer/Dominican_PCA
 There are 584 samples to do PCA analysis. The decision result is listed in:
 /home/local/ARCS/yshen/data/WENDY/BreastCancer/Dominican_PCA/PCA/PCA_decisions.tsv
-Note that based on PCA result, there are 341 Dominicans for these control data, but they are incompletely independent. By now, we are trying to find maximum number of unrelated samples and other methods to modeling the sample structure. 
+Note that based on PCA result, there are 341 Dominicans for these control data, but they are incompletely independent. By now, we are trying to fix this by other methods to modeling the sample structure. 
 
 #=====================================
 VCF files:
@@ -182,6 +183,8 @@ There are 78 of them which contain the pedigree information.
 First, we generate inherited models for each family mannually or based on R script:
 /home/local/ARCS/qh2159/breast_cancer/Panel/breast_cancer_panel/InheritedModels.R
 Then, use Ashley's script to call variants for each family.
+The variant lists for each family are lised in:
+/home/local/ARCS/qh2159/breast_cancer/variants/families/Families78V2
 
 #=====================================
 Breast Cancer main data folder (Qiang): /home/local/ARCS/qh2159/breast_cancer
@@ -203,7 +206,7 @@ Rules for variant filters:
 	-Missense hotspots based on Hongjian model
 Now, we applied the first five rules except the last one. All of them are optional rules.
 
-For variant list of each family, we used relaxed rules in InheritedModels.R::filtered_LargeFam
+For variant list of each family, we used relaxed rules in InheritedModels.R::filtered_LargeFam to further filter variant lists for each family.
 
 #=====================================
 Data sub-groups Summary:
@@ -220,6 +223,10 @@ Index cases: if one family contains >= 2 breast cancer cases, we use the older o
 Non-index cases: breast cancer affected but not in the index case lists
 unaffected: breast cancer unaffected members
 Pseudo-controls: female; without breast cancer; without other related types of cancers; liveage or age by 2014 larger than 70; not outliers; src.R::pseudoControl; notes: if "Liveage" information is not avaiable, we use the real age based on the birrh date. Other related types of cancers are manually given by Wendy Chang. The file table is  /home/local/ARCS/qh2159/breast_cancer/Panel/data/phenotype/WES_CaseControl_PossibleControls_OtherCancer.csv; related column is "Control.Status".
+BRCA positive samples: We remove 14 BRCA1/2 pathogenic or likely pathogenic subjects. They are listed in:
+/home/local/ARCS/qh2159/breast_cancer/Panel/data/phenotype/BRCA1_2.txt
+12 outliers are listed in:
+/home/local/ARCS/yshen/data/WENDY/BreastCancer/Regeneron/FreezeOneVariantCalling/Outliers_to_be_excluded.list
 
 #=====================================
 Burden test based on cases-controls:
@@ -304,8 +311,6 @@ See here for info on the decoy sequences: https://www.biostars.org/p/73100/
 
 2-Summary slides
 BreastCancerExomeStudy/Genelist_Qiang/Qiang_1_28_2016.pdf (Not all the related numbers are the newest version to now)
-BRCA positive samples: We remove 14 BRCA1/2 pathogenic or likely pathogenic subjects. They are listed in:
-/home/local/ARCS/qh2159/breast_cancer/Panel/data/phenotype/BRCA1_2.txt
 
 3-Main used gene lists 
 -Tumor suppressors filtered with COSMIC LOF >= 15%: 164
