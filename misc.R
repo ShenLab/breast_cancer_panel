@@ -129,17 +129,21 @@ plot_genesets <- function(setburdens,outputpath,vartypenames,per="top 50%"){
 output_genesets <- function(setburdens,outputpath,vartypenames,per="top 50%",vburdenfile,vartypes,Fcut=1.5,genesets,genesetnames,expg){
         varTable <- read.delim(vburdenfile,check.names=FALSE)
         colnames(varTable)[colnames(varTable)=="Folds"] <- "Odds" ### fix this
+        setburdens[is.na(as.numeric(setburdens[,"Folds"])),"Folds"] <- 0
         
         Foldvars <- c()
         n <- dim(setburdens)[2]
         for(i in 1:length(vartypenames)){
-                tmp <- setburdens[setburdens[,"Variant"]==vartypenames[i] & setburdens[,n]==per & setburdens[,"Folds"] >= Fcut,  ]
+                tmp <- setburdens[setburdens[,"Variant"]==vartypenames[i] & setburdens[,n]==per & as.numeric(setburdens[,"Folds"]) >= Fcut,  ]
                 colnames(tmp)[1:2] <- c("GeneSet","VariantType")
+                
                 if(dim(tmp)[1] > 0){
                         for(j in 1:dim(tmp)[1]){
                                 oneg <- intersect(genesets[[which(genesetnames==tmp[j,1])]],expg)
                                 oner <- varTable[varTable[,"Gene"] %in% oneg & varTable[,"VariantClass"] %in% vartypes[[i]], ]
                                 oner <- cbind(tmp[j,"GeneSet"],tmp[j,"VariantType"],tmp[j,n],oner)
+                                colnames(oner)[1:3] <- c("GeneSet","VariantType","Top_expressed")
+                                rownames(oner) <- NULL
                                 Foldvars <- rbind(Foldvars,oner)
                         }
                 }
@@ -404,9 +408,10 @@ burden_test <- function(caselist,contlist,testset=NULL,testtype=NULL,flag,sig=FA
         })
         oneTable <- t(oneTable)
     }
-    
-    if(flag==3){ cols <- c("Gene","Variant","#in_case","#in_cont","n.case","n.cont","Folds","Pvalue");
-    }else{ cols <- c("Gene","Variant","#in_case","#in_cont_0","#in_cont","n.case","n.cont","Folds","Pvalue"); }
+   
+    if(flag==1) cols <- c("Gene","Variant","#in_case","#in_cont_0","#in_cont","n.case","n.cont","Folds","Pvalue");
+    if(flag==2) cols <- c("Gene","Variant","#in_case","#in_cont_0","#in_cont","n.case","n.cont","Odds","Pvalue");
+    if(flag==3) cols <- c("Gene","Variant","#in_case","#in_cont","n.case","n.cont","Odds","Pvalue");
     colnames(oneTable) <- cols
     
     ##======================print information to logFile======================================

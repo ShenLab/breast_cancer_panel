@@ -652,3 +652,13 @@ ReacPathways <- function(){
         qwt(genes, file="../data/ReactomeMetabolism_pathways.txt")
         qwt(pathways, file="../data/ReactomeMetabolism_pathwaysNames.txt")
 }
+
+write_Genesets <- function(){
+        source("misc.R")
+        source("sourcefiles.R")
+        aa <- test_genesets()
+        genes <- c()
+        for(i in 1:length(aa[[1]])) genes <- rbind(genes,cbind(aa[[1]][[i]],aa[[2]][i]))
+        colnames(genes) <- c("Gene","GeneSets")
+        qwt(genes,file="../data/Genesets.txt",flag=2)
+}

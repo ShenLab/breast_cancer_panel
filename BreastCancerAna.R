@@ -4,12 +4,12 @@
 source("misc.R")
 source("sourcefiles.R")
 
-BreastCancerAna <- function(sig=TRUE,Ecut=0.001,hotf=1,swi=1,ana=4){
-### sig: test for singleton variant only or not
-### Ecut: ExAC frequency cutoff
-### hotf: 1: hotspots predicted based on HMM (hongjian); 2: hotspots defined by cosmic site with recurrent >=3; 3: not filter missense by hotspot; 4: not filter missense byhotspot but with the hotspot labels (by HMM hongjian)
-### swi: 1: Jewish case and control; 2: Hispanic case and contorl
-### ana: 1-single gene test only; 2-single variant test only; 3-gene set test only; 4-all related tests; 5-single gene and single variant; 6-single gene and gene sets; 7-single variant and gene sets;
+BreastCancerAna <- function(sig=FALSE,Ecut=0.01,hotf=4,swi=1,ana=4){
+### sig:	TRUE-burden test only for singleton variants in cases and controls. FALSE-burden test for all filtered variants. default: FALSE 
+### Ecut:	ExAC frequency cutoff; default: 0.01
+### hotf:	1-hotspots predicted based on HMM (hongjian); 2-hotspots defined by cosmic site with recurrent >=3; 3-not filter missense by hotspots; 4-label hotspots and not filtered; default: 4
+### swi:	1-Jewish case and control; 2-Hispanic case and contorl; default: 1
+### ana:	1-single gene test only; 2-single variant test only; 3-gene set test only; 4-all related tests; 5-single gene and variant tests; 6-single gene and gene set tests; 7-single variant and gene set tests; default: 4
     
 ## =========================input files===========================================
 if(hotf==1){ hotspotfile <- hotHMM; ## HongjianPred hotspots file

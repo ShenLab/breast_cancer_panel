@@ -90,7 +90,6 @@ Finally, we got 557 Jewish control data with Sample IDs listed in:
 The bams files for these samples are listed in (several bams may be moved into other folders by other users):
 RGN(3):
 /home/local/ARCS/yshen/mnt/BigData/WENDY/RGN_rare_disease/bams
-and
 /home/local/ARCS/yshen/data/WENDY/REGENERON/NewFreezeThreeBams
 RGN(4):
 /home/local/ARCS/yshen/data/WENDY/REGENERON/DNA_Nexus_scripts
@@ -104,6 +103,8 @@ To reduce the batch effect of NimbleGen VCRome kit for breast cancer, RGN(3), RG
 /home/local/ARCS/qh2159/breast_cancer/depthOfcoverage/code/getInterBed.sh
 The capture kit target intervals bed files are listed in: #!!!!!!
 /home/local/ARCS/ads2202/resources/CaptureKitBeds/ #!!! deleted by other users
+All avaiable capture kits are in:
+/home/local/ARCS/yshen/resources/CaptureKitBeds
 
 Depth of coverage information:
 Directory: /home/local/ARCS/qh2159/breast_cancer/depthOfcoverage
@@ -128,6 +129,12 @@ Jewish 716 cases and Controls joint calling VCF: /home/local/ARCS/yshen/data/WEN
 Jewish 716 cases and controls joint calling in common target intervals: /home/local/ARCS/qh2159/breast_cancer/variants/AJdepth/AJ_20151202.onlyCommonbed.vcf.gz
 Common target interval bed file: /home/local/ARCS/qh2159/breast_cancer/depthOfcoverage/data/RGN_PCGC_new.bed
 Dominicans 584 potential controls: /home/local/ARCS/yshen/data/WENDY/BreastCancer/Dominican_PCA/ExomeVariants_indels/DominicanSNPsIndels.vcf.gz
+VCF summaries:
+Ashley scripts: /home/local/ARCS/qh2159/breast_cancer/Panel/breast_cancer_panel/ExmPY.VCF_summary_Stats.py (Note the rules for bad SNPs and indels are the old version)
+Updated rules for bad SNPs and Indels:
+/home/local/ARCS/qh2159/breast_cancer/Panel/breast_cancer_panel/ExmPY.VCF_summary_Stats_hq.py (Qiang Used)
+For all coding variants with ExAC allele freq < 0.001 for all breast cancer samples, you can run:
+/home/local/ARCS/qh2159/breast_cancer/Panel/breast_cancer_panel/ExmPY.VCF_summary_Stats_ExAC_0.001.py
 
 #=====================================
 Variant filtering for each sample based on VCFs:
@@ -141,7 +148,6 @@ Genotype Filters:
          Not-Reference Samples: SSC08506
          Not-Alternate Samples: None
          Unfiltered Samples: None
-
 Individual Sample Filters:
          Minimum Depth of Coverage: 3
          Minimum Genotyping Quality(GQ): 30
@@ -159,9 +165,15 @@ Example to use this script is:
 
 Variant filtering for each family based on dominant or recessive models:
 Ashely's script:
-
-
-
+/home/local/ARCS/qh2159/breast_cancer/variants/code/ExmFilt.CustomGenotype_with_Table.py
+Large families selected:
+Prioritized 43 families given by Regeneron (/home/local/ARCS/qh2159/breast_cancer/variants/families/Prioritized43families.txt),
+15 large families with >=7 members sequenced (/home/local/ARCS/qh2159/breast_cancer/variants/families/LargeFamilyPhenotype.txt), 
+families with >=2 breast cancer cases sequenced (/home/local/ARCS/qh2159/breast_cancer/variants/families/FamiliesL2Cases.txt). 
+There are 78 of them which contain the pedigree information.
+First, we generate inherited models for each family mannually or based on R script:
+/home/local/ARCS/qh2159/breast_cancer/Panel/breast_cancer_panel/InheritedModels.R
+Then, use Ashley's script to call variants for each family.
 
 
 #=====================================
@@ -170,32 +182,55 @@ The details for sub-folders in the main folder is listed in:
 /home/local/ARCS/qh2159/breast_cancer/Panel/breast_cancer_panel/Readme.R 
 Main codes for the burden test analysis are listed in:
 /home/local/ARCS/qh2159/breast_cancer/Panel/breast_cancer_panel 
-which also the codes in Github:
-https://github.com/gitQiang/breast_cancer_panel
-
-
-#=====================================
-Variant calling (Ashely):
-
+Without special instruction, all the R code below are in this folder.
 
 #=====================================
 Variant filtering:
+script: misc.R::variant_filtering function
 Rules for variant filters:
+	-ExAc frequency < 0.01 (0.001)
+	-Population frequency < 0.05 (Only for Jewish)
+	-Missense variants: Meta-SVM or Polyphen2 predicted as "D"
+	-VCF FILTER: bad SNPs
+	-VCF Segmental Duplication score < 0.95
+	-Missense hotspots based on Hongjian model
+Now, we applied the first five rules except the last one. All of them are optional rules.
 
+For variant list of each family, we used relaxed rules in InheritedModels.R::filtered_LargeFam
 
 #=====================================
-BRCA positive samples:
-We remove 14 BRCA1/2 pathogenic or likely pathogenic subjects. They are listed in:
-/home/local/ARCS/qh2159/breast_cancer/Panel/data/phenotype/BRCA1_2.txt
+Burden test:
+A case-control study is a type of observational study in which two existing groups differing in outcome are identified and compared on the basis of some supposed causal attribute. The basic idea for burden test based on case-control data is aimed to find that those mutations occurred in cases at a higher rate than expected (observed in controls). For burden test, we can split into three different levels. Level 1: gene set. Level 2: single gene. Level 3: single variant. For each single variant burden test, we compare the number of carriers in cases and the number of carriers in controls, which is measured as folds and fisher test p-values. For each single gene, we treat all variants in one gene as an entirety, and compare the number of carriers of one gene in cases and the number of carriers of one gene in controls, and also measured by folds and p-values. For gene set level, we only combined all genes in one set as one single gene and do the same thing. Note for all burden tests, we firstly split all variants into different types, such as, loss-of-function, damaging missense, indels, synonymous and splicing sites.
 
-Burden test for single 
+Script: misc.R::burden_test function
+For gene set test, we used biominal test.
+For single gene and single variant tests, we used fisher test.
+
+#====================================
+Large family study:
+
 
 #====================================
 Supplement information:
-Reference genome in Ashley script:
+1-Reference genome in Ashley script
 The reference genome we are using is GRCh37 from the NCBI, plus the decoy sequences (derived from HuRef, Human Bac and Fosmid clones and NA12878).
-See here for info on the decoy sequences:
-https://www.biostars.org/p/73100/
+See here for info on the decoy sequences: https://www.biostars.org/p/73100/
+
+2-Summary slides
+BreastCancerExomeStudy/Genelist_Qiang/Qiang_1_28_2016.pdf (Not all the related numbers are the newest version to now)
+BRCA positive samples: We remove 14 BRCA1/2 pathogenic or likely pathogenic subjects. They are listed in:
+/home/local/ARCS/qh2159/breast_cancer/Panel/data/phenotype/BRCA1_2.txt
+
+3-Main used gene lists
+Tumors suppressors (313): 
+	–Tumor suppressors filtered with COSMIC LOF >= 15%: 164
+	–Tumor suppressors: 242 (genes with TUSON q value < 0.1; Davoli cell paper)
+Cancer drivers (1239): COSMIC cancer census genes, cbioportal genes with MutSig q value < 0.1.
+DNA repair genes (269): KEGG pathways
+Panel genes (459): there are 459 panel genes, 348 of them are in at least one of the first three gene sets
+Gene list files are shown in /home/local/ARCS/qh2159/breast_cancer/Panel/breast_cancer_panel/sourcefiles.R
+
+4-IGV plots
 
 #====================================
 GitHub sources:
