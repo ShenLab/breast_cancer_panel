@@ -8,13 +8,9 @@ oldR/:	Before getting real control data, we tried to use FB-SKAT, SKAT to do sin
 
 BreastCancerAna.R:	Main burden test code for case-control data, including variant filtering, single variant burden test, gene level burden test, and gene set level burden test. Parameter "swi" is used to analysis Jewish or Dominican, other parameters see details in the comment lines.
 
-HISPbatches.R:	Running Dominican analysis with different parameters.
-
 InheritedModels.R:	Automatical generating AD and AR inherited models for families.
 
 Samplelist.R:	All cohort samples information. 
-
-batchesRunBRtest.R:	Running Jewish analysis with different parameters.
 
 misc.R:	Useful functions for analysis.
 
@@ -28,6 +24,7 @@ srcp.R:	 Other functions for more specific tasks, which is privately conserved b
 
 Readme.R:	Other related analysis source location and codes in this project. 
 
+rvTDTtest.R:	rvTDT tests based on breast cancer trios and population controls, no significant result found.
 
 # Version Updates:
 

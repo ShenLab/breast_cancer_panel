@@ -651,6 +651,35 @@ ReacPathways <- function(){
         genes <- unique(genes)
         qwt(genes, file="../data/ReactomeMetabolism_pathways.txt")
         qwt(pathways, file="../data/ReactomeMetabolism_pathwaysNames.txt")
+        
+        ### see the details about pathways
+        library(GSA)
+        filename <- "/home/local/ARCS/qh2159/breast_cancer/Panel/data/pathways/ReactomePathways.gmt"
+        aa <- GSA.read.gmt(filename)
+        subs <- which(grepl("metabolism",aa$geneset.names))
+
+#         filename <- "/home/local/ARCS/qh2159/breast_cancer/Panel/data/pathways/ReactomePathwaysMetabolismPaths.txt"
+#         for(i in 1:length(subs)){
+#                 onename <-  aa$geneset.names[[subs[i]]]
+#                 onegene <- paste(aa$genesets[[subs[i]]],sep="",collapse = " ")
+#                 oneline <- paste(onename,onegene,sep="\t")
+#                 cat(oneline, file=filename, append=TRUE, sep = "\n")
+#         }
+        
+        source("misc.R")
+        source("sourcefiles.R")
+        bb <- test_genesets()
+        Gtop <- read.table(GTExfile)
+        expg <- Gtop[1:floor(0.5*dim(Gtop)[1]),1]
+        filename <- "/home/local/ARCS/qh2159/breast_cancer/Panel/data/pathways/ReactomePathwaysMetabolismPathsVariants.txt"
+        for(i in 1:length(subs)){
+                onegene <- paste(intersect(expg,intersect(aa$genesets[[subs[i]]],bb[[1]][[32]])),sep="",collapse = " ")
+                onename <- aa$geneset.names[[subs[i]]]
+                onelen <- length(intersect(expg,intersect(aa$genesets[[subs[i]]],bb[[1]][[32]])))
+                oneline <- paste(onelen,onename,onegene,sep="\t")
+                cat(oneline, file=filename, append=TRUE, sep = "\n")
+        }
+        
 }
 
 write_Genesets <- function(){
